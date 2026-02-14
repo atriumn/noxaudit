@@ -116,7 +116,7 @@ class AnthropicProvider(BaseProvider):
 
             processing = result["request_counts"]["processing"]
             print(f"  Waiting... ({processing} processing)")
-            time.sleep(30)
+            time.sleep(60)
 
     def _build_user_message(
         self, files: list[FileContent], decision_context: str

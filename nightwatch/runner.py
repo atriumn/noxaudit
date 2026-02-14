@@ -9,6 +9,7 @@ from pathlib import Path
 from nightwatch.config import NightwatchConfig
 from nightwatch.decisions import filter_findings, format_decision_context, load_decisions
 from nightwatch.focus import FOCUS_AREAS
+from nightwatch.issues import create_issues_for_findings
 from nightwatch.models import AuditResult
 from nightwatch.notifications.telegram import send_telegram
 from nightwatch.providers.anthropic import AnthropicProvider
@@ -20,6 +21,7 @@ PROVIDERS = {
 }
 
 PENDING_BATCH_FILE = ".nightwatch/pending-batch.json"
+LAST_RETRIEVED_FILE = ".nightwatch/last-retrieved.json"
 
 
 def submit_audit(
@@ -79,6 +81,11 @@ def retrieve_audit(
         return []
 
     pending = json.loads(path.read_text())
+
+    if _already_retrieved(pending):
+        print("Batch already retrieved — skipping.")
+        return []
+
     focus_name = pending["focus"]
     results = []
 
@@ -88,6 +95,7 @@ def retrieve_audit(
             results.append(result)
 
     if results:
+        _mark_retrieved(pending)
         # Clean up pending file
         path.unlink(missing_ok=True)
 
@@ -123,6 +131,31 @@ def run_audit(
         results.append(result)
 
     return results
+
+
+def _already_retrieved(pending: dict) -> bool:
+    """Check if this batch was already retrieved (idempotency guard)."""
+    path = Path(LAST_RETRIEVED_FILE)
+    if not path.exists():
+        return False
+    try:
+        last = json.loads(path.read_text())
+        pending_ids = sorted(b["batch_id"] for b in pending.get("batches", []))
+        retrieved_ids = sorted(last.get("batch_ids", []))
+        return pending_ids == retrieved_ids and len(pending_ids) > 0
+    except (json.JSONDecodeError, KeyError):
+        return False
+
+
+def _mark_retrieved(pending: dict) -> None:
+    """Record batch IDs as retrieved to prevent re-processing."""
+    path = Path(LAST_RETRIEVED_FILE)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    batch_ids = [b["batch_id"] for b in pending.get("batches", [])]
+    path.write_text(json.dumps({
+        "batch_ids": batch_ids,
+        "retrieved_at": datetime.now().isoformat(),
+    }, indent=2))
 
 
 def _submit_repo(config, repo, focus_name, provider_name, dry_run):
@@ -215,6 +248,9 @@ def _retrieve_repo(config, batch_info, focus_name):
             send_telegram(msg, chat_id=notif.target)
             print(f"[{repo_name}] Telegram notification sent")
 
+    # Create GitHub issues
+    create_issues_for_findings(audit_result, config.issues)
+
     return audit_result
 
 
@@ -267,5 +303,8 @@ def _run_repo_sync(config, repo, focus_name, provider_name, dry_run):
         if notif.channel == "telegram":
             msg = format_notification(result)
             send_telegram(msg, chat_id=notif.target)
+
+    # Create GitHub issues
+    create_issues_for_findings(result, config.issues)
 
     return result

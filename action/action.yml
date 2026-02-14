@@ -25,6 +25,10 @@ inputs:
   telegram-chat-id:
     description: 'Telegram chat ID for notifications'
     required: false
+  github-token:
+    description: 'GitHub token for creating issues'
+    required: false
+    default: ${{ github.token }}
 
 runs:
   using: 'composite'
@@ -38,12 +42,21 @@ runs:
       shell: bash
       run: pip install git+https://github.com/atriumn/nightwatch.git
 
-    - name: Download pending batch (retrieve mode)
+    - name: Restore pending batch (retrieve mode)
       if: inputs.mode == 'retrieve'
       uses: actions/cache/restore@v4
       with:
         path: .nightwatch/pending-batch.json
-        key: nightwatch-pending-batch
+        key: nightwatch-pending-will-not-match
+        restore-keys: nightwatch-pending-
+
+    - name: Restore last-retrieved guard (retrieve mode)
+      if: inputs.mode == 'retrieve'
+      uses: actions/cache/restore@v4
+      with:
+        path: .nightwatch/last-retrieved.json
+        key: nightwatch-retrieved-will-not-match
+        restore-keys: nightwatch-retrieved-
 
     - name: Run nightwatch
       shell: bash
@@ -51,6 +64,7 @@ runs:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-bot-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
+        GH_TOKEN: ${{ inputs.github-token }}
       run: |
         if [ "${{ inputs.mode }}" = "submit" ]; then
           ARGS="--config ${{ inputs.config }}"
@@ -67,7 +81,14 @@ runs:
       uses: actions/cache/save@v4
       with:
         path: .nightwatch/pending-batch.json
-        key: nightwatch-pending-batch
+        key: nightwatch-pending-${{ github.run_id }}
+
+    - name: Cache last-retrieved guard (retrieve mode)
+      if: inputs.mode == 'retrieve'
+      uses: actions/cache/save@v4
+      with:
+        path: .nightwatch/last-retrieved.json
+        key: nightwatch-retrieved-${{ github.run_id }}
 
     - name: Upload reports
       uses: actions/upload-artifact@v4

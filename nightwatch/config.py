@@ -58,12 +58,21 @@ class DecisionConfig:
 
 
 @dataclass
+class IssuesConfig:
+    enabled: bool = False
+    severity_threshold: str = "medium"  # "low", "medium", or "high"
+    labels: list[str] = field(default_factory=lambda: ["nightwatch"])
+    assignees: list[str] = field(default_factory=list)
+
+
+@dataclass
 class NightwatchConfig:
     repos: list[RepoConfig] = field(default_factory=list)
     schedule: dict[str, str] = field(default_factory=lambda: dict(DEFAULT_SCHEDULE))
     budget: BudgetConfig = field(default_factory=BudgetConfig)
     notifications: list[NotificationConfig] = field(default_factory=list)
     decisions: DecisionConfig = field(default_factory=DecisionConfig)
+    issues: IssuesConfig = field(default_factory=IssuesConfig)
     reports_dir: str = ".nightwatch/reports"
     model: str = "claude-sonnet-4-5-20250929"
 
@@ -130,12 +139,21 @@ def load_config(config_path: str | Path | None = None) -> NightwatchConfig:
         path=decisions_raw.get("path", ".nightwatch/decisions.jsonl"),
     )
 
+    issues_raw = raw.get("issues", {})
+    issues = IssuesConfig(
+        enabled=issues_raw.get("enabled", False),
+        severity_threshold=issues_raw.get("severity_threshold", "medium"),
+        labels=issues_raw.get("labels", ["nightwatch"]),
+        assignees=issues_raw.get("assignees", []),
+    )
+
     return NightwatchConfig(
         repos=repos,
         schedule=schedule,
         budget=budget,
         notifications=notifications,
         decisions=decisions,
+        issues=issues,
         reports_dir=raw.get("reports_dir", ".nightwatch/reports"),
         model=raw.get("model", "claude-sonnet-4-5-20250929"),
     )

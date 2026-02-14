@@ -39,3 +39,10 @@ reports_dir: .nightwatch/reports
 notifications:
   - channel: telegram
     target: "YOUR_CHAT_ID"
+
+# Auto-create GitHub issues for findings (optional)
+issues:
+  enabled: false
+  severity_threshold: medium  # low, medium, or high
+  labels: [nightwatch]
+  assignees: []
