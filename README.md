@@ -1,10 +1,10 @@
-# Nightwatch
+# Noxaudit
 
 Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory.
 
 **The problem**: Codebases drift. Docs go stale, security issues creep in, patterns diverge, dead code accumulates. Manual reviews are expensive and inconsistent. Linters catch syntax but miss semantics.
 
-**The solution**: Nightwatch runs a focused AI audit every night, rotating through different concerns. It remembers what you've already reviewed so it only surfaces genuinely new findings.
+**The solution**: Noxaudit runs a focused AI audit every night, rotating through different concerns. It remembers what you've already reviewed so it only surfaces genuinely new findings.
 
 ## How It Works
 
@@ -22,9 +22,9 @@ schedule:
   friday: [performance, testing]
 ```
 
-Or run everything at once: `nightwatch run --focus all`
+Or run everything at once: `noxaudit run --focus all`
 
-Each night, Nightwatch:
+Each night, Noxaudit:
 1. Picks today's focus area(s) from the schedule
 2. Gathers relevant files from your codebase (deduped across focus areas)
 3. Sends them to an AI provider (Claude, GPT, Gemini) with a focused prompt
@@ -36,34 +36,34 @@ Each night, Nightwatch:
 ### Local CLI
 
 ```bash
-pip install nightwatch-ai
+pip install noxaudit
 
 # Create config (edit to match your project)
-cp nightwatch.yml.example nightwatch.yml
+cp noxaudit.yml.example noxaudit.yml
 
 # Run a security audit
 export ANTHROPIC_API_KEY=sk-...
-nightwatch run --focus security
+noxaudit run --focus security
 
 # Run multiple focus areas in one call
-nightwatch run --focus security,performance
+noxaudit run --focus security,performance
 
 # Run all focus areas at once
-nightwatch run --focus all
+noxaudit run --focus all
 
 # See the schedule
-nightwatch schedule
+noxaudit schedule
 
 # Review a finding and dismiss it
-nightwatch decide abc123def456 --action dismiss --reason "This is test code"
+noxaudit decide abc123def456 --action dismiss --reason "This is test code"
 ```
 
 ### GitHub Actions
 
-Add to `.github/workflows/nightwatch.yml`:
+Add to `.github/workflows/noxaudit.yml`:
 
 ```yaml
-name: Nightwatch Audit
+name: Noxaudit Audit
 on:
   schedule:
     - cron: '0 6 * * *'  # 6am UTC daily
@@ -79,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: atriumn/nightwatch/action@main
+      - uses: atriumn/noxaudit/action@main
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           focus: ${{ inputs.focus }}
@@ -89,7 +89,7 @@ jobs:
 
 ## Configuration
 
-Create a `nightwatch.yml` in your project root. See [nightwatch.yml.example](nightwatch.yml.example) for all options.
+Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudit.yml.example) for all options.
 
 ### Key Options
 
@@ -115,20 +115,20 @@ Create a `nightwatch.yml` in your project root. See [nightwatch.yml.example](nig
 
 ## Decision Memory
 
-When nightwatch finds something you've already addressed, you can record a decision:
+When noxaudit finds something you've already addressed, you can record a decision:
 
 ```bash
 # "We fixed this"
-nightwatch decide abc123 --action accept --reason "Fixed in PR #42"
+noxaudit decide abc123 --action accept --reason "Fixed in PR #42"
 
 # "This is fine, stop flagging it"
-nightwatch decide def456 --action dismiss --reason "Test fixture, not real credentials"
+noxaudit decide def456 --action dismiss --reason "Test fixture, not real credentials"
 
 # "We know, it's on purpose"
-nightwatch decide ghi789 --action intentional --reason "Intentionally permissive CORS for dev"
+noxaudit decide ghi789 --action intentional --reason "Intentionally permissive CORS for dev"
 ```
 
-Decisions are stored in `.nightwatch/decisions.jsonl` and fed to future runs. A finding won't resurface unless:
+Decisions are stored in `.noxaudit/decisions.jsonl` and fed to future runs. A finding won't resurface unless:
 - The file it's in changes
 - The decision expires (default: 90 days)
 
@@ -154,7 +154,7 @@ Commit your decisions file to share across the team.
 
 ### Full Report
 
-Reports are saved as markdown in `.nightwatch/reports/{repo}/{date}-{focus}.md`.
+Reports are saved as markdown in `.noxaudit/reports/{repo}/{date}-{focus}.md`.
 
 ## Multi-Provider Support
 
