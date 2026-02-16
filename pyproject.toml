@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nightwatch-ai"
+name = "noxaudit"
 version = "0.1.0"
 description = "Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory"
 readme = "README.md"
@@ -12,7 +12,7 @@ requires-python = ">=3.11"
 authors = [
     { name = "Atriumn", email = "hello@atriumn.com" },
 ]
-keywords = ["ai", "code-review", "audit", "security", "codebase"]
+keywords = ["ai", "code-review", "audit", "security", "codebase", "nightwatch"]
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
@@ -38,14 +38,14 @@ openai = ["openai>=1.50"]
 google = ["google-genai>=1.0"]
 
 [project.scripts]
-nightwatch = "nightwatch.cli:main"
+noxaudit = "noxaudit.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/atriumn/nightwatch"
-Issues = "https://github.com/atriumn/nightwatch/issues"
+Homepage = "https://github.com/atriumn/noxaudit"
+Issues = "https://github.com/atriumn/noxaudit/issues"
 
 [tool.hatch.build.targets.wheel]
-packages = ["nightwatch"]
+packages = ["noxaudit"]
 
 [tool.ruff]
 target-version = "py311"
