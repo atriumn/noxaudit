@@ -5,7 +5,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from pathlib import Path
 
-from nightwatch.models import FileContent
+from noxaudit.models import FileContent
 
 
 # Max file size to include (skip large generated/vendored files)

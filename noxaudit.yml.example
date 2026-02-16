@@ -1,5 +1,5 @@
-# Nightwatch configuration
-# Copy this to nightwatch.yml and customize for your project.
+# Noxaudit configuration
+# Copy this to noxaudit.yml and customize for your project.
 
 repos:
   - name: my-app
@@ -39,10 +39,10 @@ budget:
 # Where to store decision memory
 decisions:
   expiry_days: 90
-  path: .nightwatch/decisions.jsonl
+  path: .noxaudit/decisions.jsonl
 
 # Where to save reports
-reports_dir: .nightwatch/reports
+reports_dir: .noxaudit/reports
 
 # Notification channels (optional)
 notifications:
@@ -53,5 +53,5 @@ notifications:
 issues:
   enabled: false
   severity_threshold: medium  # low, medium, or high
-  labels: [nightwatch]
+  labels: [noxaudit]
   assignees: []

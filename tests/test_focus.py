@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from nightwatch.focus import FOCUS_AREAS
-from nightwatch.focus.base import (
+from noxaudit.focus import FOCUS_AREAS
+from noxaudit.focus.base import (
     BaseFocus,
     build_combined_prompt,
     gather_files_combined,

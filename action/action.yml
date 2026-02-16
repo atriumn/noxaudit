@@ -1,5 +1,5 @@
-name: 'Nightwatch AI Audit'
-description: 'Run AI-powered codebase audits using batch API (50% off)'
+name: 'Noxaudit'
+description: 'Nightly AI-powered codebase audits with rotating focus areas'
 branding:
   icon: 'shield'
   color: 'blue'
@@ -13,9 +13,9 @@ inputs:
     description: 'Focus area to audit. Defaults to today''s schedule.'
     required: false
   config:
-    description: 'Path to nightwatch.yml config file.'
+    description: 'Path to noxaudit.yml config file.'
     required: false
-    default: 'nightwatch.yml'
+    default: 'noxaudit.yml'
   anthropic-api-key:
     description: 'Anthropic API key'
     required: false
@@ -38,27 +38,27 @@ runs:
       with:
         python-version: '3.12'
 
-    - name: Install nightwatch
+    - name: Install noxaudit
       shell: bash
-      run: pip install git+https://github.com/atriumn/nightwatch.git
+      run: pip install git+https://github.com/atriumn/noxaudit.git
 
     - name: Restore pending batch (retrieve mode)
       if: inputs.mode == 'retrieve'
       uses: actions/cache/restore@v4
       with:
-        path: .nightwatch/pending-batch.json
-        key: nightwatch-pending-will-not-match
-        restore-keys: nightwatch-pending-
+        path: .noxaudit/pending-batch.json
+        key: noxaudit-pending-will-not-match
+        restore-keys: noxaudit-pending-
 
     - name: Restore last-retrieved guard (retrieve mode)
       if: inputs.mode == 'retrieve'
       uses: actions/cache/restore@v4
       with:
-        path: .nightwatch/last-retrieved.json
-        key: nightwatch-retrieved-will-not-match
-        restore-keys: nightwatch-retrieved-
+        path: .noxaudit/last-retrieved.json
+        key: noxaudit-retrieved-will-not-match
+        restore-keys: noxaudit-retrieved-
 
-    - name: Run nightwatch
+    - name: Run noxaudit
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
@@ -71,29 +71,29 @@ runs:
           if [ -n "${{ inputs.focus }}" ]; then
             ARGS="$ARGS --focus ${{ inputs.focus }}"
           fi
-          nightwatch submit $ARGS
+          noxaudit submit $ARGS
         else
-          nightwatch retrieve --config ${{ inputs.config }}
+          noxaudit retrieve --config ${{ inputs.config }}
         fi
 
     - name: Cache pending batch (submit mode)
       if: inputs.mode == 'submit'
       uses: actions/cache/save@v4
       with:
-        path: .nightwatch/pending-batch.json
-        key: nightwatch-pending-${{ github.run_id }}
+        path: .noxaudit/pending-batch.json
+        key: noxaudit-pending-${{ github.run_id }}
 
     - name: Cache last-retrieved guard (retrieve mode)
       if: inputs.mode == 'retrieve'
       uses: actions/cache/save@v4
       with:
-        path: .nightwatch/last-retrieved.json
-        key: nightwatch-retrieved-${{ github.run_id }}
+        path: .noxaudit/last-retrieved.json
+        key: noxaudit-retrieved-${{ github.run_id }}
 
     - name: Upload reports
       uses: actions/upload-artifact@v4
       if: inputs.mode == 'retrieve'
       with:
-        name: nightwatch-reports
-        path: .nightwatch/reports/
+        name: noxaudit-reports
+        path: .noxaudit/reports/
         retention-days: 30

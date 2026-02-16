@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nightwatch.models import AuditResult, Decision, DecisionType, Finding, Severity
+from noxaudit.models import AuditResult, Decision, DecisionType, Finding, Severity
 
 
 class TestFinding:

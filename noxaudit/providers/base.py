@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from nightwatch.models import FileContent, Finding
+from noxaudit.models import FileContent, Finding
 
 
 class BaseProvider(ABC):

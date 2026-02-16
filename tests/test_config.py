@@ -3,9 +3,9 @@
 from __future__ import annotations
 
 
-from nightwatch.config import (
+from noxaudit.config import (
     ALL_FOCUS_NAMES,
-    NightwatchConfig,
+    NoxauditConfig,
     load_config,
     normalize_focus,
 )
@@ -115,7 +115,7 @@ class TestLoadConfig:
 
 class TestGetTodayFocus:
     def test_returns_schedule_value(self):
-        config = NightwatchConfig(schedule={"monday": ["security", "deps"]})
+        config = NoxauditConfig(schedule={"monday": ["security", "deps"]})
         # We can't control what day it is, but we can verify the method works
         result = config.get_today_focus()
         assert result is not None

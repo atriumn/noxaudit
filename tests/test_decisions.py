@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 
-from nightwatch.decisions import (
+from noxaudit.decisions import (
     filter_findings,
     format_decision_context,
     load_decisions,
     save_decision,
 )
-from nightwatch.models import Decision, DecisionType, Finding, Severity
+from noxaudit.models import Decision, DecisionType, Finding, Severity
 
 
 def _make_finding(id: str = "abc123", file: str = "a.py") -> Finding:

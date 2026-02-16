@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from nightwatch.models import AuditResult, Severity
+from noxaudit.models import AuditResult, Severity
 
 
 def _focus_display(focus: str) -> str:

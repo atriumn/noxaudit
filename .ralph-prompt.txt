@@ -1,0 +1,334 @@
+Rename nightwatch → noxaudit and prepare for open source release
+
+## Background
+
+Nightwatch is an AI-powered codebase auditor that runs nightly with rotating focus areas (security, patterns, docs, etc.). It's currently branded as "nightwatch" but that name is extremely common on GitHub (~1M repos). Renaming to "noxaudit" (nox = night in Latin) for uniqueness and potential open source release.
+
+## Tasks
+
+### 1. Repository-wide Rename
+
+**Find and replace across all files:**
+- `nightwatch` → `noxaudit` (case-sensitive)
+- `Nightwatch` → `Noxaudit` (in titles, docs)
+- Keep Python package structure: `nightwatch/` directory → `noxaudit/`
+
+**Files to update:**
+- All `*.py` files (imports, docstrings, comments)
+- All `*.md` files (README, docs)
+- `pyproject.toml` (package name, URLs)
+- `action/action.yml` (GitHub Action)
+- Test files
+- Config examples
+
+**Special cases:**
+- `.nightwatch/` directory references in code → `.noxaudit/`
+- `nightwatch.yml` config file → `noxaudit.yml`
+- `nightwatch-ai` PyPI package name → `noxaudit` (simpler, more distinctive)
+
+### 2. Update GitHub References
+
+**Current:**
+```
+https://github.com/atriumn/nightwatch
+```
+
+**New:**
+```
+https://github.com/atriumn/noxaudit
+```
+
+Update in:
+- README.md (all links)
+- pyproject.toml `[project.urls]`
+- nightwatch/issues.py footer link
+- action/action.yml install command
+
+### 3. Make Issues Footer Configurable
+
+**Current (hardcoded):**
+```python
+# nightwatch/issues.py
+f"*Found by [Nightwatch](https://github.com/atriumn/nightwatch)..."
+```
+
+**New (use repo from config):**
+```python
+# Read from config or use generic fallback
+repo_url = config.get('repository_url', 'https://github.com/atriumn/noxaudit')
+f"*Found by [Noxaudit]({repo_url})..."
+```
+
+### 4. Update pyproject.toml Metadata
+
+```toml
+[project]
+name = "noxaudit"  # was nightwatch-ai
+description = "Nightly AI-powered codebase audits with rotating focus areas"
+authors = [
+    { name = "Jeff Rogers", email = "jeff@atriumn.com" },  # or your preferred email
+]
+keywords = ["ai", "code-review", "audit", "security", "codebase", "nightwatch"]
+
+[project.urls]
+Homepage = "https://github.com/atriumn/noxaudit"
+Issues = "https://github.com/atriumn/noxaudit/issues"
+```
+
+### 5. Rename Python Package Directory
+
+```bash
+# Rename the main package directory
+mv nightwatch/ noxaudit/
+
+# Update all imports
+# From: from nightwatch.config import ...
+# To:   from noxaudit.config import ...
+```
+
+### 6. Update CLI Entry Point
+
+```toml
+[project.scripts]
+noxaudit = "noxaudit.cli:main"  # was nightwatch = "nightwatch.cli:main"
+```
+
+### 7. Add CONTRIBUTING.md
+
+Create `CONTRIBUTING.md` with:
+- How to set up development environment
+- How to run tests
+- Code style (ruff)
+- How to submit PRs
+- How to add new focus areas
+
+Template:
+```markdown
+# Contributing to Noxaudit
+
+## Development Setup
+
+\`\`\`bash
+git clone https://github.com/atriumn/noxaudit.git
+cd noxaudit
+python -m venv .venv
+source .venv/bin/activate  # or .venv\Scripts\activate on Windows
+pip install -e ".[dev]"
+\`\`\`
+
+## Running Tests
+
+\`\`\`bash
+pytest tests/ -v
+ruff check noxaudit/ tests/
+ruff format noxaudit/ tests/
+\`\`\`
+
+## Adding a New Focus Area
+
+1. Create `noxaudit/focus/yourarea.py` extending `FocusArea`
+2. Add prompt template to `focus_prompts/yourarea.md`
+3. Register in `noxaudit/focus/__init__.py`
+4. Add tests in `tests/test_focus.py`
+
+## Pull Requests
+
+- Keep changes focused and atomic
+- Add tests for new features
+- Update README if adding user-facing features
+- Run `ruff format` before committing
+```
+
+### 8. Add CHANGELOG.md
+
+Create `CHANGELOG.md`:
+```markdown
+# Changelog
+
+All notable changes to this project will be documented in this file.
+
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [Unreleased]
+
+### Changed
+- Renamed project from Nightwatch to Noxaudit for better GitHub uniqueness
+- Package name changed from `nightwatch-ai` to `noxaudit`
+- CLI command changed from `nightwatch` to `noxaudit`
+
+## [0.1.0] - 2026-02-15
+
+### Added
+- Initial release
+- Multi-provider AI support (Anthropic, Google Gemini)
+- Rotating focus areas: security, patterns, docs, hygiene, performance, dependencies, testing
+- Decision memory system to avoid re-flagging resolved issues
+- GitHub Actions integration
+- Telegram notifications
+- GitHub issue creation
+- Two-pass audit for large codebases
+```
+
+### 9. Update README.md
+
+**Key changes:**
+1. Update title: `# Noxaudit`
+2. Update installation: `pip install noxaudit`
+3. Update CLI examples: `nightwatch run` → `noxaudit run`
+4. Update config filename: `nightwatch.yml` → `noxaudit.yml`
+5. Update directory references: `.nightwatch/` → `.noxaudit/`
+6. Update GitHub Action usage:
+   ```yaml
+   - uses: atriumn/noxaudit/action@main
+   ```
+
+### 10. Update Config Example
+
+Rename `nightwatch.yml.example` → `noxaudit.yml.example` and update header:
+```yaml
+# Noxaudit configuration
+# Copy this to noxaudit.yml and customize for your project.
+```
+
+### 11. Update .gitignore
+
+Add:
+```
+.noxaudit/
+noxaudit.yml
+```
+
+(Keep `.nightwatch/` for backward compat during migration, or remove)
+
+### 12. Update GitHub Action
+
+`action/action.yml`:
+```yaml
+name: 'Noxaudit'
+description: 'Nightly AI-powered codebase audits with rotating focus areas'
+# ... rest of action
+```
+
+And update the install command:
+```bash
+run: pip install git+https://github.com/atriumn/noxaudit.git
+```
+
+## Testing Strategy
+
+**Before declaring done:**
+
+1. **Package structure:**
+   ```bash
+   # Verify package installs
+   pip install -e .
+   
+   # Verify CLI works
+   noxaudit --help
+   noxaudit schedule
+   ```
+
+2. **Import paths:**
+   ```bash
+   # All tests pass
+   pytest tests/ -v
+   
+   # No import errors
+   python -c "from noxaudit.cli import main; print('OK')"
+   python -c "from noxaudit.runner import run_audit; print('OK')"
+   ```
+
+3. **Config loading:**
+   ```bash
+   # Copy example config
+   cp noxaudit.yml.example noxaudit.yml
+   
+   # Verify it loads
+   noxaudit schedule
+   ```
+
+4. **Lint passes:**
+   ```bash
+   ruff check noxaudit/ tests/
+   ruff format --check noxaudit/ tests/
+   ```
+
+5. **GitHub references:**
+   ```bash
+   # No old references remain
+   grep -r "nightwatch" --include="*.py" --include="*.md" --include="*.yml" . | grep -v "# "
+   # Should only show: CHANGELOG.md mentions, comments explaining the rename
+   ```
+
+6. **Documentation accuracy:**
+   - README examples use `noxaudit` command
+   - All GitHub URLs point to atriumn/noxaudit
+   - Config examples reference noxaudit.yml
+
+## Backpressure
+
+- [ ] All Python imports updated (no `from nightwatch.` anywhere)
+- [ ] CLI entry point is `noxaudit` (test: `noxaudit --help`)
+- [ ] All tests pass: `pytest tests/ -v`
+- [ ] Lint passes: `ruff check noxaudit/ tests/`
+- [ ] Format passes: `ruff format --check noxaudit/ tests/`
+- [ ] README accurately describes new name/commands
+- [ ] CONTRIBUTING.md exists and is helpful
+- [ ] CHANGELOG.md documents the rename
+- [ ] No hardcoded "nightwatch" strings remain (except in CHANGELOG/comments)
+- [ ] Package installs: `pip install -e .` works
+- [ ] Config example is renamed and updated
+
+## When Done
+
+1. Rebase on origin/main: `git fetch origin && git rebase origin/main`
+2. Run full test suite: `pytest tests/ -v && ruff check noxaudit/ tests/`
+3. Commit message: `refactor: rename nightwatch → noxaudit for OSS release`
+4. Push branch: `git push origin HEAD`
+5. Create PR:
+   ```bash
+   gh pr create \
+     --title "refactor: Rename nightwatch → noxaudit for open source release" \
+     --body "## Summary
+   
+   Rename project from Nightwatch to Noxaudit to avoid namespace collision with 1M+ GitHub repos named 'nightwatch'.
+   
+   ## Changes
+   
+   - Renamed Python package: \`nightwatch/\` → \`noxaudit/\`
+   - Updated package name: \`nightwatch-ai\` → \`noxaudit\`
+   - Updated CLI command: \`nightwatch\` → \`noxaudit\`
+   - Updated all GitHub URLs: atriumn/nightwatch → atriumn/noxaudit
+   - Updated config filename: nightwatch.yml → noxaudit.yml
+   - Updated directory: .nightwatch/ → .noxaudit/
+   - Made issues footer repository URL configurable
+   - Added CONTRIBUTING.md
+   - Added CHANGELOG.md documenting rename
+   - Updated README with new branding
+   
+   ## Breaking Changes
+   
+   - CLI command changed (users must update scripts/workflows)
+   - Config file renamed (users must rename nightwatch.yml → noxaudit.yml)
+   - Python imports changed (any custom integrations need updating)
+   
+   ## Post-Merge
+   
+   Jeff needs to:
+   1. Rename GitHub repo: nightwatch → noxaudit
+   2. Update any existing cron jobs/workflows
+   3. Consider publishing to PyPI as \`noxaudit\` package"
+   ```
+6. Output: **LOOP_COMPLETE**
+
+## Notes
+
+- This is a pure refactor - no functional changes to the audit logic
+- Keep the rename atomic - all references updated in one PR
+- The old name "nightwatch" can remain in comments explaining the rename
+- After merge, the GitHub repo itself should be renamed (Jeff's task, not Ralph's)
+
+## Model
+
+Use **sonnet** (this is straightforward find-replace + documentation, doesn't need opus).

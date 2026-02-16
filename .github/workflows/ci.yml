@@ -28,7 +28,7 @@ jobs:
           uv pip install --python .venv/bin/python -e ".[dev]"
 
       - name: Lint
-        run: .venv/bin/ruff check nightwatch/ tests/
+        run: .venv/bin/ruff check noxaudit/ tests/
 
       - name: Test
         run: .venv/bin/pytest tests/ -v
@@ -51,7 +51,7 @@ jobs:
           uv pip install --python .venv/bin/python -e ".[dev]"
 
       - name: Ruff check
-        run: .venv/bin/ruff check nightwatch/ tests/
+        run: .venv/bin/ruff check noxaudit/ tests/
 
       - name: Ruff format check
-        run: .venv/bin/ruff format --check nightwatch/ tests/
+        run: .venv/bin/ruff format --check noxaudit/ tests/

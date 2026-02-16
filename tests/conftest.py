@@ -1,4 +1,4 @@
-"""Shared fixtures for nightwatch tests."""
+"""Shared fixtures for noxaudit tests."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from nightwatch.models import AuditResult, Finding, Severity
+from noxaudit.models import AuditResult, Finding, Severity
 
 
 @pytest.fixture
@@ -94,10 +94,10 @@ def combined_result(sample_findings):
 
 @pytest.fixture
 def tmp_config(tmp_path):
-    """Write a nightwatch.yml and return its path."""
+    """Write a noxaudit.yml and return its path."""
 
     def _write(content: str) -> Path:
-        p = tmp_path / "nightwatch.yml"
+        p = tmp_path / "noxaudit.yml"
         p.write_text(textwrap.dedent(content))
         return p
 

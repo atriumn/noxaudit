@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from nightwatch.focus.base import BaseFocus
+from noxaudit.focus.base import BaseFocus
 
 
 class DocsFocus(BaseFocus):

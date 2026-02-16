@@ -12,3 +12,10 @@ venv/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# Noxaudit runtime directories and config
+.noxaudit/
+noxaudit.yml
+# Legacy nightwatch directories (for backward compatibility during migration)
+.nightwatch/
+nightwatch.yml

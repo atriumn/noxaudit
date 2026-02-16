@@ -7,8 +7,8 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from nightwatch.models import Severity
-from nightwatch.providers.anthropic import AnthropicProvider, FINDING_SCHEMA
+from noxaudit.models import Severity
+from noxaudit.providers.anthropic import AnthropicProvider, FINDING_SCHEMA
 
 
 class TestFindingSchema:
@@ -172,7 +172,7 @@ class TestSubmitBatchMaxTokens:
         mock_batch.id = "batch_123"
         provider.client.messages.batches.create.return_value = mock_batch
 
-        from nightwatch.models import FileContent
+        from noxaudit.models import FileContent
 
         files = [FileContent(path="a.py", content="x = 1")]
 

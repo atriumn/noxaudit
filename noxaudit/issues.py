@@ -7,8 +7,8 @@ import shutil
 import subprocess
 import time
 
-from nightwatch.config import IssuesConfig
-from nightwatch.models import AuditResult, Finding
+from noxaudit.config import IssuesConfig
+from noxaudit.models import AuditResult, Finding
 
 SEVERITY_ORDER = {"low": 0, "medium": 1, "high": 2}
 
@@ -78,7 +78,7 @@ def _gh_authenticated() -> bool:
 
 def _issue_exists(finding: Finding) -> bool:
     """Check if an issue already exists for this finding via marker comment."""
-    marker = f"nightwatch-finding-id: {finding.id}"
+    marker = f"noxaudit-finding-id: {finding.id}"
     try:
         result = subprocess.run(
             ["gh", "issue", "list", "--search", marker, "--state", "open", "--json", "number"],
@@ -101,7 +101,7 @@ def _create_issue(
 ) -> str | None:
     """Create a single GitHub issue. Returns issue URL or None."""
     severity = finding.severity.value
-    title = f"[nightwatch/{severity}] {finding.title}"
+    title = f"[noxaudit/{severity}] {finding.title}"
 
     location = finding.file
     if finding.line:
@@ -123,15 +123,15 @@ def _create_issue(
         [
             "",
             "---",
-            f"*Found by [Nightwatch](https://github.com/atriumn/nightwatch) ({result.provider}, {result.timestamp})*",
+            f"*Found by [Noxaudit]({config.repository_url}) ({result.provider}, {result.timestamp})*",
             "",
-            f"<!-- nightwatch-finding-id: {finding.id} -->",
+            f"<!-- noxaudit-finding-id: {finding.id} -->",
         ]
     )
 
     body = "\n".join(body_parts)
 
-    labels = list(config.labels) + [f"nightwatch:{severity}"]
+    labels = list(config.labels) + [f"noxaudit:{severity}"]
 
     cmd = [
         "gh",

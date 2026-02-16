@@ -8,8 +8,8 @@ import os
 
 import anthropic
 
-from nightwatch.models import FileContent, Finding, Severity
-from nightwatch.providers.base import BaseProvider
+from noxaudit.models import FileContent, Finding, Severity
+from noxaudit.providers.base import BaseProvider
 
 FINDING_SCHEMA = {
     "type": "object",
@@ -53,7 +53,7 @@ class AnthropicProvider(BaseProvider):
         files: list[FileContent],
         system_prompt: str,
         decision_context: str,
-        custom_id: str = "nightwatch-audit",
+        custom_id: str = "noxaudit-audit",
         num_focus_areas: int = 1,
     ) -> str:
         """Submit a batch request. Returns the batch ID."""

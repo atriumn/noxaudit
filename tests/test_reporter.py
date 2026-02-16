@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from nightwatch.models import AuditResult
-from nightwatch.reporter import (
+from noxaudit.models import AuditResult
+from noxaudit.reporter import (
     _focus_display,
     format_notification,
     generate_report,

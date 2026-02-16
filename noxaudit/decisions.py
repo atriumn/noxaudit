@@ -7,7 +7,7 @@ import json
 from datetime import date, timedelta
 from pathlib import Path
 
-from nightwatch.models import Decision, DecisionType, Finding
+from noxaudit.models import Decision, DecisionType, Finding
 
 
 def load_decisions(decisions_path: str | Path) -> list[Decision]:

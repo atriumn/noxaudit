@@ -5,7 +5,7 @@ from __future__ import annotations
 
 from click.testing import CliRunner
 
-from nightwatch.cli import main
+from noxaudit.cli import main
 
 
 def _write_config(tmp_path, schedule=None):
@@ -17,7 +17,7 @@ def _write_config(tmp_path, schedule=None):
         "repos": [{"name": "test-repo", "path": str(tmp_path)}],
         "schedule": schedule,
     }
-    cfg_path = tmp_path / "nightwatch.yml"
+    cfg_path = tmp_path / "noxaudit.yml"
     cfg_path.write_text(yaml.dump(config))
     return str(cfg_path)
 

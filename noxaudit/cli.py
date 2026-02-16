@@ -1,4 +1,4 @@
-"""CLI entrypoint for nightwatch."""
+"""CLI entrypoint for noxaudit."""
 
 from __future__ import annotations
 
@@ -7,20 +7,20 @@ from pathlib import Path
 
 import click
 
-from nightwatch import __version__
-from nightwatch.config import WEEKDAY_NAMES, load_config, normalize_focus
-from nightwatch.decisions import load_decisions, save_decision
-from nightwatch.focus import FOCUS_AREAS
-from nightwatch.models import Decision, DecisionType
-from nightwatch.runner import retrieve_audit, run_audit, submit_audit
+from noxaudit import __version__
+from noxaudit.config import WEEKDAY_NAMES, load_config, normalize_focus
+from noxaudit.decisions import load_decisions, save_decision
+from noxaudit.focus import FOCUS_AREAS
+from noxaudit.models import Decision, DecisionType
+from noxaudit.runner import retrieve_audit, run_audit, submit_audit
 
 
 @click.group()
 @click.version_option(version=__version__)
-@click.option("--config", "-c", "config_path", default=None, help="Path to nightwatch.yml")
+@click.option("--config", "-c", "config_path", default=None, help="Path to noxaudit.yml")
 @click.pass_context
 def main(ctx, config_path):
-    """Nightwatch: Nightly AI-powered codebase audits."""
+    """Noxaudit: Nightly AI-powered codebase audits."""
     ctx.ensure_object(dict)
     ctx.obj["config_path"] = config_path
 
@@ -60,7 +60,7 @@ def submit(ctx, repo, focus, provider, dry_run):
 
     if pending and pending["batches"]:
         click.echo(
-            f"\nSubmitted {len(pending['batches'])} batch(es). Run `nightwatch retrieve` to get results."
+            f"\nSubmitted {len(pending['batches'])} batch(es). Run `noxaudit retrieve` to get results."
         )
     elif not dry_run:
         click.echo("Nothing to submit.")
@@ -142,7 +142,7 @@ def status(ctx):
     """Show current configuration and status."""
     config = load_config(ctx.obj["config_path"])
 
-    click.echo(f"Nightwatch v{__version__}")
+    click.echo(f"Noxaudit v{__version__}")
     click.echo("")
 
     click.echo("Repos:")
@@ -184,7 +184,7 @@ def report(ctx, repo, focus):
     reports_dir = Path(config.reports_dir)
 
     if not reports_dir.exists():
-        click.echo("No reports yet. Run `nightwatch run` first.")
+        click.echo("No reports yet. Run `noxaudit run` first.")
         return
 
     # Find latest report

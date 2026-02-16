@@ -1,0 +1,10 @@
+{"ts":"2026-02-16T04:59:19.571760135+00:00","iteration":0,"hat":"loop","topic":"task.start","triggered":"planner","payload":"Rename nightwatch → noxaudit and prepare for open source release\n\n## Background\n\nNightwatch is an AI-powered codebase auditor that runs nightly with rotating focus areas (security, patterns, docs, etc.). It's currently branded as \"nightwatch\" but that name is extremely common on GitHub (~1M repos). Renaming to \"noxaudit\" (nox = night in Latin) for uniqueness and potential open source release.\n\n## Tasks\n\n### 1. Repository-wide Rename\n\n**Find and replace across all files:**\n- `nightwatch` → `n... [truncated, 9108 chars total]"}
+{"payload":"Updated pyproject.toml - package name, CLI entry point, and URLs","topic":"task.done","ts":"2026-02-16T05:01:46.310384643+00:00"}
+{"payload":"Updated all Python imports from nightwatch to noxaudit - 26 files, 54 changes","topic":"task.done","ts":"2026-02-16T05:04:56.397165040+00:00"}
+{"payload":"Renamed config file and updated .gitignore - noxaudit.yml.example created","topic":"task.done","ts":"2026-02-16T05:07:15.197974221+00:00"}
+{"payload":"Updated GitHub Action and CI workflow (commit: 8929216)","topic":"task.done","ts":"2026-02-16T05:09:28.381779258+00:00"}
+{"payload":"README.md updated with Noxaudit branding (commit a03dca8)","topic":"task.done","ts":"2026-02-16T05:11:13.094601270+00:00"}
+{"payload":"Make issues footer configurable - committed ba3f606","topic":"task.done","ts":"2026-02-16T05:16:33.285170495+00:00"}
+{"payload":"Created CONTRIBUTING.md (commit: 5cdeee9)","topic":"task.done","ts":"2026-02-16T05:17:51.834225952+00:00"}
+{"payload":"Created CHANGELOG.md (commit: 61856d0)","topic":"task.done","ts":"2026-02-16T05:18:58.194759915+00:00"}
+{"ts":"2026-02-16T05:21:39.455631114+00:00","iteration":10,"hat":"loop","topic":"loop.terminate","payload":"## Reason\ncompleted\n\n## Status\nAll tasks completed successfully.\n\n## Summary\n- Iterations: 10\n- Duration: 22m 19s\n- Exit code: 0"}
