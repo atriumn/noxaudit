@@ -6,7 +6,7 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from noxaudit.config import NightwatchConfig, normalize_focus
+from noxaudit.config import NoxauditConfig, normalize_focus
 from noxaudit.decisions import filter_findings, format_decision_context, load_decisions
 from noxaudit.focus import FOCUS_AREAS
 from noxaudit.focus.base import build_combined_prompt, gather_files_combined
@@ -21,13 +21,13 @@ PROVIDERS = {
     "anthropic": AnthropicProvider,
 }
 
-PENDING_BATCH_FILE = ".nightwatch/pending-batch.json"
-LAST_RETRIEVED_FILE = ".nightwatch/last-retrieved.json"
+PENDING_BATCH_FILE = ".noxaudit/pending-batch.json"
+LAST_RETRIEVED_FILE = ".noxaudit/last-retrieved.json"
 
 
 def _resolve_focus_names(
     focus_override: str | None,
-    config: NightwatchConfig,
+    config: NoxauditConfig,
 ) -> list[str]:
     """Resolve focus names from override or today's schedule. Returns list of names."""
     raw = focus_override or config.get_today_focus()
@@ -50,7 +50,7 @@ def _focus_label(names: list[str]) -> str:
 
 
 def submit_audit(
-    config: NightwatchConfig,
+    config: NoxauditConfig,
     repo_name: str | None = None,
     focus_name: str | None = None,
     provider_name: str | None = None,
@@ -87,20 +87,20 @@ def submit_audit(
         pending_path.parent.mkdir(parents=True, exist_ok=True)
         pending_path.write_text(json.dumps(pending, indent=2))
         print(f"\nBatch info saved to {PENDING_BATCH_FILE}")
-        print("Run `nightwatch retrieve` later to get results.")
+        print("Run `noxaudit retrieve` later to get results.")
 
     return pending
 
 
 def retrieve_audit(
-    config: NightwatchConfig,
+    config: NoxauditConfig,
     pending_path: str | None = None,
 ) -> list[AuditResult]:
     """Retrieve results from a previously submitted batch."""
     path = Path(pending_path or PENDING_BATCH_FILE)
     if not path.exists():
         print(f"No pending batch found at {path}")
-        print("Run `nightwatch submit` first.")
+        print("Run `noxaudit submit` first.")
         return []
 
     pending = json.loads(path.read_text())
@@ -129,7 +129,7 @@ def retrieve_audit(
 
 
 def run_audit(
-    config: NightwatchConfig,
+    config: NoxauditConfig,
     repo_name: str | None = None,
     focus_name: str | None = None,
     provider_name: str | None = None,

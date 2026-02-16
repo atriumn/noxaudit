@@ -54,15 +54,16 @@ class NotificationConfig:
 @dataclass
 class DecisionConfig:
     expiry_days: int = 90
-    path: str = ".nightwatch/decisions.jsonl"
+    path: str = ".noxaudit/decisions.jsonl"
 
 
 @dataclass
 class IssuesConfig:
     enabled: bool = False
     severity_threshold: str = "medium"  # "low", "medium", or "high"
-    labels: list[str] = field(default_factory=lambda: ["nightwatch"])
+    labels: list[str] = field(default_factory=lambda: ["noxaudit"])
     assignees: list[str] = field(default_factory=list)
+    repository_url: str = "https://github.com/atriumn/noxaudit"
 
 
 ALL_FOCUS_NAMES = [
@@ -99,14 +100,14 @@ def normalize_focus(raw: str | list[str] | bool) -> list[str]:
 
 
 @dataclass
-class NightwatchConfig:
+class NoxauditConfig:
     repos: list[RepoConfig] = field(default_factory=list)
     schedule: dict[str, str | list[str]] = field(default_factory=lambda: dict(DEFAULT_SCHEDULE))
     budget: BudgetConfig = field(default_factory=BudgetConfig)
     notifications: list[NotificationConfig] = field(default_factory=list)
     decisions: DecisionConfig = field(default_factory=DecisionConfig)
     issues: IssuesConfig = field(default_factory=IssuesConfig)
-    reports_dir: str = ".nightwatch/reports"
+    reports_dir: str = ".noxaudit/reports"
     model: str = "claude-sonnet-4-5-20250929"
 
     def get_today_focus(self) -> str | list[str]:
@@ -123,15 +124,15 @@ class NightwatchConfig:
         return "anthropic"
 
 
-def load_config(config_path: str | Path | None = None) -> NightwatchConfig:
-    """Load config from nightwatch.yml, falling back to defaults."""
+def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
+    """Load config from noxaudit.yml, falling back to defaults."""
     if config_path is None:
-        config_path = Path("nightwatch.yml")
+        config_path = Path("noxaudit.yml")
     else:
         config_path = Path(config_path)
 
     if not config_path.exists():
-        return NightwatchConfig()
+        return NoxauditConfig()
 
     with open(config_path) as f:
         raw = yaml.safe_load(f) or {}
@@ -169,24 +170,25 @@ def load_config(config_path: str | Path | None = None) -> NightwatchConfig:
     decisions_raw = raw.get("decisions", {})
     decisions = DecisionConfig(
         expiry_days=decisions_raw.get("expiry_days", 90),
-        path=decisions_raw.get("path", ".nightwatch/decisions.jsonl"),
+        path=decisions_raw.get("path", ".noxaudit/decisions.jsonl"),
     )
 
     issues_raw = raw.get("issues", {})
     issues = IssuesConfig(
         enabled=issues_raw.get("enabled", False),
         severity_threshold=issues_raw.get("severity_threshold", "medium"),
-        labels=issues_raw.get("labels", ["nightwatch"]),
+        labels=issues_raw.get("labels", ["noxaudit"]),
         assignees=issues_raw.get("assignees", []),
+        repository_url=issues_raw.get("repository_url", "https://github.com/atriumn/noxaudit"),
     )
 
-    return NightwatchConfig(
+    return NoxauditConfig(
         repos=repos,
         schedule=schedule,
         budget=budget,
         notifications=notifications,
         decisions=decisions,
         issues=issues,
-        reports_dir=raw.get("reports_dir", ".nightwatch/reports"),
+        reports_dir=raw.get("reports_dir", ".noxaudit/reports"),
         model=raw.get("model", "claude-sonnet-4-5-20250929"),
     )

@@ -53,7 +53,7 @@ class AnthropicProvider(BaseProvider):
         files: list[FileContent],
         system_prompt: str,
         decision_context: str,
-        custom_id: str = "nightwatch-audit",
+        custom_id: str = "noxaudit-audit",
         num_focus_areas: int = 1,
     ) -> str:
         """Submit a batch request. Returns the batch ID."""
