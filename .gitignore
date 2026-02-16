@@ -19,3 +19,4 @@ noxaudit.yml
 # Legacy nightwatch directories (for backward compatibility during migration)
 .nightwatch/
 nightwatch.yml
+.ralph/
