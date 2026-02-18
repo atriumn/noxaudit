@@ -203,5 +203,18 @@ def report(ctx, repo, focus):
     click.echo(latest.read_text())
 
 
+@main.command("mcp-server")
+def mcp_server():
+    """Start the MCP server for AI coding tool integration."""
+    try:
+        from noxaudit.mcp.server import run_server
+    except ImportError:
+        click.echo("MCP support requires the 'mcp' package.")
+        click.echo("Install with: pip install 'noxaudit[mcp]'")
+        raise SystemExit(1)
+
+    run_server()
+
+
 if __name__ == "__main__":
     main()

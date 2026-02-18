@@ -11,6 +11,7 @@ from noxaudit.decisions import filter_findings, format_decision_context, load_de
 from noxaudit.focus import FOCUS_AREAS
 from noxaudit.focus.base import build_combined_prompt, gather_files_combined
 from noxaudit.issues import create_issues_for_findings
+from noxaudit.mcp.state import save_latest_findings
 from noxaudit.models import AuditResult
 from noxaudit.notifications.telegram import send_telegram
 from noxaudit.providers.anthropic import AnthropicProvider
@@ -272,6 +273,15 @@ def _retrieve_repo(config, batch_info, focus_label, default_focus):
         timestamp=datetime.now().isoformat(),
     )
 
+    # Serialize findings for MCP tools
+    save_latest_findings(
+        findings=new_findings,
+        repo=repo_name,
+        focus=focus_label,
+        timestamp=audit_result.timestamp,
+        resolved_count=resolved_count,
+    )
+
     # Generate and save report
     report = generate_report(audit_result)
     report_path = save_report(report, config.reports_dir, repo_name, focus_label)
@@ -347,6 +357,15 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run):
         new_findings=new_findings,
         resolved_count=resolved_count,
         timestamp=datetime.now().isoformat(),
+    )
+
+    # Serialize findings for MCP tools
+    save_latest_findings(
+        findings=new_findings,
+        repo=repo.name,
+        focus=label,
+        timestamp=result.timestamp,
+        resolved_count=resolved_count,
     )
 
     report = generate_report(result)
