@@ -9,13 +9,16 @@ Thank you for your interest in contributing to Noxaudit! This document provides 
 git clone https://github.com/atriumn/noxaudit.git
 cd noxaudit
 
-# Create a virtual environment
-python -m venv .venv
-source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
 # Install in development mode with dev dependencies
-pip install -e ".[dev]"
+uv pip install -e ".[dev]"
+
+# Install git hooks
+./scripts/setup-hooks.sh
 ```
+
+This installs:
+- pre-commit hooks (ruff format + lint on every commit)
+- pre-push hook (pytest runs before every push)
 
 ## Running Tests
 
