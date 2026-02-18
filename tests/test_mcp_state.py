@@ -43,8 +43,11 @@ def findings():
 class TestSaveLatestFindings:
     def test_creates_file(self, tmp_path, findings):
         path = save_latest_findings(
-            findings, repo="my-app", focus="security",
-            timestamp="2026-02-18T10:00:00", base_path=tmp_path,
+            findings,
+            repo="my-app",
+            focus="security",
+            timestamp="2026-02-18T10:00:00",
+            base_path=tmp_path,
         )
         assert path.exists()
         data = json.loads(path.read_text())
@@ -59,8 +62,12 @@ class TestSaveLatestFindings:
 
     def test_includes_resolved_count(self, tmp_path, findings):
         save_latest_findings(
-            findings, repo="r", focus="f", timestamp="t",
-            resolved_count=5, base_path=tmp_path,
+            findings,
+            repo="r",
+            focus="f",
+            timestamp="t",
+            resolved_count=5,
+            base_path=tmp_path,
         )
         data = json.loads((tmp_path / LATEST_FINDINGS_FILE).read_text())
         assert data["resolved_count"] == 5
@@ -72,8 +79,11 @@ class TestLoadLatestFindings:
 
     def test_roundtrip(self, tmp_path, findings):
         save_latest_findings(
-            findings, repo="my-app", focus="security",
-            timestamp="2026-02-18T10:00:00", base_path=tmp_path,
+            findings,
+            repo="my-app",
+            focus="security",
+            timestamp="2026-02-18T10:00:00",
+            base_path=tmp_path,
         )
         loaded = load_latest_findings(tmp_path)
         assert len(loaded) == 2
@@ -92,8 +102,12 @@ class TestLoadLatestFindings:
 
     def test_finding_without_optional_fields(self, tmp_path):
         finding = Finding(
-            id="xxx", severity=Severity.LOW, file="f.py",
-            line=None, title="T", description="D",
+            id="xxx",
+            severity=Severity.LOW,
+            file="f.py",
+            line=None,
+            title="T",
+            description="D",
         )
         save_latest_findings([finding], repo="r", focus="f", timestamp="t", base_path=tmp_path)
         loaded = load_latest_findings(tmp_path)
@@ -108,8 +122,11 @@ class TestLoadLatestMetadata:
 
     def test_returns_metadata(self, tmp_path, findings):
         save_latest_findings(
-            findings, repo="my-app", focus="security+docs",
-            timestamp="2026-02-18T10:00:00", resolved_count=3,
+            findings,
+            repo="my-app",
+            focus="security+docs",
+            timestamp="2026-02-18T10:00:00",
+            resolved_count=3,
             base_path=tmp_path,
         )
         meta = load_latest_metadata(tmp_path)

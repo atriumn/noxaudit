@@ -150,8 +150,14 @@ class TestGetHealthSummary:
     def test_score_clamped_at_zero(self, tmp_path):
         """Score can't go below 0 with many findings."""
         many_findings = [
-            Finding(id=f"f{i}", severity=Severity.HIGH, file=f"f{i}.py",
-                    line=1, title=f"Finding {i}", description="desc")
+            Finding(
+                id=f"f{i}",
+                severity=Severity.HIGH,
+                file=f"f{i}.py",
+                line=1,
+                title=f"Finding {i}",
+                description="desc",
+            )
             for i in range(10)
         ]
         save_latest_findings(many_findings, repo="r", focus="f", timestamp="t", base_path=tmp_path)
@@ -204,9 +210,13 @@ class TestGetFindingsForDiff:
 
 class TestRecordDecision:
     def test_valid_decision(self, mcp_state):
-        result = asyncio.run(record_decision(
-            finding_id="aaa111", action="dismiss", reason="Not relevant",
-        ))
+        result = asyncio.run(
+            record_decision(
+                finding_id="aaa111",
+                action="dismiss",
+                reason="Not relevant",
+            )
+        )
         assert "Decision recorded" in result
         assert "dismiss" in result
 
@@ -218,26 +228,42 @@ class TestRecordDecision:
         assert data["decision"] == "dismissed"
 
     def test_invalid_action(self, mcp_state):
-        result = asyncio.run(record_decision(
-            finding_id="aaa111", action="invalid", reason="test",
-        ))
+        result = asyncio.run(
+            record_decision(
+                finding_id="aaa111",
+                action="invalid",
+                reason="test",
+            )
+        )
         assert "Invalid action" in result
 
     def test_unknown_finding(self, mcp_state):
-        result = asyncio.run(record_decision(
-            finding_id="zzz999", action="dismiss", reason="test",
-        ))
+        result = asyncio.run(
+            record_decision(
+                finding_id="zzz999",
+                action="dismiss",
+                reason="test",
+            )
+        )
         assert "not found" in result
 
     def test_accept_action(self, mcp_state):
-        result = asyncio.run(record_decision(
-            finding_id="bbb222", action="accept", reason="Fixed",
-        ))
+        result = asyncio.run(
+            record_decision(
+                finding_id="bbb222",
+                action="accept",
+                reason="Fixed",
+            )
+        )
         assert "Decision recorded" in result
         assert "accept" in result
 
     def test_intentional_action(self, mcp_state):
-        result = asyncio.run(record_decision(
-            finding_id="ccc333", action="intentional", reason="By design",
-        ))
+        result = asyncio.run(
+            record_decision(
+                finding_id="ccc333",
+                action="intentional",
+                reason="By design",
+            )
+        )
         assert "Decision recorded" in result

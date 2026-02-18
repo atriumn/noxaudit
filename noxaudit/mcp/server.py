@@ -124,11 +124,15 @@ async def get_findings_for_diff() -> str:
     try:
         unstaged = subprocess.run(
             ["git", "diff", "--name-only"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         staged = subprocess.run(
             ["git", "diff", "--cached", "--name-only"],
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
     except (subprocess.TimeoutExpired, FileNotFoundError):
         return "Error: Could not run git diff. Are you in a git repository?"
@@ -183,7 +187,11 @@ async def record_decision(
         action: Decision type: "accept", "dismiss", or "intentional"
         reason: Why this decision was made
     """
-    valid_actions = {"accept": DecisionType.ACCEPTED, "dismiss": DecisionType.DISMISSED, "intentional": DecisionType.INTENTIONAL}
+    valid_actions = {
+        "accept": DecisionType.ACCEPTED,
+        "dismiss": DecisionType.DISMISSED,
+        "intentional": DecisionType.INTENTIONAL,
+    }
     if action.lower() not in valid_actions:
         return f"Invalid action: {action}. Must be one of: accept, dismiss, intentional"
 
@@ -198,6 +206,7 @@ async def record_decision(
     if finding.file:
         from noxaudit.decisions import _hash_file
         from pathlib import Path
+
         file_hash = _hash_file(Path(finding.file))
 
     decision = Decision(
