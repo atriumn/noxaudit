@@ -17,7 +17,8 @@ Five phases, each building demand for the next:
 | 1 | [OSS Foundation](./01-oss-foundation.md) | Tool people actually adopt and keep installed | — |
 | 2 | [Product-Market Fit](./02-product-market-fit.md) | Tool that saves measurable time every week | Phase 1 |
 | 3 | [Web Presence](./03-web-presence.md) | noxaudit.com drives awareness, docs, and signups | Phases 1–2 |
-| 4 | [Monetization](./04-monetization.md) | Sustainable revenue from teams and orgs | Phases 1–3 |
+| 3.5 | [SaaS Application](./03.5-saas-application.md) | Dashboard, user flows, and product architecture users log into | Phases 2–3 |
+| 4 | [Monetization](./04-monetization.md) | Sustainable revenue from teams and orgs | Phases 1–3.5 |
 | 5 | [Enterprise](./05-enterprise.md) | Procurement-ready product for regulated industries | Phases 1–4 |
 
 ## Guiding principles
