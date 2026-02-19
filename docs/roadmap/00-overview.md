@@ -48,6 +48,10 @@ The website strategy is detailed in [Phase 3](./03-web-presence.md).
 
 In addition to the phase-based roadmap, [Product Quality Focus Areas](./06-product-quality-focus-areas.md) describes the expansion from 7 engineer-facing focus areas to 17 total — adding UX copy, user flow coherence, accessibility, cross-browser compatibility, help content accuracy, error state handling, UI clarity, internationalization, design system consistency, and performance UX. These land mid-Phase 2 and reshape the value proposition: from "keep your codebase healthy" to "keep your product healthy." This also informs the free/paid boundary — engineer focus areas stay free, product focus areas become the paid differentiator.
 
+## Cross-cutting: Infrastructure Health Check
+
+Separate from the weekly focus area cycle, the [Infrastructure Health Check](./07-infrastructure-health-check.md) is a monthly assessment of CI/CD pipelines, deployment infrastructure, monitoring, and incident response readiness. It audits the preconditions for good DORA metrics — not "what's your MTTR?" but "why is your MTTR high?" Runs monthly because infrastructure config drifts slowly. Included free in all tiers.
+
 ## How to read these docs
 
 Each phase doc follows the same structure:
