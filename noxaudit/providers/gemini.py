@@ -6,7 +6,10 @@ import hashlib
 import json
 import os
 
-import google.genai as genai
+try:
+    import google.genai as genai
+except ImportError:
+    genai = None
 
 from noxaudit.models import FileContent, Finding, Severity
 from noxaudit.providers.base import BaseProvider
@@ -42,6 +45,10 @@ class GeminiProvider(BaseProvider):
     name = "gemini"
 
     def __init__(self, model: str = "gemini-2.0-flash"):
+        if genai is None:
+            raise ImportError(
+                "google-genai is not installed. Install with: pip install google-genai"
+            )
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise ValueError("GOOGLE_API_KEY environment variable is required")
