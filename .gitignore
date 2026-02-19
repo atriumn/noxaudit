@@ -22,4 +22,5 @@ nightwatch.yml
 .ralph/
 .ralph-monitor.log
 .ralph-prompt.txt
+.ralph-fix-prompt.txt
 .worktrees/
