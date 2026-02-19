@@ -203,6 +203,61 @@ def report(ctx, repo, focus):
     click.echo(latest.read_text())
 
 
+@main.command()
+@click.option("--repo", "-r", default=None, help="Estimate for a specific repo (default: all)")
+@click.option("--focus", "-f", default=None, help="Focus area(s): name, comma-separated, or 'all'")
+@click.option("--provider", "-p", default=None, help="AI provider (default: from config)")
+@click.pass_context
+def estimate(ctx, repo, focus, provider):
+    """Estimate audit cost before running (no API keys needed)."""
+    from noxaudit.focus import FOCUS_AREAS
+    from noxaudit.focus.base import gather_files_combined
+    from noxaudit.pricing import build_estimate_report, resolve_model_key
+    from noxaudit.runner import _resolve_focus_names
+
+    config = load_config(ctx.obj["config_path"])
+
+    try:
+        focus_names = _resolve_focus_names(focus, config)
+    except ValueError as e:
+        raise click.ClickException(str(e))
+
+    if not focus_names:
+        click.echo("Today is scheduled as off. Use --focus to override.")
+        return
+
+    repos = config.repos
+    if repo:
+        repos = [r for r in repos if r.name == repo]
+        if not repos:
+            raise click.ClickException(f"Unknown repo: {repo}")
+
+    if not repos:
+        click.echo("No repos configured. Add repos to noxaudit.yml.")
+        return
+
+    for repo_cfg in repos:
+        focus_instances = [FOCUS_AREAS[name]() for name in focus_names]
+        files = gather_files_combined(focus_instances, repo_cfg.path, repo_cfg.exclude_patterns)
+
+        if not files:
+            click.echo(f"\n  {repo_cfg.name}: No files found matching focus areas.")
+            continue
+
+        pname = provider or config.get_provider_for_repo(repo_cfg.name)
+        model_key = resolve_model_key(pname, config.model)
+
+        report = build_estimate_report(
+            repo_name=repo_cfg.name,
+            focus_names=focus_names,
+            files=files,
+            provider_name=pname,
+            model_key=model_key,
+            schedule=config.schedule,
+        )
+        click.echo(report)
+
+
 @main.command("mcp-server")
 def mcp_server():
     """Start the MCP server for AI coding tool integration."""
