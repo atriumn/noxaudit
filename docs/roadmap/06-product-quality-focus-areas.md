@@ -195,6 +195,124 @@ It also creates differentiation that's hard to replicate. Every SAST tool does s
 - Framework-specific: React error boundaries, Vue error handlers, SvelteKit error pages, Next.js error.tsx — each framework has its own patterns.
 - Auto-fix potential is high for the copy aspects (improving error messages) but low for structural aspects (adding error boundaries, implementing retry logic).
 
+### 7. UI Clarity & Visual Hierarchy (`ui-clarity`)
+
+**What the AI reviews**: Page-level component composition, button/CTA density, heading structure, whitespace and spacing patterns, information density, visual weight distribution, competing calls-to-action, form length and complexity.
+
+**What it flags**:
+
+| Severity | Example |
+|---|---|
+| High | Page has multiple primary-styled CTAs competing for attention (3 buttons all styled as primary on the same view) |
+| High | Critical action (delete, submit payment) has same visual weight as secondary actions — no clear hierarchy |
+| High | Form has 15+ fields on a single page with no sections, steps, or progressive disclosure |
+| Medium | Dense data table with no visual grouping, no row highlighting, no sticky headers — wall of text |
+| Medium | Modal spawns another modal — user has lost spatial context |
+| Medium | Sidebar navigation has 20+ items with no grouping or collapsible sections |
+| Medium | Page mixes multiple card styles, spacing scales, or visual containers inconsistently |
+| Low | Action buttons are far from the content they act on (delete button at the top, item list at the bottom) |
+| Low | Success and error states use the same visual style — user can't tell them apart at a glance |
+
+**File patterns**: Page-level components, layout components, navigation components, form components, data table/list components, modal/dialog components, CSS/Tailwind class usage for spacing and color.
+
+**Why this matters**: "This page is really busy" is a real product problem that no linter catches. Developers add features incrementally — each one reasonable in isolation — until the page has 6 CTAs, 3 sidebars, and no clear focus. The AI can look at a component's rendered structure and identify competing visual elements, missing hierarchy, and overcrowded interfaces. This is the kind of review a designer does in a design critique but that happens too rarely on fast-moving teams.
+
+**Considerations**:
+- This is the most subjective focus area. "Too busy" depends on context — a dashboard is denser than an onboarding flow. The prompt should establish baseline expectations per page type (form, dashboard, settings, landing page).
+- The AI is reviewing code structure, not rendered pixels. It can count buttons, check heading levels, and analyze component nesting — but can't truly "see" the layout. This means it catches structural clutter (too many CTAs, no heading hierarchy) better than visual clutter (colors fighting, poor whitespace).
+- False positives will be higher here. Severity should skew toward medium/low. Position findings as "design review suggestions" not "bugs."
+- This pairs naturally with `patterns` — if `patterns` finds "3 different card components," `ui-clarity` finds "page X uses all 3 card styles at once."
+
+---
+
+### 8. Internationalization Readiness (`i18n`)
+
+**What the AI reviews**: String handling in templates and components, date/time/number formatting, currency display, pluralization logic, text direction assumptions, locale-sensitive sorting, hardcoded strings vs. i18n function usage, translation file completeness.
+
+**What it flags**:
+
+| Severity | Example |
+|---|---|
+| Critical | User-facing string hardcoded in component instead of using i18n function (`<h1>Welcome back</h1>` instead of `<h1>{t('welcome.back')}</h1>`) |
+| Critical | String concatenation used to build sentences (`"You have " + count + " items"`) — breaks in languages with different word order |
+| High | Date displayed with `toLocaleDateString()` but hardcoded to `en-US` format, or formatted manually (`MM/DD/YYYY`) instead of using locale-aware formatting |
+| High | Currency symbol hardcoded (`$`) instead of using locale-aware currency formatting |
+| High | Pluralization done with ternary (`count === 1 ? "item" : "items"`) instead of i18n pluralization rules (which vary dramatically by language) |
+| Medium | Translation file has keys present in the default locale but missing in other locales |
+| Medium | UI layout assumes LTR text direction — icons, alignment, and padding hardcoded for left-to-right |
+| Medium | Text truncation with CSS (`text-overflow: ellipsis`) applied to elements that will contain translated text (which may be 2-3x longer in German or Finnish) |
+| Low | Sort order uses default JS string comparison instead of `Intl.Collator` |
+| Low | Phone number or address field assumes a single country format |
+
+**File patterns**: Component files with rendered text, i18n/l10n configuration, translation files (JSON, YAML, PO), date/time utilities, currency/number formatting code, form components with validation.
+
+**Why this matters**: i18n is one of those things that's 10x cheaper to do right from the start than to retrofit. Even if a product only supports English today, hardcoded strings and manual date formatting create massive technical debt when the team decides to localize. The AI can flag "you're not i18n-ready" early, before it becomes a quarter-long migration project. For products already localized, it catches the drift — new strings added without translation keys, new date formatting that bypasses the locale system.
+
+**Considerations**:
+- The i18n focus area should be aware of whether the project uses an i18n framework (react-intl, next-intl, i18next, vue-i18n, etc.). If it does, the prompt focuses on "strings that bypass the framework." If it doesn't, the prompt focuses on "readiness for future localization."
+- Severity depends on whether the product currently supports multiple languages. For an English-only product, hardcoded strings are medium (technical debt). For a localized product, they're critical (user-visible bug in other locales).
+- This could be configured with target locales to make findings more specific: "German translations are 40% longer on average — these 12 fixed-width containers will overflow."
+- Auto-fix potential is medium — the AI can wrap hardcoded strings in `t()` calls and generate translation keys, but the actual translations need human review (or a separate translation service integration).
+
+---
+
+### 9. Design System Consistency (`design-system`)
+
+**What the AI reviews**: Component usage across the application, design token usage, color values, spacing values, typography scale, icon usage, shared component library adherence.
+
+**What it flags**:
+
+| Severity | Example |
+|---|---|
+| High | Custom modal/dialog implementation when a shared component exists in the design system |
+| High | Raw color hex values in components instead of design tokens/CSS variables (`#3b82f6` instead of `var(--color-primary)`) |
+| High | Inline styles overriding design system patterns (`style={{ marginTop: 37 }}` — magic number, not a token) |
+| Medium | 4 different button components across the codebase (Button, Btn, ActionButton, CustomButton) with overlapping functionality |
+| Medium | Spacing values inconsistent — mix of `p-3`, `p-4`, `padding: 14px`, `padding: 1rem` across similar contexts |
+| Medium | Typography doesn't follow the scale — arbitrary `font-size: 15px` that doesn't match any defined step |
+| Medium | Icon library inconsistent — mixing Heroicons, Lucide, and custom SVGs for similar concepts |
+| Low | Component prop interface differs from design system convention (some use `variant`, others use `type`, others use `kind` for the same concept) |
+| Low | Color opacity applied manually (`rgba(59, 130, 246, 0.5)`) instead of using opacity token or Tailwind's `/50` syntax |
+
+**File patterns**: All component files, CSS/SCSS/Tailwind files, theme configuration, design token definitions, shared component library, icon imports.
+
+**Why this matters**: Every growing codebase develops "design system drift" — the component library has a `<Modal>` but three teams built their own. The design tokens define a spacing scale but half the app uses arbitrary pixel values. This isn't a code smell (the code works) and it isn't a visual bug (each individual screen looks fine) — it's a consistency tax that compounds over time. Inconsistent UI means inconsistent UX. The AI can detect "you have a system, and you're not following it" by comparing actual component usage against the available shared components.
+
+**Considerations**:
+- This focus area is most valuable for teams that have a design system (or are trying to build one). For small projects without a shared component library, many findings won't be actionable.
+- The AI needs to understand what the design system is. Detection approach: look for a `components/ui/` or `components/shared/` directory, a theme config file, CSS custom property definitions, or a Tailwind config. The prompt should identify the system first, then audit adherence.
+- Overlaps with `patterns` (which also finds "inconsistent approaches"). The distinction: `patterns` is about code architecture (inconsistent error handling, mixed data access patterns). `design-system` is about visual/UI architecture (inconsistent components, color values, spacing).
+- Auto-fix is viable for the mechanical stuff — replacing hex values with tokens, swapping a custom component for the shared one if the API is compatible. Not viable for consolidating 4 button components into 1.
+
+---
+
+### 10. Performance UX (`perf-ux`)
+
+**What the AI reviews**: Loading state implementations, skeleton screens, optimistic updates, pagination/virtualization of long lists, image optimization, lazy loading, perceived performance patterns, animation performance.
+
+**What it flags**:
+
+| Severity | Example |
+|---|---|
+| High | List renders 500+ items without virtualization — DOM will be slow, scroll will jank |
+| High | Full-page loading spinner instead of skeleton/placeholder — perceived performance is terrible even if actual load time is acceptable |
+| High | Large image served without responsive `srcset` or lazy loading — kills mobile performance and data budgets |
+| Medium | No optimistic update on common actions (like/favorite/toggle) — UI feels sluggish waiting for server round-trip |
+| Medium | Skeleton screen layout doesn't match actual content layout — jarring content shift when data loads |
+| Medium | Animation uses `left`/`top` instead of `transform` — triggers layout recalculation, will jank on low-end devices |
+| Medium | No loading indicator at all for async operations — user clicks a button and nothing happens for 2 seconds |
+| Low | Prefetching or preloading not used for predictable navigation (user will obviously click "next" but the next page isn't prefetched) |
+| Low | `will-change` applied too broadly (causes memory overhead) or not at all on animated elements |
+
+**File patterns**: List/table components, image components, loading/skeleton components, API call wrappers, animation CSS/JS, lazy-loaded route/component definitions, intersection observer usage.
+
+**Why this matters**: This is distinct from the existing `performance` focus area. `performance` audits backend/code performance (N+1 queries, missing indexes, blocking I/O). `perf-ux` audits what the user *perceives* — does the app feel fast? The same 200ms API response can feel instant (skeleton screen + optimistic update) or sluggish (full-page spinner + wait for response). This focus area bridges the gap between engineering performance and user-perceived performance.
+
+**Considerations**:
+- Overlaps with `performance` (the existing engineering-focused area) and `compatibility` (mobile performance). The boundaries: `performance` = "is the code fast?", `perf-ux` = "does the app feel fast?", `compatibility` = "does it work on all devices?"
+- This requires some understanding of rendering behavior. The AI can reason about DOM size (500 list items = large DOM) and animation properties (transform vs. left/top) but can't measure actual frame rates.
+- Auto-fix potential is low-medium. Adding `loading="lazy"` to images: yes. Implementing virtualization for a list: needs human design decisions.
+
 ## How these interact with existing focus areas
 
 ```
@@ -202,49 +320,58 @@ It also creates differentiation that's hard to replicate. Every SAST tool does s
                     (existing)               (new)
                     ─────────────            ──────────────
 Code quality:       patterns                 user-flows
-                    hygiene                  compatibility
+                    hygiene                  design-system
 
-Documentation:      docs                     help-content
+Presentation:                                ui-clarity
+                                             compatibility
+
+Content:            docs                     help-content
                                              ux-copy
+
+Globalization:                               i18n
 
 Safety:             security                 a11y
                     testing                  error-states
 
+Performance:        performance              perf-ux
+
 Infrastructure:     dependencies
-                    performance
 ```
 
-The new focus areas don't replace the existing ones — they mirror them from the user's perspective. `patterns` asks "is the code consistent?" while `user-flows` asks "is the product coherent?" `docs` asks "are the READMEs accurate?" while `help-content` asks "are the tooltips accurate?" `security` asks "can an attacker exploit this?" while `a11y` asks "can a screen reader user navigate this?"
+The new focus areas don't replace the existing ones — they mirror them from the user's perspective. `patterns` asks "is the code consistent?" while `user-flows` asks "is the product coherent?" `docs` asks "are the READMEs accurate?" while `help-content` asks "are the tooltips accurate?" `security` asks "can an attacker exploit this?" while `a11y` asks "can a screen reader user navigate this?" `performance` asks "is the code fast?" while `perf-ux` asks "does the app feel fast?"
 
 ## Scheduling implications
 
-The current weekly rotation has 7 slots for 7 focus areas. Adding 6 more means either:
+The current weekly rotation has 7 slots for 7 focus areas. Adding 10 more (17 total) means the naive approach (one per day) takes 2.5 weeks. That's too slow. Combined audits are the answer.
 
-**Option A: Two-week rotation**
-```
-Week 1:
-  Mon: security         Tue: patterns      Wed: docs + hygiene
-  Thu: testing          Fri: dependencies   Sat: performance
-
-Week 2:
-  Mon: a11y             Tue: user-flows    Wed: ux-copy + help-content
-  Thu: error-states     Fri: compatibility  Sat: (catch-up / custom)
-```
-
-**Option B: Combined audits (recommended)**
+**Combined audits (recommended)**
 
 The combined audit feature already saves ~80% tokens by deduping files. Group engineer and product focus areas that share file patterns:
 
 ```
-Mon: security + a11y              (both review component markup)
-Tue: patterns + user-flows        (both review routing + components)
-Wed: docs + help-content + ux-copy (all review text content)
-Thu: testing + error-states       (both review error handling)
-Fri: dependencies + compatibility (both review config + browser targets)
-Sat: hygiene + performance        (both review all source files)
+Mon: security + a11y + error-states          (safety: what can go wrong for users?)
+Tue: patterns + user-flows + design-system   (consistency: is the product coherent?)
+Wed: docs + help-content + ux-copy           (content: is the text right?)
+Thu: testing + i18n                          (coverage: what's missing?)
+Fri: dependencies + compatibility            (external: browser support + supply chain)
+Sat: hygiene + performance + perf-ux         (efficiency: what's wasted or slow?)
+Sun: ui-clarity                              (solo — benefits from a full-context review)
 ```
 
-This keeps the 6-day rotation while covering 13 focus areas. Token cost increases modestly (~20-30%) over today's 7-area schedule because file gathering is shared.
+This covers all 17 focus areas in a 7-day rotation. Token cost increases ~30-40% over today's 7-area schedule because file gathering is shared and prompts are combined, but coverage nearly triples. The groupings are deliberate — focus areas that share files and share a conceptual frame are combined so the AI can reason across them (e.g., finding a security issue and an a11y issue in the same component, in the same pass).
+
+**Alternative: Two-tier schedule**
+
+For teams that don't need all 17 every week:
+
+```
+Weekly (critical):   security, a11y, error-states, ux-copy
+Biweekly (important): patterns, user-flows, testing, docs, dependencies
+Monthly (hygiene):   hygiene, performance, perf-ux, design-system,
+                     compatibility, help-content, i18n, ui-clarity
+```
+
+This reduces cost while ensuring the highest-impact areas run frequently.
 
 ## Auto-fix suitability
 
@@ -252,21 +379,26 @@ This keeps the 6-day rotation while covering 13 focus areas. Token cost increase
 |---|---|---|
 | **ux-copy** | High | Text changes are low-risk, easy to verify |
 | **help-content** | High | Updating descriptions and tooltips is mechanical |
+| **i18n** | Medium-High | Wrapping strings in `t()` calls and generating keys is mechanical; actual translations need human/service |
 | **error-states** | Medium | Improving error messages: yes. Adding error boundaries: needs review |
 | **a11y** | Medium | Adding alt text, ARIA labels: yes. Restructuring heading hierarchy: needs review |
+| **design-system** | Medium | Swapping raw hex for tokens: yes. Consolidating 4 button components: no |
+| **perf-ux** | Low-Medium | Adding `loading="lazy"`: yes. Implementing virtualization: no |
 | **compatibility** | Low-Medium | Adding CSS fallbacks: yes. Restructuring layouts: needs review |
+| **ui-clarity** | Low | Can suggest restructuring, but "too busy" fixes require design decisions |
 | **user-flows** | Low | Fixing dead routes is structural; can suggest but shouldn't auto-apply |
 
-`ux-copy` and `help-content` are the strongest auto-fix candidates — they're text changes with low blast radius. This makes them excellent for the free tier auto-fix (alongside `hygiene` and `docs`), which expands the value of the free product and creates a stronger upgrade path.
+`ux-copy` and `help-content` are the strongest auto-fix candidates — they're text changes with low blast radius. `i18n` is close behind — wrapping strings in translation functions is mechanical even if the translations themselves need human input. These make excellent candidates for the free tier auto-fix (alongside `hygiene` and `docs`), which expands the value of the free product and creates a stronger upgrade path.
 
 ## Impact on the SaaS dashboard
 
 The dashboard (Phase 3.5) gets more interesting with product quality data:
 
-- **Health score** can now reflect product quality, not just code quality. A repo with clean code but terrible error messages and broken help content shouldn't score 95.
+- **Health score** can now reflect product quality, not just code quality. A repo with clean code but terrible error messages and broken help content shouldn't score 95. Two sub-scores: "Code Health" and "Product Health" with an overall composite.
 - **Trends by category** (engineer-facing vs. user-facing) lets teams see if they're improving code but neglecting product, or vice versa.
-- **Different audiences** care about different focus areas. An engineering manager looks at security/patterns/testing. A product manager looks at ux-copy/user-flows/error-states. A design lead looks at a11y/compatibility. The dashboard can offer role-based default views.
+- **Different audiences** care about different focus areas. An engineering manager looks at security/patterns/testing. A product manager looks at ux-copy/user-flows/error-states. A design lead looks at a11y/compatibility/design-system/ui-clarity. The dashboard can offer role-based default views.
 - **The "product health" angle** is a distinct selling point for the SaaS tier. Free users get code audits. Paid users get product audits. This is a cleaner upsell than gating auto-fix by focus area.
+- **i18n dashboard** is its own value center — translation coverage percentage, untranslated strings by locale, strings added without keys this week. This alone could justify the Pro tier for any internationalized product.
 
 ## Revised pricing consideration
 
@@ -275,10 +407,12 @@ If product quality focus areas become the paid differentiator:
 | | Free | Pro | Team |
 |---|---|---|---|
 | **Engineer focus areas** (7) | All | All | All |
-| **Product focus areas** (6) | a11y only | All 6 | All 6 + custom |
-| **Auto-fix** | Hygiene + docs + a11y | + ux-copy, help-content, error-states | All |
+| **Product focus areas** (10) | a11y + i18n (readiness only) | All 10 | All 10 + custom |
+| **Auto-fix** | Hygiene + docs + a11y | + ux-copy, help-content, error-states, i18n | All |
 
 This makes the free/paid boundary about **audience** (engineer vs. product team) rather than about **capability** (with/without auto-fix). A solo developer gets full engineering audits for free. A team that cares about product quality pays. That's a cleaner story.
+
+a11y stays free because accessibility shouldn't be paywalled — it's both good ethics and good marketing ("we don't charge you to make your product accessible"). i18n readiness (flagging hardcoded strings) is free; i18n completeness (translation coverage, missing keys by locale) is paid.
 
 ## Dependencies
 
@@ -301,7 +435,7 @@ Product focus areas should land **mid-Phase 2** — after the custom focus area 
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| Too many focus areas overwhelm users | Confusion, config fatigue | Group into categories (engineer / product), sane defaults, don't require configuring all 13 |
+| Too many focus areas overwhelm users | Confusion, config fatigue | Group into categories (engineer / product), sane defaults, don't require configuring all 17 |
 | Product focus areas produce vague findings | Users dismiss them as noise | Invest in prompt quality; these prompts are harder to write than code-focused ones because "good UX" is more subjective than "has a SQL injection" |
 | AI hallucinates UI issues that don't exist | Trust erosion | Higher confidence threshold for product findings; always include file/line references so users can verify immediately |
 | "We already have QA for this" | Low adoption in teams with existing QA processes | Position as augmenting QA, not replacing it — catches issues before QA, reduces QA cycle time, covers things QA doesn't check every sprint |
