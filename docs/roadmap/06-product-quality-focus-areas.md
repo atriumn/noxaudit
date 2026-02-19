@@ -20,6 +20,99 @@ Today noxaudit's value proposition is: "keep your codebase healthy." Adding prod
 
 It also creates differentiation that's hard to replicate. Every SAST tool does security scanning. No tool does AI-powered UX copy review on a nightly schedule.
 
+## The five frames
+
+Every focus area answers one of five questions. These frames organize the 17 focus areas into concerns that map to real team priorities — and they're the toggle layer that lets teams turn entire categories on or off based on what matters right now.
+
+| Frame | Question | Focus areas | Who cares |
+|---|---|---|---|
+| **Does it work?** | Can users complete their tasks without hitting errors? | `security`, `testing`, `error-states`, `user-flows`, `help-content` | Engineering, QA |
+| **Does it feel right?** | Is the experience polished, consistent, and intuitive? | `ux-copy`, `ui-clarity`, `design-system`, `perf-ux` | Design, Product |
+| **Can everyone use it?** | Does it work for all users, devices, languages, abilities? | `a11y`, `compatibility`, `i18n` | Product, Legal, Growth |
+| **Does it last?** | Can the team keep shipping without the codebase fighting back? | `patterns`, `hygiene`, `docs`, `dependencies` | Engineering leads |
+| **Can we prove it?** | Can we demonstrate quality to auditors, customers, and leadership? | `performance` + Phase 5 (compliance mapping, audit trail, policy-as-code) | Security, Compliance, Exec |
+
+### How teams use frames
+
+A team's priorities change over time. The frames let them express that:
+
+**Early-stage startup (5 engineers, pre-product-market-fit)**:
+```yaml
+frames:
+  does_it_work: true
+  does_it_feel_right: false     # not yet — shipping fast
+  can_everyone_use_it: false    # English-only, Chrome-only for now
+  does_it_last: true            # tech debt kills startups
+  can_we_prove_it: false        # no auditors yet
+```
+
+**Growth-stage product (20 engineers, expanding to EU)**:
+```yaml
+frames:
+  does_it_work: true
+  does_it_feel_right: true      # design team is growing, consistency matters
+  can_everyone_use_it: true     # EU launch requires a11y + i18n + multi-device
+  does_it_last: true
+  can_we_prove_it: false        # not yet
+```
+
+**Enterprise product (50+ engineers, SOC 2 required)**:
+```yaml
+frames:
+  does_it_work: true
+  does_it_feel_right: true
+  can_everyone_use_it: true
+  does_it_last: true
+  can_we_prove_it: true         # auditors are asking questions
+```
+
+Frames are the high-level switch. Within each frame, individual focus areas can still be toggled:
+
+```yaml
+frames:
+  can_everyone_use_it:
+    a11y: true
+    compatibility: true
+    i18n: false                 # not localizing yet, but want device coverage
+```
+
+### Frames in the dashboard
+
+The SaaS dashboard (Phase 3.5) organizes around frames, not individual focus areas:
+
+- **Health overview** shows 5 frame scores, not 17 focus area scores
+- **Drill-down** from a frame to its focus areas to individual findings
+- **Trend view** shows "Does it feel right?" trending up while "Does it last?" is trending down — tells a story a VP can act on
+- **Onboarding** asks new users which frames matter to them, not which of 17 focus areas to enable
+
+### Frames in the schedule
+
+Frames map naturally to the combined audit schedule:
+
+```
+Mon: Does it work?        → security + testing + error-states + user-flows + help-content
+Tue: Does it feel right?  → ux-copy + ui-clarity + design-system + perf-ux
+Wed: Can everyone use it? → a11y + compatibility + i18n
+Thu: Does it last?        → patterns + hygiene + docs + dependencies
+Fri: Can we prove it?     → performance + (compliance checks when Phase 5 ships)
+```
+
+Five frames, five days. Weekends off. If a frame is disabled, that day is skipped (saves cost) or replaced with a deeper run of an enabled frame.
+
+### Frames in pricing
+
+The free/paid boundary maps cleanly to frames:
+
+| Frame | Free | Pro | Team+ |
+|---|---|---|---|
+| **Does it work?** | `security`, `testing` | + `error-states`, `user-flows`, `help-content` | All |
+| **Does it feel right?** | — | All 4 | All 4 + custom |
+| **Can everyone use it?** | `a11y` | + `compatibility`, `i18n` | All |
+| **Does it last?** | All 4 | All 4 | All 4 |
+| **Can we prove it?** | `performance` | `performance` | All (Phase 5) |
+
+Free users get the two frames every engineer needs: "Does it work?" (core safety) and "Does it last?" (maintainability). Plus `a11y` because accessibility shouldn't be paywalled. Pro unlocks the product quality frames. Team unlocks everything plus customization.
+
 ## Proposed focus areas
 
 ### 1. UX Copy & Microcopy (`ux-copy`)
@@ -342,36 +435,31 @@ The new focus areas don't replace the existing ones — they mirror them from th
 
 ## Scheduling implications
 
-The current weekly rotation has 7 slots for 7 focus areas. Adding 10 more (17 total) means the naive approach (one per day) takes 2.5 weeks. That's too slow. Combined audits are the answer.
+The five frames replace the old "which focus areas on which day" question with something cleaner: one frame per day, five days a week.
 
-**Combined audits (recommended)**
-
-The combined audit feature already saves ~80% tokens by deduping files. Group engineer and product focus areas that share file patterns:
+**Frame-based schedule (recommended)**:
 
 ```
-Mon: security + a11y + error-states          (safety: what can go wrong for users?)
-Tue: patterns + user-flows + design-system   (consistency: is the product coherent?)
-Wed: docs + help-content + ux-copy           (content: is the text right?)
-Thu: testing + i18n                          (coverage: what's missing?)
-Fri: dependencies + compatibility            (external: browser support + supply chain)
-Sat: hygiene + performance + perf-ux         (efficiency: what's wasted or slow?)
-Sun: ui-clarity                              (solo — benefits from a full-context review)
+Mon: Does it work?        → security + testing + error-states + user-flows + help-content
+Tue: Does it feel right?  → ux-copy + ui-clarity + design-system + perf-ux
+Wed: Can everyone use it? → a11y + compatibility + i18n
+Thu: Does it last?        → patterns + hygiene + docs + dependencies
+Fri: Can we prove it?     → performance + compliance (Phase 5)
 ```
 
-This covers all 17 focus areas in a 7-day rotation. Token cost increases ~30-40% over today's 7-area schedule because file gathering is shared and prompts are combined, but coverage nearly triples. The groupings are deliberate — focus areas that share files and share a conceptual frame are combined so the AI can reason across them (e.g., finding a security issue and an a11y issue in the same component, in the same pass).
+If a frame is disabled, that day is skipped or replaced with a deeper run of an enabled frame. The combined audit feature dedupes files across focus areas within a frame, keeping token costs manageable.
 
-**Alternative: Two-tier schedule**
+**Alternative: Frequency-tiered schedule**
 
-For teams that don't need all 17 every week:
+For teams that want critical frames more often:
 
 ```
-Weekly (critical):   security, a11y, error-states, ux-copy
-Biweekly (important): patterns, user-flows, testing, docs, dependencies
-Monthly (hygiene):   hygiene, performance, perf-ux, design-system,
-                     compatibility, help-content, i18n, ui-clarity
+Weekly:    Does it work?, Does it last?
+Biweekly:  Does it feel right?, Can everyone use it?
+Monthly:   Can we prove it?
 ```
 
-This reduces cost while ensuring the highest-impact areas run frequently.
+This reduces cost while ensuring the highest-impact frames run frequently. A startup might run only "Does it work?" and "Does it last?" — two audits per week, minimal cost, maximum safety.
 
 ## Auto-fix suitability
 
