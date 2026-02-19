@@ -15,11 +15,13 @@ from noxaudit.mcp.state import save_latest_findings
 from noxaudit.models import AuditResult
 from noxaudit.notifications.telegram import send_telegram
 from noxaudit.providers.anthropic import AnthropicProvider
+from noxaudit.providers.gemini import GeminiProvider
 from noxaudit.reporter import format_notification, generate_report, save_report
 
 
 PROVIDERS = {
     "anthropic": AnthropicProvider,
+    "gemini": GeminiProvider,
 }
 
 PENDING_BATCH_FILE = ".noxaudit/pending-batch.json"

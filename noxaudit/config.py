@@ -34,7 +34,7 @@ WEEKDAY_NAMES = [
 class RepoConfig:
     name: str
     path: str
-    provider_rotation: list[str] = field(default_factory=lambda: ["anthropic"])
+    provider_rotation: list[str] = field(default_factory=lambda: ["gemini"])
     exclude_patterns: list[str] = field(default_factory=list)
 
 
@@ -121,7 +121,7 @@ class NoxauditConfig:
             if repo.name == repo_name:
                 providers = repo.provider_rotation
                 return providers[run_index % len(providers)]
-        return "anthropic"
+        return "gemini"
 
 
 def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
@@ -143,7 +143,7 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
             RepoConfig(
                 name=r["name"],
                 path=os.path.expanduser(r["path"]),
-                provider_rotation=r.get("provider_rotation", ["anthropic"]),
+                provider_rotation=r.get("provider_rotation", ["gemini"]),
                 exclude_patterns=r.get("exclude", []),
             )
         )
