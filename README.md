@@ -168,7 +168,28 @@ repos:
 
 Different models catch different things. Claude is strong on security reasoning, GPT excels at structured analysis, Gemini can ingest massive codebases in a single pass.
 
-*Currently supported: Anthropic (Claude). OpenAI and Gemini coming soon.*
+**Supported providers:**
+
+| Provider | Model | Input/M | Notes |
+|----------|-------|---------|-------|
+| **Anthropic** | `claude-sonnet-4-5-20250929` | $3.00 | Default. Strong security reasoning, batch API. |
+| **OpenAI** | `gpt-5.2` | $1.75 | Cheaper than Claude Sonnet, 400K context window. Good default for OpenAI users. |
+| **OpenAI** | `gpt-5-mini` | $0.25 | Budget option, comparable to Gemini Flash pricing. |
+| **OpenAI** | `gpt-5-nano` | $0.05 | Cheapest option available. Good for high-frequency runs. |
+| **Gemini** | `gemini-2.0-flash` | $0.10 | Massive context window, fast. |
+
+Set your API key for the provider(s) you use:
+```bash
+export ANTHROPIC_API_KEY=sk-ant-...
+export OPENAI_API_KEY=sk-...
+export GOOGLE_API_KEY=...
+```
+
+Install optional provider dependencies:
+```bash
+pip install 'noxaudit[openai]'   # OpenAI
+pip install 'noxaudit[google]'   # Gemini
+```
 
 ## License
 

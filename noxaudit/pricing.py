@@ -57,6 +57,42 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         batch_discount=0.0,
         context_window=1_000_000,
     ),
+    "gpt-5.2": ModelPricing(
+        input_per_million=1.75,
+        output_per_million=14.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=400_000,
+    ),
+    "gpt-5": ModelPricing(
+        input_per_million=1.25,
+        output_per_million=10.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=400_000,
+    ),
+    "gpt-5-mini": ModelPricing(
+        input_per_million=0.25,
+        output_per_million=2.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=400_000,
+    ),
+    "gpt-5-nano": ModelPricing(
+        input_per_million=0.05,
+        output_per_million=0.40,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=400_000,
+    ),
 }
 
 # Maps each focus area to its "frame" question
@@ -76,6 +112,10 @@ _MODEL_PROVIDER: dict[str, str] = {
     "claude-sonnet-4-5": "anthropic",
     "gemini-2.5-flash": "gemini",
     "gemini-2.0-flash": "gemini",
+    "gpt-5.2": "openai",
+    "gpt-5": "openai",
+    "gpt-5-mini": "openai",
+    "gpt-5-nano": "openai",
 }
 
 
@@ -95,6 +135,12 @@ def resolve_model_key(provider: str, model: str) -> str:
         if "2.5" in model or "2-5" in model:
             return "gemini-2.5-flash"
         return "gemini-2.0-flash"
+    elif provider == "openai":
+        if "nano" in model_lower:
+            return "gpt-5-nano"
+        if "mini" in model_lower:
+            return "gpt-5-mini"
+        return "gpt-5.2"
     return "gemini-2.0-flash"
 
 

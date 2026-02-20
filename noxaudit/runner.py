@@ -26,6 +26,13 @@ PROVIDERS = {
     "gemini": GeminiProvider,
 }
 
+try:
+    from noxaudit.providers.openai import OpenAIProvider
+
+    PROVIDERS["openai"] = OpenAIProvider
+except ImportError:
+    pass
+
 PENDING_BATCH_FILE = ".noxaudit/pending-batch.json"
 LAST_RETRIEVED_FILE = ".noxaudit/last-retrieved.json"
 
