@@ -12,8 +12,9 @@ from noxaudit.focus import FOCUS_AREAS
 from noxaudit.focus.base import build_combined_prompt, gather_files_combined
 from noxaudit.issues import create_issues_for_findings
 from noxaudit.mcp.state import save_latest_findings
-from noxaudit.models import AuditResult
+from noxaudit.models import AuditResult, FileContent
 from noxaudit.notifications.telegram import send_telegram
+from noxaudit.pricing import MODEL_PRICING
 from noxaudit.providers.anthropic import AnthropicProvider
 from noxaudit.providers.gemini import GeminiProvider
 from noxaudit.reporter import format_notification, generate_report, save_report
@@ -50,6 +51,61 @@ def _resolve_focus_names(
 def _focus_label(names: list[str]) -> str:
     """Create a display label for focus names: 'security+performance'."""
     return "+".join(names)
+
+
+def estimate_tokens(files: list[FileContent]) -> int:
+    """Estimate token count from files. Rough heuristic: ~4 chars per token."""
+    total_chars = sum(len(f.content) for f in files)
+    return total_chars // 4
+
+
+def _maybe_prepass(
+    files: list[FileContent],
+    focus_names: list[str],
+    config: NoxauditConfig,
+    repo_name: str,
+    provider_name: str,
+) -> tuple[bool, list[FileContent], str]:
+    """Check if pre-pass should be run based on config or provider economics.
+
+    Returns:
+        (should_run_prepass, filtered_files, message)
+        - should_run_prepass: True if pre-pass should be run
+        - filtered_files: Files to use (may be same as input if no prepass)
+        - message: Message to print (explaining why prepass was triggered, or empty)
+    """
+    token_estimate = estimate_tokens(files)
+
+    # Check explicit config: prepass.enabled && tokens > threshold
+    if config.prepass.enabled and token_estimate > config.prepass.threshold_tokens:
+        return (True, files, "")
+
+    # Check provider economics: Anthropic + tokens > 200K (tier threshold)
+    # Only check this if auto_disable is False (auto-enable is enabled)
+    if config.prepass.auto_disable:
+        return (False, files, "")
+
+    # Determine model key for provider
+    model_key = config.model
+    pricing = MODEL_PRICING.get(model_key)
+
+    if pricing and pricing.tier_threshold is not None:
+        if token_estimate > pricing.tier_threshold:
+            # Auto-enable pre-pass with explanatory message
+            savings_ratio = 0.5  # Rough estimate: pre-pass reduces tokens by ~50%
+            tokens_after_prepass = int(token_estimate * savings_ratio)
+            cost_before = (token_estimate / 1_000_000) * pricing.input_per_million
+            cost_after = (tokens_after_prepass / 1_000_000) * pricing.input_per_million_high if pricing.input_per_million_high else cost_before
+            savings = cost_before - cost_after
+
+            msg = (
+                f"  [{repo_name}] Auto-enabling pre-pass: {token_estimate//1000}K tokens would hit tiered pricing.\n"
+                f"           Pre-pass reduces to ~{tokens_after_prepass//1000}K tokens, saving ~${savings:.2f} per audit.\n"
+                f"           To disable: set prepass.auto: false in config."
+            )
+            return (True, files, msg)
+
+    return (False, files, "")
 
 
 def submit_audit(
@@ -201,6 +257,18 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
         print(f"[{repo.name}] No files to audit, skipping")
         return None
 
+    # Resolve provider early so _maybe_prepass can check economics
+    pname = provider_name or config.get_provider_for_repo(repo.name)
+    if pname not in PROVIDERS:
+        raise ValueError(f"Unknown provider: {pname}")
+
+    # Check if pre-pass should run (based on config or provider economics)
+    should_run_prepass, files, prepass_msg = _maybe_prepass(
+        files, focus_names, config, repo.name, pname
+    )
+    if prepass_msg:
+        print(prepass_msg)
+
     decisions = load_decisions(config.decisions.path)
     decision_context = format_decision_context(decisions)
     prompt = build_combined_prompt(focus_instances)
@@ -211,10 +279,6 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
         print(f"[{repo.name}] Prompt length: {len(prompt)} chars")
         print(f"[{repo.name}] Decision context: {len(decisions)} prior decisions")
         return None
-
-    pname = provider_name or config.get_provider_for_repo(repo.name)
-    if pname not in PROVIDERS:
-        raise ValueError(f"Unknown provider: {pname}")
 
     provider = PROVIDERS[pname](model=config.model)
     custom_id = f"{repo.name}-{label}"
@@ -319,6 +383,18 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run):
             timestamp=datetime.now().isoformat(),
         )
 
+    # Resolve provider early so _maybe_prepass can check economics
+    pname = provider_name or config.get_provider_for_repo(repo.name)
+    if pname not in PROVIDERS:
+        raise ValueError(f"Unknown provider: {pname}")
+
+    # Check if pre-pass should run (based on config or provider economics)
+    should_run_prepass, files, prepass_msg = _maybe_prepass(
+        files, focus_names, config, repo.name, pname
+    )
+    if prepass_msg:
+        print(prepass_msg)
+
     decisions = load_decisions(config.decisions.path)
     decision_context = format_decision_context(decisions)
     prompt = build_combined_prompt(focus_instances)
@@ -333,7 +409,6 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run):
             timestamp=datetime.now().isoformat(),
         )
 
-    pname = provider_name or config.get_provider_for_repo(repo.name)
     provider = PROVIDERS[pname](model=config.model)
     print(f"[{repo.name}] Running {label} audit via {pname} (batch API, polling)...")
 
