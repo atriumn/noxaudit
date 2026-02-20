@@ -19,6 +19,7 @@ from noxaudit.pricing import MODEL_PRICING
 from noxaudit.providers.anthropic import AnthropicProvider
 from noxaudit.providers.gemini import GeminiProvider
 from noxaudit.reporter import format_notification, generate_report, save_report
+from noxaudit.sarif import findings_to_sarif, save_sarif
 
 
 PROVIDERS = {
@@ -166,6 +167,7 @@ def submit_audit(
 def retrieve_audit(
     config: NoxauditConfig,
     pending_path: str | None = None,
+    output_format: str = "markdown",
 ) -> list[AuditResult]:
     """Retrieve results from a previously submitted batch."""
     path = Path(pending_path or PENDING_BATCH_FILE)
@@ -187,7 +189,7 @@ def retrieve_audit(
     results = []
 
     for batch_info in pending["batches"]:
-        result = _retrieve_repo(config, batch_info, label, default_focus)
+        result = _retrieve_repo(config, batch_info, label, default_focus, output_format)
         if result:
             results.append(result)
 
@@ -205,6 +207,7 @@ def run_audit(
     focus_name: str | None = None,
     provider_name: str | None = None,
     dry_run: bool = False,
+    output_format: str = "markdown",
 ) -> list[AuditResult]:
     """Submit and wait for results (convenience for local CLI use)."""
     focus_names = _resolve_focus_names(focus_name, config)
@@ -220,7 +223,7 @@ def run_audit(
 
     results = []
     for repo in repos:
-        result = _run_repo_sync(config, repo, focus_names, provider_name, dry_run)
+        result = _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_format)
         results.append(result)
 
     return results
@@ -313,7 +316,7 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
     }
 
 
-def _retrieve_repo(config, batch_info, focus_label, default_focus):
+def _retrieve_repo(config, batch_info, focus_label, default_focus, output_format="markdown"):
     """Retrieve batch results for one repo."""
     repo_name = batch_info["repo"]
     batch_id = batch_info["batch_id"]
@@ -382,6 +385,11 @@ def _retrieve_repo(config, batch_info, focus_label, default_focus):
     report_path = save_report(report, config.reports_dir, repo_name, focus_label)
     print(f"[{repo_name}] Report saved to {report_path}")
 
+    if output_format == "sarif":
+        sarif = findings_to_sarif(audit_result.findings, focus_label, repo_name)
+        sarif_path = save_sarif(sarif, config.reports_dir, repo_name, focus_label)
+        print(f"[{repo_name}] SARIF report saved to {sarif_path}")
+
     # Send notifications
     for notif in config.notifications:
         if notif.channel == "telegram":
@@ -395,7 +403,7 @@ def _retrieve_repo(config, batch_info, focus_label, default_focus):
     return audit_result
 
 
-def _run_repo_sync(config, repo, focus_names, provider_name, dry_run):
+def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_format="markdown"):
     """Run audit synchronously — submits batch, polls until done."""
     label = _focus_label(focus_names)
     focus_instances = [FOCUS_AREAS[name]() for name in focus_names]
@@ -491,6 +499,11 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run):
     report = generate_report(result)
     report_path = save_report(report, config.reports_dir, repo.name, label)
     print(f"[{repo.name}] Report saved to {report_path}")
+
+    if output_format == "sarif":
+        sarif = findings_to_sarif(result.findings, label, repo.name)
+        sarif_path = save_sarif(sarif, config.reports_dir, repo.name, label)
+        print(f"[{repo.name}] SARIF report saved to {sarif_path}")
 
     for notif in config.notifications:
         if notif.channel == "telegram":

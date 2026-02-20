@@ -29,6 +29,14 @@ inputs:
     description: 'GitHub token for creating issues'
     required: false
     default: ${{ github.token }}
+  format:
+    description: 'Output format: markdown (default) or sarif (for GitHub Code Scanning upload)'
+    required: false
+    default: 'markdown'
+  upload-sarif:
+    description: 'Upload SARIF results to GitHub Code Scanning (requires format: sarif and write security-events permission)'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -73,7 +81,7 @@ runs:
           fi
           noxaudit submit $ARGS
         else
-          noxaudit retrieve --config ${{ inputs.config }}
+          noxaudit retrieve --config ${{ inputs.config }} --format ${{ inputs.format }}
         fi
 
     - name: Cache pending batch (submit mode)
@@ -97,3 +105,10 @@ runs:
         name: noxaudit-reports
         path: .noxaudit/reports/
         retention-days: 30
+
+    - name: Upload SARIF to GitHub Code Scanning
+      if: inputs.mode == 'retrieve' && inputs.upload-sarif == 'true'
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: .noxaudit/reports/
+        category: noxaudit
