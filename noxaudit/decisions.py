@@ -30,6 +30,9 @@ def load_decisions(decisions_path: str | Path) -> list[Decision]:
                 by=raw.get("by", ""),
                 file=raw.get("file"),
                 file_hash=raw.get("file_hash"),
+                focus=raw.get("focus"),
+                severity=raw.get("severity"),
+                repo=raw.get("repo"),
             )
         )
     return decisions
@@ -118,10 +121,12 @@ def create_baseline_decisions(
     findings: list[Finding],
     repo_path: str | Path,
     by: str = "baseline",
+    repo_name: str | None = None,
 ) -> list[Decision]:
     """Create DISMISSED decisions for each finding with reason='baseline'.
 
     Computes file hashes so that file changes will resurface the findings.
+    Stores focus, severity, and repo_name for later filtering with --undo.
     Returns list of Decision objects (not yet persisted).
     """
     today = date.today().isoformat()
@@ -137,6 +142,9 @@ def create_baseline_decisions(
                 by=by,
                 file=finding.file,
                 file_hash=file_hash,
+                focus=finding.focus,
+                severity=finding.severity.value if finding.severity else None,
+                repo=repo_name,
             )
         )
     return result

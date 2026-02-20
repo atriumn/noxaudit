@@ -45,18 +45,38 @@ def _display_cost_summary() -> None:
     # Calculate aggregates
     total_input = sum(e.get("input_tokens", 0) for e in entries)
     total_output = sum(e.get("output_tokens", 0) for e in entries)
+    total_cache_read = sum(e.get("cache_read_tokens", 0) for e in entries)
+    total_cache_write = sum(e.get("cache_write_tokens", 0) for e in entries)
     total_cost = sum(e.get("cost_estimate_usd", 0) for e in entries)
     avg_cost = total_cost / len(entries) if entries else 0
 
-    # Project monthly (assuming consistent)
-    days_available = 30
-    projected_monthly = total_cost / days_available * 30
+    # Project monthly using actual days with data (not a hardcoded 30/30 = 1x)
+    from datetime import datetime as _dt
+
+    timestamps = []
+    for e in entries:
+        try:
+            timestamps.append(_dt.fromisoformat(e.get("timestamp", "")))
+        except (ValueError, TypeError):
+            pass
+    if len(timestamps) > 1:
+        days_with_data = max((max(timestamps).date() - min(timestamps).date()).days, 1)
+    else:
+        days_with_data = 1
+    projected_monthly = (total_cost / days_with_data) * 30
 
     click.echo("")
     click.echo("Cost (last 30 days):")
     click.echo(f"  Audits run:          {len(entries)}")
     click.echo(f"  Total input tokens:  {_format_tokens(total_input)}")
     click.echo(f"  Total output tokens: {_format_tokens(total_output)}")
+    if total_cache_read or total_cache_write:
+        click.echo(f"  Cache read tokens:   {_format_tokens(total_cache_read)}")
+        click.echo(f"  Cache write tokens:  {_format_tokens(total_cache_write)}")
+        total_input_processed = total_input + total_cache_read
+        if total_input_processed > 0:
+            cache_pct = total_cache_read / total_input_processed * 100
+            click.echo(f"  Cache savings:       {cache_pct:.1f}% served from cache")
     click.echo(f"  Estimated spend:     ${total_cost:.2f}")
     click.echo(f"  Avg per audit:       ${avg_cost:.2f}")
     click.echo(f"  Projected monthly:   ~${projected_monthly:.2f}")
@@ -419,11 +439,26 @@ def baseline(ctx, repo, focus, severity, undo, list_baselines):
         return
 
     if undo:
-        finding_ids = None
         if repo or focus or severity:
-            findings = _load_findings_for_baseline(config, repo, focus, severity)
-            finding_ids = {f.id for f in findings}
-        removed = remove_baseline_decisions(config.decisions.path, finding_ids=finding_ids)
+            # Filter stored baseline decisions directly — do not rely on the
+            # ephemeral latest-findings.json which may be stale or empty.
+            all_baselines = list_baseline_decisions(config.decisions.path)
+            finding_ids: set[str] = set()
+            focus_names = [f.strip() for f in focus.split(",") if f.strip()] if focus else None
+            sev_names = (
+                [s.strip().lower() for s in severity.split(",") if s.strip()] if severity else None
+            )
+            for d in all_baselines:
+                if repo and d.repo != repo:
+                    continue
+                if focus_names and d.focus not in focus_names:
+                    continue
+                if sev_names and d.severity not in sev_names:
+                    continue
+                finding_ids.add(d.finding_id)
+            removed = remove_baseline_decisions(config.decisions.path, finding_ids=finding_ids)
+        else:
+            removed = remove_baseline_decisions(config.decisions.path)
         label = f" for {repo}" if repo else ""
         click.echo(f"Removed {removed} baseline decisions{label}.")
         return
@@ -447,7 +482,7 @@ def baseline(ctx, repo, focus, severity, undo, list_baselines):
                 repo_path = r.path
                 break
 
-    decisions = create_baseline_decisions(findings, repo_path)
+    decisions = create_baseline_decisions(findings, repo_path, repo_name=repo)
     for decision in decisions:
         save_decision(config.decisions.path, decision)
 
