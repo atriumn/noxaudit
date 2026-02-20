@@ -67,6 +67,15 @@ class IssuesConfig:
 
 
 @dataclass
+class PrepassConfig:
+    """Pre-pass configuration for file filtering before main audit."""
+
+    enabled: bool = False
+    threshold_tokens: int = 600_000
+    auto_disable: bool = False
+
+
+@dataclass
 class FrameConfig:
     """Per-focus boolean overrides for a frame."""
 
@@ -124,6 +133,7 @@ class NoxauditConfig:
     notifications: list[NotificationConfig] = field(default_factory=list)
     decisions: DecisionConfig = field(default_factory=DecisionConfig)
     issues: IssuesConfig = field(default_factory=IssuesConfig)
+    prepass: PrepassConfig = field(default_factory=PrepassConfig)
     reports_dir: str = ".noxaudit/reports"
     model: str = "claude-sonnet-4-5-20250929"
 
@@ -214,6 +224,13 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
         repository_url=issues_raw.get("repository_url", "https://github.com/atriumn/noxaudit"),
     )
 
+    prepass_raw = raw.get("prepass", {})
+    prepass = PrepassConfig(
+        enabled=prepass_raw.get("enabled", False),
+        threshold_tokens=prepass_raw.get("threshold_tokens", 600_000),
+        auto_disable=not prepass_raw.get("auto", True),
+    )
+
     return NoxauditConfig(
         repos=repos,
         schedule=schedule,
@@ -222,6 +239,7 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
         notifications=notifications,
         decisions=decisions,
         issues=issues,
+        prepass=prepass,
         reports_dir=raw.get("reports_dir", ".noxaudit/reports"),
         model=raw.get("model", "claude-sonnet-4-5-20250929"),
     )
