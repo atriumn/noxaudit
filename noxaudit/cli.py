@@ -104,12 +104,25 @@ def main(ctx, config_path):
 @click.option("--focus", "-f", default=None, help="Focus area(s): name, comma-separated, or 'all'")
 @click.option("--provider", "-p", default=None, help="AI provider (default: from config)")
 @click.option("--dry-run", is_flag=True, help="Show what would be audited without calling AI")
+@click.option(
+    "--format",
+    "-F",
+    "output_format",
+    type=click.Choice(["markdown", "sarif"]),
+    default="markdown",
+    help="Output format: markdown (default) or sarif (for GitHub Code Scanning)",
+)
 @click.pass_context
-def run(ctx, repo, focus, provider, dry_run):
+def run(ctx, repo, focus, provider, dry_run, output_format):
     """Run an audit."""
     config = load_config(ctx.obj["config_path"])
     results = run_audit(
-        config, repo_name=repo, focus_name=focus, provider_name=provider, dry_run=dry_run
+        config,
+        repo_name=repo,
+        focus_name=focus,
+        provider_name=provider,
+        dry_run=dry_run,
+        output_format=output_format,
     )
 
     for result in results:
@@ -142,11 +155,19 @@ def submit(ctx, repo, focus, provider, dry_run):
 
 @main.command()
 @click.option("--pending-file", default=None, help="Path to pending batch JSON file")
+@click.option(
+    "--format",
+    "-F",
+    "output_format",
+    type=click.Choice(["markdown", "sarif"]),
+    default="markdown",
+    help="Output format: markdown (default) or sarif (for GitHub Code Scanning)",
+)
 @click.pass_context
-def retrieve(ctx, pending_file):
+def retrieve(ctx, pending_file, output_format):
     """Retrieve results from a previously submitted batch."""
     config = load_config(ctx.obj["config_path"])
-    results = retrieve_audit(config, pending_path=pending_file)
+    results = retrieve_audit(config, pending_path=pending_file, output_format=output_format)
 
     if not results:
         click.echo("No results ready yet. Batch may still be processing.")
