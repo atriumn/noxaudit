@@ -277,7 +277,8 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
     if pname not in PROVIDERS:
         raise ValueError(f"Unknown provider: {pname}")
 
-    # Check if pre-pass should run (based on config or provider economics)
+    # Determine whether pre-pass should run (config or provider economics).
+    # should_run_prepass=True means we classify files into tiers before the main audit.
     should_run_prepass, files, prepass_msg = _maybe_prepass(
         files, focus_names, config, repo.name, pname
     )
@@ -297,7 +298,7 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
 
     provider = PROVIDERS[pname](model=config.model)
 
-    # Execute pre-pass if triggered — classify and enrich files before the main audit
+    # Execute pre-pass if triggered — classify files into tiers and enrich content
     if should_run_prepass:
         from noxaudit.prepass import run_prepass
 
@@ -436,7 +437,8 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
     if pname not in PROVIDERS:
         raise ValueError(f"Unknown provider: {pname}")
 
-    # Check if pre-pass should run (based on config or provider economics)
+    # Determine whether pre-pass should run (config or provider economics).
+    # should_run_prepass=True means we classify files into tiers before the main audit.
     should_run_prepass, files, prepass_msg = _maybe_prepass(
         files, focus_names, config, repo.name, pname
     )
@@ -459,7 +461,8 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
 
     provider = PROVIDERS[pname](model=config.model)
 
-    # Execute pre-pass if triggered — classify and enrich files before the main audit
+    # Execute pre-pass if triggered (should_run_prepass assigned above via _maybe_prepass).
+    # Classifies files into tiers (full/snippet/map) and enriches content accordingly.
     if should_run_prepass:
         from noxaudit.prepass import run_prepass
 
