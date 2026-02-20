@@ -142,6 +142,48 @@ class TestCostLedgerAppend:
             expected_cost = 13.95
             assert abs(entry["cost_estimate_usd"] - expected_cost) < 0.01
 
+    def test_cache_read_tokens_included_in_cost(self, tmp_path):
+        """Cache read tokens are included in cost calculation."""
+        ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
+        with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
+            # Anthropic Sonnet: cache read = $0.30/M, with 50% batch discount = $0.15/M
+            CostLedger.append_entry(
+                repo="test",
+                focus="security",
+                provider="anthropic",
+                model="claude-sonnet-4-5",
+                input_tokens=0,
+                output_tokens=0,
+                cache_read_tokens=1_000_000,
+                cache_write_tokens=0,
+                file_count=10,
+            )
+            entry = CostLedger.read_entries()[0]
+            # 1M cache read * $0.30/M * 50% batch discount = $0.15
+            expected_cost = 0.15
+            assert abs(entry["cost_estimate_usd"] - expected_cost) < 0.001
+
+    def test_cache_write_tokens_included_in_cost(self, tmp_path):
+        """Cache write tokens are included in cost calculation."""
+        ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
+        with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
+            # Anthropic Sonnet: cache write = $3.75/M, with 50% batch discount = $1.875/M
+            CostLedger.append_entry(
+                repo="test",
+                focus="security",
+                provider="anthropic",
+                model="claude-sonnet-4-5",
+                input_tokens=0,
+                output_tokens=0,
+                cache_read_tokens=0,
+                cache_write_tokens=1_000_000,
+                file_count=10,
+            )
+            entry = CostLedger.read_entries()[0]
+            # 1M cache write * $3.75/M * 50% batch discount = $1.875
+            expected_cost = 1.875
+            assert abs(entry["cost_estimate_usd"] - expected_cost) < 0.001
+
 
 class TestCostLedgerRead:
     """Test ledger read operations."""

@@ -32,6 +32,33 @@ def _format_tokens(n: int) -> str:
     return str(n)
 
 
+def _reprice_entry(entry: dict) -> float:
+    """Recalculate cost for a ledger entry using current pricing.
+
+    Retroactive repricing: uses stored token counts with the current MODEL_PRICING
+    table so costs remain accurate even when pricing changes or when old entries
+    were logged before cache token costs were included in the calculation.
+    """
+    from noxaudit.pricing import MODEL_PRICING, estimate_cost, resolve_model_key
+
+    provider = entry.get("provider", "")
+    model = entry.get("model", "")
+    model_key = resolve_model_key(provider, model)
+    pricing = MODEL_PRICING.get(model_key)
+    if not pricing:
+        return entry.get("cost_estimate_usd", 0.0)
+
+    use_batch = provider.lower() == "anthropic"
+    return estimate_cost(
+        input_tokens=entry.get("input_tokens", 0),
+        output_tokens=entry.get("output_tokens", 0),
+        pricing=pricing,
+        use_batch=use_batch,
+        cache_read_tokens=entry.get("cache_read_tokens", 0),
+        cache_write_tokens=entry.get("cache_write_tokens", 0),
+    )
+
+
 def _display_cost_summary() -> None:
     """Display cost tracking summary from ledger."""
     entries = CostLedger.get_last_n_days(30)
@@ -42,12 +69,13 @@ def _display_cost_summary() -> None:
         click.echo("  No audit history yet")
         return
 
-    # Calculate aggregates
+    # Calculate aggregates — use retroactive repricing so costs reflect current
+    # pricing table and include cache token costs even for older entries.
     total_input = sum(e.get("input_tokens", 0) for e in entries)
     total_output = sum(e.get("output_tokens", 0) for e in entries)
     total_cache_read = sum(e.get("cache_read_tokens", 0) for e in entries)
     total_cache_write = sum(e.get("cache_write_tokens", 0) for e in entries)
-    total_cost = sum(e.get("cost_estimate_usd", 0) for e in entries)
+    total_cost = sum(_reprice_entry(e) for e in entries)
     avg_cost = total_cost / len(entries) if entries else 0
 
     # Project monthly using actual days with data (not a hardcoded 30/30 = 1x)
@@ -101,7 +129,7 @@ def _display_cost_summary() -> None:
             model = entry.get("model", "")
             file_count = entry.get("file_count", 0)
             total_tokens = entry.get("input_tokens", 0) + entry.get("output_tokens", 0)
-            cost = entry.get("cost_estimate_usd", 0)
+            cost = _reprice_entry(entry)
 
             click.echo(
                 f"    {date_str}  {focus:<18} {model:<20} {file_count:>3} files  "

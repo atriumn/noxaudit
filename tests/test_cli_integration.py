@@ -319,6 +319,36 @@ class TestCostTrackingCLIIntegration:
                 )
                 break
 
+    def test_status_reprices_cache_costs_for_anthropic(self, tmp_path):
+        """status command reprices costs including cache tokens for Anthropic entries."""
+        cfg = _write_config(tmp_path)
+        ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
+
+        with patch.object(CostLedger, "LEDGER_PATH", ledger_path):
+            # An entry with cache write tokens — cost must include cache write charges
+            CostLedger.append_entry(
+                repo="test-repo",
+                focus="security",
+                provider="anthropic",
+                model="claude-sonnet-4-5",
+                input_tokens=0,
+                output_tokens=0,
+                cache_read_tokens=0,
+                cache_write_tokens=1_000_000,
+                file_count=5,
+            )
+            result = CliRunner().invoke(main, ["--config", cfg, "status"])
+
+        assert result.exit_code == 0, result.output
+        # 1M cache write * $3.75/M * 50% batch discount = $1.875, rounds to $1.88
+        assert "$0.00" not in result.output or "Estimated spend:     $0.00" not in result.output
+        assert "Estimated spend:" in result.output
+        # The cost should be non-zero (cache writes have a real cost)
+        for line in result.output.splitlines():
+            if "Estimated spend:" in line:
+                assert "$0.00" not in line, "Cache write tokens must be included in cost"
+                break
+
 
 # ---------------------------------------------------------------------------
 # Issue #48: Baseline --undo with filters wired into CLI

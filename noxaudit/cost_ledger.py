@@ -43,7 +43,14 @@ class CostLedger:
         else:
             # Use batch API discount if provider is Anthropic
             use_batch = provider.lower() == "anthropic"
-            cost_estimate = estimate_cost(input_tokens, output_tokens, pricing, use_batch=use_batch)
+            cost_estimate = estimate_cost(
+                input_tokens,
+                output_tokens,
+                pricing,
+                use_batch=use_batch,
+                cache_read_tokens=cache_read_tokens,
+                cache_write_tokens=cache_write_tokens,
+            )
 
         entry = {
             "timestamp": timestamp,

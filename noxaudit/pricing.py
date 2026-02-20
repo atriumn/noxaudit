@@ -18,6 +18,8 @@ class ModelPricing:
     output_per_million_high: float | None  # $/M tokens, high tier output
     batch_discount: float = 0.0  # Fraction discount (0.5 = 50%)
     context_window: int = 200_000
+    cache_read_per_million: float = 0.0  # $/M cache-read tokens (flat rate, not tiered)
+    cache_write_per_million: float = 0.0  # $/M cache-write tokens (flat rate, not tiered)
 
 
 MODEL_PRICING: dict[str, ModelPricing] = {
@@ -29,6 +31,8 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         output_per_million_high=37.50,
         batch_discount=0.50,
         context_window=200_000,
+        cache_read_per_million=0.50,  # 10% of $5.00/M input
+        cache_write_per_million=6.25,  # 125% of $5.00/M input
     ),
     "claude-sonnet-4-5": ModelPricing(
         input_per_million=3.00,
@@ -38,6 +42,8 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         output_per_million_high=22.50,
         batch_discount=0.50,
         context_window=200_000,
+        cache_read_per_million=0.30,  # 10% of $3.00/M input
+        cache_write_per_million=3.75,  # 125% of $3.00/M input
     ),
     "gemini-2.5-flash": ModelPricing(
         input_per_million=0.30,
@@ -149,14 +155,22 @@ def estimate_cost(
     output_tokens: int,
     pricing: ModelPricing,
     use_batch: bool = True,
+    cache_read_tokens: int = 0,
+    cache_write_tokens: int = 0,
 ) -> float:
     """Calculate total cost for given token counts.
 
     Handles tiered pricing split at threshold. When input exceeds the tier
     threshold, output tokens are also billed at the high tier rate (matching
-    Anthropic actual pricing). Batch discount applied last.
+    Anthropic actual pricing). Cache tokens are billed at flat rates (not
+    tiered). Batch discount applied last to the combined total.
     """
-    if input_tokens == 0 and output_tokens == 0:
+    if (
+        input_tokens == 0
+        and output_tokens == 0
+        and cache_read_tokens == 0
+        and cache_write_tokens == 0
+    ):
         return 0.0
 
     if pricing.tier_threshold and input_tokens > pricing.tier_threshold:
@@ -169,7 +183,11 @@ def estimate_cost(
         input_cost = (input_tokens / 1_000_000) * pricing.input_per_million
         output_cost = (output_tokens / 1_000_000) * pricing.output_per_million
 
-    total = input_cost + output_cost
+    # Cache tokens are billed at flat rates, not subject to tiered pricing
+    cache_read_cost = (cache_read_tokens / 1_000_000) * pricing.cache_read_per_million
+    cache_write_cost = (cache_write_tokens / 1_000_000) * pricing.cache_write_per_million
+
+    total = input_cost + output_cost + cache_read_cost + cache_write_cost
 
     if use_batch and pricing.batch_discount > 0:
         total *= 1.0 - pricing.batch_discount
