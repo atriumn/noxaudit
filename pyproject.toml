@@ -63,4 +63,5 @@ markers = [
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
+    "ruff>=0.15.1",
 ]
