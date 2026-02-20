@@ -95,12 +95,16 @@ def _maybe_prepass(
             savings_ratio = 0.5  # Rough estimate: pre-pass reduces tokens by ~50%
             tokens_after_prepass = int(token_estimate * savings_ratio)
             cost_before = (token_estimate / 1_000_000) * pricing.input_per_million
-            cost_after = (tokens_after_prepass / 1_000_000) * pricing.input_per_million_high if pricing.input_per_million_high else cost_before
+            cost_after = (
+                (tokens_after_prepass / 1_000_000) * pricing.input_per_million_high
+                if pricing.input_per_million_high
+                else cost_before
+            )
             savings = cost_before - cost_after
 
             msg = (
-                f"  [{repo_name}] Auto-enabling pre-pass: {token_estimate//1000}K tokens would hit tiered pricing.\n"
-                f"           Pre-pass reduces to ~{tokens_after_prepass//1000}K tokens, saving ~${savings:.2f} per audit.\n"
+                f"  [{repo_name}] Auto-enabling pre-pass: {token_estimate // 1000}K tokens would hit tiered pricing.\n"
+                f"           Pre-pass reduces to ~{tokens_after_prepass // 1000}K tokens, saving ~${savings:.2f} per audit.\n"
                 f"           To disable: set prepass.auto: false in config."
             )
             return (True, files, msg)
