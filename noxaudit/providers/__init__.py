@@ -10,3 +10,10 @@ try:
     __all__.append("GeminiProvider")
 except ImportError:
     GeminiProvider = None
+
+try:
+    from noxaudit.providers.openai import OpenAIProvider
+
+    __all__.append("OpenAIProvider")
+except ImportError:
+    OpenAIProvider = None
