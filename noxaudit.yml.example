@@ -9,24 +9,34 @@ repos:
       - vendor
       - generated
 
-# Which focus area runs on which day
-# Values can be: a single name, a list (grouped into one API call), or "all"
+# Frame-based schedule (preferred)
+# Frames are the five organizing lenses for code quality:
+#   does_it_work        → security, testing
+#   does_it_feel_right  → (Phase 2: ux-copy, help-content)
+#   can_everyone_use_it → (Phase 2: a11y)
+#   does_it_last        → patterns, hygiene, docs, dependencies
+#   can_we_prove_it     → performance
 #
-# Grouping saves ~80% on input tokens by deduplicating source files:
-#   6 separate runs: ~$5/week    1 combined run: ~$1/week
-#
-# Examples:
-#   monday: security                   # single focus
+# You can also use individual focus area names (backward compatible):
+#   monday: security                   # single focus area
 #   monday: [security, dependencies]   # grouped (one API call, files deduped)
 #   monday: all                        # all 7 focus areas in one call
 schedule:
-  monday: security
-  tuesday: patterns
-  wednesday: docs
-  thursday: hygiene
-  friday: performance
-  saturday: dependencies
+  monday: does_it_work        # → security + testing
+  tuesday: does_it_last       # → patterns + hygiene + docs + dependencies
+  wednesday: does_it_work     # second run this week
+  thursday: does_it_last
+  friday: can_we_prove_it     # → performance
+  saturday: off
   sunday: off
+
+# Optional: override which focus areas are active within a frame
+# frames:
+#   does_it_last:
+#     patterns: true
+#     hygiene: true
+#     docs: true
+#     dependencies: false     # skip dependency audits
 
 # AI model to use (any Anthropic model ID)
 model: claude-sonnet-4-5-20250929

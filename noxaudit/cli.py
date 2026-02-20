@@ -9,6 +9,7 @@ import click
 
 from noxaudit import __version__
 from noxaudit.config import WEEKDAY_NAMES, load_config, normalize_focus
+from noxaudit.frames import FRAME_LABELS, FRAMES, get_enabled_focus_areas
 from noxaudit.decisions import (
     create_baseline_decisions,
     list_baseline_decisions,
@@ -135,10 +136,23 @@ def schedule(ctx):
     today_name = WEEKDAY_NAMES[date.today().weekday()]
     for day in WEEKDAY_NAMES:
         raw = config.schedule.get(day, "off")
-        names = normalize_focus(raw)
-        display = ", ".join(names) if names else "off"
+        raw_str = str(raw) if not isinstance(raw, list) else None
+
+        if raw_str and raw_str in FRAMES:
+            # Frame-based entry: show label + active focus areas
+            fc = config.frames.get(raw_str)
+            overrides = fc.overrides if fc else None
+            focuses = get_enabled_focus_areas(raw_str, overrides)
+            label = FRAME_LABELS[raw_str]
+            display = f"{label} ({', '.join(focuses)})" if focuses else f"{label} (none active)"
+            active = bool(focuses)
+        else:
+            names = normalize_focus(raw)
+            display = ", ".join(names) if names else "off"
+            active = bool(names)
+
         marker = " ← today" if day == today_name else ""
-        icon = "  " if not names else "▶ "
+        icon = "▶ " if active else "  "
         click.echo(f"  {icon}{day.capitalize():12s} {display}{marker}")
 
 
@@ -174,9 +188,23 @@ def status(ctx):
         click.echo(f"  {len(decisions)} decisions recorded")
 
     click.echo("")
-    today_raw = config.get_today_focus()
-    today_names = normalize_focus(today_raw)
-    today_display = ", ".join(today_names) if today_names else "off"
+    import datetime
+
+    today_day = WEEKDAY_NAMES[datetime.date.today().weekday()]
+    today_entry = config.schedule.get(today_day, "off")
+    today_entry_str = str(today_entry) if not isinstance(today_entry, list) else None
+
+    if today_entry_str and today_entry_str in FRAMES:
+        fc = config.frames.get(today_entry_str)
+        overrides = fc.overrides if fc else None
+        focuses = get_enabled_focus_areas(today_entry_str, overrides)
+        label = FRAME_LABELS[today_entry_str]
+        today_display = f"{label} ({', '.join(focuses)})" if focuses else f"{label} (none active)"
+    else:
+        today_raw = config.get_today_focus()
+        today_names = normalize_focus(today_raw)
+        today_display = ", ".join(today_names) if today_names else "off"
+
     click.echo(f"Today's focus: {today_display}")
 
 
