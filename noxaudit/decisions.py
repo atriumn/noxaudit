@@ -114,6 +114,67 @@ def format_decision_context(decisions: list[Decision]) -> str:
     return "\n".join(lines)
 
 
+def create_baseline_decisions(
+    findings: list[Finding],
+    repo_path: str | Path,
+    by: str = "baseline",
+) -> list[Decision]:
+    """Create DISMISSED decisions for each finding with reason='baseline'.
+
+    Computes file hashes so that file changes will resurface the findings.
+    Returns list of Decision objects (not yet persisted).
+    """
+    today = date.today().isoformat()
+    result = []
+    for finding in findings:
+        file_hash = _hash_file(Path(repo_path) / finding.file) if finding.file else None
+        result.append(
+            Decision(
+                finding_id=finding.id,
+                decision=DecisionType.DISMISSED,
+                reason="baseline",
+                date=today,
+                by=by,
+                file=finding.file,
+                file_hash=file_hash,
+            )
+        )
+    return result
+
+
+def remove_baseline_decisions(
+    decisions_path: str | Path,
+    finding_ids: set[str] | None = None,
+) -> int:
+    """Remove baseline decisions from the JSONL file.
+
+    If finding_ids is given, only removes baselines for those IDs.
+    Returns count of removed decisions.
+    """
+    path = Path(decisions_path)
+    if not path.exists():
+        return 0
+
+    all_decisions = load_decisions(path)
+    kept = []
+    removed = 0
+    for d in all_decisions:
+        is_baseline = d.reason == "baseline"
+        matches_filter = finding_ids is None or d.finding_id in finding_ids
+        if is_baseline and matches_filter:
+            removed += 1
+        else:
+            kept.append(d)
+
+    path.write_text("".join(json.dumps(d.to_dict()) + "\n" for d in kept))
+    return removed
+
+
+def list_baseline_decisions(decisions_path: str | Path) -> list[Decision]:
+    """Return all baseline decisions."""
+    return [d for d in load_decisions(decisions_path) if d.reason == "baseline"]
+
+
 def _hash_file(path: Path) -> str | None:
     """Hash a file's contents for change detection."""
     try:

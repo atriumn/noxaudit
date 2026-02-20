@@ -9,7 +9,13 @@ import click
 
 from noxaudit import __version__
 from noxaudit.config import WEEKDAY_NAMES, load_config, normalize_focus
-from noxaudit.decisions import load_decisions, save_decision
+from noxaudit.decisions import (
+    create_baseline_decisions,
+    list_baseline_decisions,
+    load_decisions,
+    remove_baseline_decisions,
+    save_decision,
+)
 from noxaudit.focus import FOCUS_AREAS
 from noxaudit.models import Decision, DecisionType
 from noxaudit.runner import retrieve_audit, run_audit, submit_audit
@@ -269,6 +275,89 @@ def mcp_server():
         raise SystemExit(1)
 
     run_server()
+
+
+@main.command()
+@click.option("--repo", "-r", default=None, help="Baseline a specific repo")
+@click.option("--focus", "-f", default=None, help="Baseline specific focus area(s)")
+@click.option(
+    "--severity", "-s", default=None, help="Baseline specific severities (low,medium,high)"
+)
+@click.option("--undo", is_flag=True, help="Remove baseline decisions")
+@click.option("--list", "list_baselines", is_flag=True, help="Show baselined findings")
+@click.pass_context
+def baseline(ctx, repo, focus, severity, undo, list_baselines):
+    """Baseline existing findings to suppress them in future audits."""
+    config = load_config(ctx.obj["config_path"])
+
+    if list_baselines:
+        baselines = list_baseline_decisions(config.decisions.path)
+        if not baselines:
+            click.echo("No baselined findings.")
+            return
+        click.echo(f"{len(baselines)} baselined finding(s).")
+        click.echo("Run `noxaudit baseline --undo` to remove all baselines.")
+        return
+
+    if undo:
+        finding_ids = None
+        if repo or focus or severity:
+            findings = _load_findings_for_baseline(config, repo, focus, severity)
+            finding_ids = {f.id for f in findings}
+        removed = remove_baseline_decisions(config.decisions.path, finding_ids=finding_ids)
+        label = f" for {repo}" if repo else ""
+        click.echo(f"Removed {removed} baseline decisions{label}.")
+        return
+
+    # Main baseline: load findings and create decisions
+    findings = _load_findings_for_baseline(config, repo, focus, severity)
+
+    if not findings:
+        if repo:
+            click.echo(
+                f"No findings to baseline for {repo}. Run `noxaudit run --repo {repo}` first."
+            )
+        else:
+            click.echo("No findings to baseline. Run `noxaudit run` first.")
+        return
+
+    repo_path = "."
+    if repo:
+        for r in config.repos:
+            if r.name == repo:
+                repo_path = r.path
+                break
+
+    decisions = create_baseline_decisions(findings, repo_path)
+    for decision in decisions:
+        save_decision(config.decisions.path, decision)
+
+    click.echo(f"Baselined {len(decisions)} findings from latest audit.")
+    click.echo("These will not appear in future reports unless the affected files change.")
+    click.echo("Run `noxaudit baseline --undo` to reverse.")
+
+
+def _load_findings_for_baseline(config, repo, focus, severity):
+    """Load and filter findings from latest-findings.json for baseline operations."""
+    from noxaudit.mcp.state import load_latest_findings
+
+    findings = load_latest_findings(".")
+
+    if not findings and repo:
+        for r in config.repos:
+            if r.name == repo:
+                findings = load_latest_findings(r.path)
+                break
+
+    if focus:
+        focus_names = [f.strip() for f in focus.split(",") if f.strip()]
+        findings = [f for f in findings if f.focus in focus_names]
+
+    if severity:
+        sev_names = [s.strip().lower() for s in severity.split(",") if s.strip()]
+        findings = [f for f in findings if f.severity.value in sev_names]
+
+    return findings
 
 
 if __name__ == "__main__":
