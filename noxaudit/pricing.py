@@ -45,13 +45,31 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         cache_read_per_million=0.30,  # 10% of $3.00/M input
         cache_write_per_million=3.75,  # 125% of $3.00/M input
     ),
+    "gemini-2.5-pro": ModelPricing(
+        input_per_million=1.25,
+        output_per_million=10.00,
+        tier_threshold=200_000,
+        input_per_million_high=2.50,
+        output_per_million_high=15.00,
+        batch_discount=0.50,
+        context_window=1_000_000,
+    ),
     "gemini-2.5-flash": ModelPricing(
         input_per_million=0.30,
         output_per_million=2.50,
         tier_threshold=None,
         input_per_million_high=None,
         output_per_million_high=None,
-        batch_discount=0.0,
+        batch_discount=0.50,
+        context_window=1_000_000,
+    ),
+    "gemini-3-flash": ModelPricing(
+        input_per_million=0.50,
+        output_per_million=3.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
         context_window=1_000_000,
     ),
     "gemini-2.0-flash": ModelPricing(
@@ -60,7 +78,7 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         tier_threshold=None,
         input_per_million_high=None,
         output_per_million_high=None,
-        batch_discount=0.0,
+        batch_discount=0.50,
         context_window=1_000_000,
     ),
     "gpt-5.2": ModelPricing(
@@ -116,7 +134,9 @@ FOCUS_FRAMES: dict[str, str] = {
 _MODEL_PROVIDER: dict[str, str] = {
     "claude-opus-4-6": "anthropic",
     "claude-sonnet-4-5": "anthropic",
+    "gemini-2.5-pro": "gemini",
     "gemini-2.5-flash": "gemini",
+    "gemini-3-flash": "gemini",
     "gemini-2.0-flash": "gemini",
     "gpt-5.2": "openai",
     "gpt-5": "openai",
@@ -138,6 +158,10 @@ def resolve_model_key(provider: str, model: str) -> str:
             return "claude-opus-4-6"
         return "claude-sonnet-4-5"
     elif provider == "gemini":
+        if "3" in model_lower and "flash" in model_lower:
+            return "gemini-3-flash"
+        if "pro" in model_lower:
+            return "gemini-2.5-pro"
         if "2.5" in model or "2-5" in model:
             return "gemini-2.5-flash"
         return "gemini-2.0-flash"

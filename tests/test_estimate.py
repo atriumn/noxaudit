@@ -55,12 +55,12 @@ class TestEstimateCost:
         cost_no_batch = estimate_cost(100_000, 1_000, pricing, use_batch=False)
         assert abs(cost_no_batch - cost_batch * 2) < 0.0001
 
-    def test_no_batch_discount_for_gemini(self):
-        """Gemini has batch_discount=0 so use_batch flag has no effect."""
+    def test_batch_discount_for_gemini(self):
+        """Gemini has batch_discount=0.50 so use_batch halves the cost."""
         pricing = MODEL_PRICING["gemini-2.5-flash"]
         cost_batch = estimate_cost(100_000, 10_000, pricing, use_batch=True)
         cost_no_batch = estimate_cost(100_000, 10_000, pricing, use_batch=False)
-        assert cost_batch == cost_no_batch
+        assert abs(cost_no_batch - cost_batch * 2) < 0.0001
 
     def test_exactly_at_tier_threshold_no_tiered(self):
         pricing = MODEL_PRICING["claude-sonnet-4-5"]  # threshold 200K
