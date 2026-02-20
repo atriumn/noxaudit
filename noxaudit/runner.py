@@ -277,7 +277,8 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
     if pname not in PROVIDERS:
         raise ValueError(f"Unknown provider: {pname}")
 
-    # Check if pre-pass should run (based on config or provider economics)
+    # Determine whether pre-pass should run (config or provider economics).
+    # should_run_prepass=True means we classify files into tiers before the main audit.
     should_run_prepass, files, prepass_msg = _maybe_prepass(
         files, focus_names, config, repo.name, pname
     )
@@ -296,6 +297,17 @@ def _submit_repo(config, repo, focus_names, provider_name, dry_run):
         return None
 
     provider = PROVIDERS[pname](model=config.model)
+
+    # Execute pre-pass if triggered — classify files into tiers and enrich content
+    if should_run_prepass:
+        from noxaudit.prepass import run_prepass
+
+        prepass_result, files = run_prepass(files, focus_names, provider)
+        print(
+            f"[{repo.name}] Pre-pass: {prepass_result.retained_count}/"
+            f"{prepass_result.original_count} files retained"
+        )
+
     custom_id = f"{repo.name}-{label}"
     print(f"[{repo.name}] Submitting {label} batch via {pname} ({config.model})...")
 
@@ -425,7 +437,8 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
     if pname not in PROVIDERS:
         raise ValueError(f"Unknown provider: {pname}")
 
-    # Check if pre-pass should run (based on config or provider economics)
+    # Determine whether pre-pass should run (config or provider economics).
+    # should_run_prepass=True means we classify files into tiers before the main audit.
     should_run_prepass, files, prepass_msg = _maybe_prepass(
         files, focus_names, config, repo.name, pname
     )
@@ -447,6 +460,18 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
         )
 
     provider = PROVIDERS[pname](model=config.model)
+
+    # Execute pre-pass if triggered (should_run_prepass assigned above via _maybe_prepass).
+    # Classifies files into tiers (full/snippet/map) and enriches content accordingly.
+    if should_run_prepass:
+        from noxaudit.prepass import run_prepass
+
+        prepass_result, files = run_prepass(files, focus_names, provider)
+        print(
+            f"[{repo.name}] Pre-pass: {prepass_result.retained_count}/"
+            f"{prepass_result.original_count} files retained"
+        )
+
     print(f"[{repo.name}] Running {label} audit via {pname} (batch API, polling)...")
 
     default_focus = focus_names[0] if len(focus_names) == 1 else None

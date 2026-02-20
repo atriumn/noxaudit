@@ -65,6 +65,56 @@ class BaseFocus(ABC):
         return self.get_prompt()
 
 
+def extract_file_snippets(file: FileContent, max_lines: int = 50) -> FileContent:
+    """Extract a representative snippet from a file for pre-pass enrichment.
+
+    Returns the first and last portions of the file (each max_lines/2 lines)
+    with a truncation marker in between. Files already within max_lines are
+    returned unchanged.
+    """
+    lines = file.content.splitlines()
+    if len(lines) <= max_lines:
+        return file
+
+    half = max_lines // 2
+    omitted = len(lines) - max_lines
+    snippet_lines = lines[:half] + [f"# ... [{omitted} lines omitted] ..."] + lines[-half:]
+    return FileContent(path=file.path, content="\n".join(snippet_lines))
+
+
+def extract_file_map(file: FileContent) -> FileContent:
+    """Extract a structural map from a file for pre-pass enrichment.
+
+    Retains only top-level definitions (classes, functions, constants) and
+    their docstrings/comments. Useful for giving the main audit model context
+    about a file's structure without the full implementation.
+    """
+    import re
+
+    lines = file.content.splitlines()
+    map_lines: list[str] = []
+
+    # Patterns that signal a top-level definition line worth keeping
+    _DEF_RE = re.compile(
+        r"^(class |def |async def |function |export\s+(default\s+)?(class|function|const|let|var)\s)"
+    )
+    _COMMENT_RE = re.compile(r'^\s*(#|//|/\*|"""|\'\'\')')
+
+    for line in lines:
+        stripped = line.strip()
+        if _DEF_RE.match(stripped) or _COMMENT_RE.match(line):
+            map_lines.append(line)
+
+    if not map_lines:
+        # Fallback: return first 20 lines to avoid sending empty content
+        map_lines = lines[:20]
+
+    return FileContent(
+        path=file.path,
+        content="# [file map — definitions only]\n" + "\n".join(map_lines),
+    )
+
+
 def gather_files_combined(
     focus_areas: list[BaseFocus],
     repo_path: str | Path,

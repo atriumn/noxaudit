@@ -60,6 +60,9 @@ class Decision:
     by: str
     file: str | None = None  # File the finding was in (for change detection)
     file_hash: str | None = None  # Hash of file at decision time
+    focus: str | None = None  # Focus area (stored for baseline filtering)
+    severity: str | None = None  # Severity value (stored for baseline filtering)
+    repo: str | None = None  # Repo name (stored for baseline filtering)
 
     def to_dict(self) -> dict[str, Any]:
         d = {
@@ -73,7 +76,41 @@ class Decision:
             d["file"] = self.file
         if self.file_hash:
             d["file_hash"] = self.file_hash
+        if self.focus:
+            d["focus"] = self.focus
+        if self.severity:
+            d["severity"] = self.severity
+        if self.repo:
+            d["repo"] = self.repo
         return d
+
+
+class ContentTier(str, Enum):
+    """Content tier for pre-pass classification — how much of a file to send to the main audit."""
+
+    FULL = "full"  # Send complete file content
+    SNIPPET = "snippet"  # Extract and send a representative snippet
+    MAP = "map"  # Send only structural map (class/function signatures)
+    SKIP = "skip"  # Exclude from main audit entirely
+
+
+@dataclass
+class FileClassification:
+    path: str
+    tier: ContentTier = ContentTier.FULL  # Default: include full content if used
+    reason: str | None = None
+
+    @property
+    def relevant(self) -> bool:
+        """True if this file should be included in the main audit."""
+        return self.tier != ContentTier.SKIP
+
+
+@dataclass
+class PrepassResult:
+    classified: list["FileClassification"]
+    original_count: int
+    retained_count: int
 
 
 @dataclass

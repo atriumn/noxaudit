@@ -56,6 +56,9 @@ line-length = 100
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = [
+    "cli_integration: end-to-end tests through the CLI entry point (new features must have at least one)",
+]
 
 [dependency-groups]
 dev = [

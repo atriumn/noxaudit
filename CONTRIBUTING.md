@@ -31,7 +31,63 @@ pytest tests/ --cov=noxaudit --cov-report=term-missing
 
 # Run specific test file
 pytest tests/test_config.py -v
+
+# Run only CLI integration tests
+pytest tests/ -m cli_integration -v
 ```
+
+## Mandatory CLI Integration Tests
+
+**Every new feature must have at least one CLI integration test.**
+
+The pattern we have seen repeatedly: a feature is implemented with passing unit tests
+but is never wired into the CLI. Examples:
+
+- SARIF output — implemented in `sarif.py` but `run` command didn't pass `--format` to
+  the runner until it was caught in review
+- Pre-pass — `_maybe_prepass()` existed but `should_run_prepass` was a dead variable
+  (fixed in #46)
+- Cost tracking — `CostLedger` worked but `status` command did not display cache tokens
+  (fixed in #47)
+
+### The rule
+
+All tests that test a feature end-to-end through the CLI entry point must be marked:
+
+```python
+@pytest.mark.cli_integration
+class TestMyFeatureCLI:
+    def test_feature_visible_from_cli(self, tmp_path):
+        ...
+```
+
+Integration tests live in:
+- `tests/test_cli_integration.py` — general CLI integration tests
+- `tests/test_sarif_integration.py` — SARIF-specific integration tests
+
+### What a CLI integration test looks like
+
+```python
+from click.testing import CliRunner
+from unittest.mock import patch, MagicMock
+from noxaudit.cli import main
+
+@pytest.mark.cli_integration
+def test_my_feature_through_cli(tmp_path):
+    cfg = _write_config(tmp_path)
+    provider_cls, provider_instance = _make_mock_provider(findings=[...])
+
+    with patch.dict("noxaudit.runner.PROVIDERS", {"gemini": provider_cls}):
+        result = CliRunner().invoke(main, ["--config", cfg, "run", "--focus", "security"])
+
+    assert result.exit_code == 0
+    assert "my feature output" in result.output
+```
+
+A CLI integration test:
+1. Invokes the CLI through `click.testing.CliRunner` (not runner functions directly)
+2. Mocks the AI provider so no real API calls are made
+3. Asserts that the feature's output/side-effects are observable from the CLI layer
 
 ## Code Quality
 
