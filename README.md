@@ -1,10 +1,16 @@
-# Noxaudit
+<p align="center">
+  <img src="docs/assets/logo.png" alt="Noxaudit" width="200">
+</p>
 
-[![PyPI](https://img.shields.io/pypi/v/noxaudit)](https://pypi.org/project/noxaudit/)
-[![Python 3.11+](https://img.shields.io/pypi/pyversions/noxaudit)](https://pypi.org/project/noxaudit/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+<h1 align="center">Noxaudit</h1>
 
-Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory.
+<p align="center">
+  <a href="https://pypi.org/project/noxaudit/"><img src="https://img.shields.io/pypi/v/noxaudit" alt="PyPI"></a>
+  <a href="https://pypi.org/project/noxaudit/"><img src="https://img.shields.io/pypi/pyversions/noxaudit" alt="Python 3.11+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
+</p>
+
+<p align="center">Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory.</p>
 
 **The problem**: Codebases drift. Security issues creep in, docs go stale, patterns diverge, dead code accumulates. Linters catch syntax — they miss semantics.
 
