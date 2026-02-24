@@ -1,10 +1,14 @@
 # Noxaudit
 
+[![PyPI](https://img.shields.io/pypi/v/noxaudit)](https://pypi.org/project/noxaudit/)
+[![Python 3.11+](https://img.shields.io/pypi/pyversions/noxaudit)](https://pypi.org/project/noxaudit/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory.
 
-**The problem**: Codebases drift. Docs go stale, security issues creep in, patterns diverge, dead code accumulates. Manual reviews are expensive and inconsistent. Linters catch syntax but miss semantics.
+**The problem**: Codebases drift. Security issues creep in, docs go stale, patterns diverge, dead code accumulates. Linters catch syntax — they miss semantics.
 
-**The solution**: Noxaudit runs a focused AI audit every night, rotating through different concerns. It remembers what you've already reviewed so it only surfaces genuinely new findings.
+**The solution**: Noxaudit runs a focused AI audit every night, rotating through different concerns. It remembers what you've already reviewed so only genuinely new findings surface.
 
 ## How It Works
 
@@ -87,6 +91,93 @@ jobs:
           telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
 ```
 
+## What It Looks Like
+
+### Running an audit
+
+```
+$ noxaudit run --focus security
+
+my-app: 3 new findings
+```
+
+```
+$ noxaudit report
+
+# Security Audit — my-app
+## 2025-01-14
+
+### 🔴 HIGH: Hardcoded API key in test fixture
+**File:** tests/fixtures/config.py:12
+The string `sk-proj-abc123` is committed to the repo. Even in test fixtures,
+real credentials in source control are a liability.
+**Suggestion:** Replace with `os.environ.get("TEST_API_KEY", "sk-test-placeholder")`.
+
+### 🟡 MEDIUM: SQL string interpolation in query builder
+**File:** src/db/queries.py:87
+`cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")` is vulnerable
+to SQL injection. Use parameterized queries.
+**Suggestion:** `cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))`
+
+### 🟡 MEDIUM: Permissive CORS in production config
+**File:** src/config/cors.py:23
+`allow_origins=["*"]` in the production config allows any origin.
+**Suggestion:** Restrict to known domains before shipping.
+
+---
+3 new findings (1 high, 2 medium) | 5 findings suppressed by decisions
+```
+
+### Telegram notification
+
+```
+🔒 Security Audit — my-app
+3 new findings: 🔴 1 high, 🟡 2 medium
+
+🔴 Hardcoded API key in test fixture
+   tests/fixtures/config.py
+🟡 SQL string interpolation in query builder
+   src/db/queries.py
+🟡 Permissive CORS in production config
+   src/config/cors.py
+
+✅ 5 previous findings still resolved
+```
+
+### MCP server (Cursor / Claude / Windsurf)
+
+Add to your editor's MCP config, then ask your AI assistant directly:
+
+```
+You: What security findings are open in this repo?
+
+Claude: I found 3 open security findings:
+
+[HIGH] [security] a1b2c3d4 — Hardcoded API key in test fixture
+  Location: tests/fixtures/config.py:12
+  A real API key `sk-proj-abc123` is committed in a test fixture.
+  Suggestion: Use an environment variable or a clearly fake placeholder.
+
+[MEDIUM] [security] e5f6g7h8 — SQL string interpolation in query builder
+  Location: src/db/queries.py:87
+  f-string used in cursor.execute() — vulnerable to SQL injection.
+  Suggestion: Switch to parameterized queries.
+  ...
+```
+
+### `.noxaudit/` directory layout
+
+```
+.noxaudit/
+├── decisions.jsonl          # Team decisions — commit this
+├── latest-findings.json     # Latest findings (for MCP server)
+└── reports/
+    └── my-app/
+        ├── 2025-01-13-security.md
+        ├── 2025-01-14-patterns.md
+        └── 2025-01-15-docs.md
+```
+
 ## Configuration
 
 Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudit.yml.example) for all options.
@@ -133,26 +224,6 @@ Decisions are stored in `.noxaudit/decisions.jsonl` and fed to future runs. A fi
 - The decision expires (default: 90 days)
 
 Commit your decisions file to share across the team.
-
-## Example Output
-
-### Telegram Notification
-
-```
-🔒 Security Audit — my-app
-3 new findings: 🔴 1 high, 🟡 2 medium
-
-⚠️ SQL interpolation in query builder
-   src/db/queries.ts
-ℹ️ Console.log with request body
-   src/middleware/auth.ts
-ℹ️ Permissive CORS in production config
-   src/config/cors.ts
-
-✅ 5 previous findings still resolved
-```
-
-### Full Report
 
 Reports are saved as markdown in `.noxaudit/reports/{repo}/{date}-{focus}.md`.
 
