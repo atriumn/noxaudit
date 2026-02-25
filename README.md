@@ -187,9 +187,10 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 | Option | Description | Default |
 |--------|-------------|---------|
 | `repos[].path` | Path to repository | `.` |
-| `repos[].provider_rotation` | AI providers to rotate through | `[anthropic]` |
+| `repos[].provider_rotation` | AI providers to rotate through (see [Providers](#providers) section) | `[anthropic]` |
 | `schedule` | Day-of-week to focus area(s) — single name, list, or `all` | Security Mon, Patterns Tue, ... |
-| `model` | AI model to use | `claude-sonnet-4-5-20250929` |
+| `model` | AI model to use (see [Providers](#providers) section for provider-specific setup) | `claude-sonnet-4-5-20250929` |
+| `prepass` | Pre-pass filtering configuration (see [Providers](#providers) section) | disabled |
 | `decisions.expiry_days` | Days before a decision expires | `90` |
 | `notifications` | Where to send summaries | (none) |
 
