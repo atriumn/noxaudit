@@ -570,3 +570,165 @@ class TestBaselineUndoFiltersCLIIntegration:
         d = decisions[0]
         assert d.focus == "security"
         assert d.severity == "high"
+
+
+# ---------------------------------------------------------------------------
+# Issue #56: Gemini batch submit + retrieve wired into CLI
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.cli_integration
+class TestGeminiBatchCLIIntegration:
+    """submit and retrieve CLI commands work end-to-end with a mocked GeminiProvider."""
+
+    def _write_gemini_config(self, tmp_path: Path) -> str:
+        repo_path = tmp_path / "repo"
+        repo_path.mkdir()
+        (repo_path / "app.py").write_text("x = 1\n")
+
+        config = {
+            "repos": [{"name": "test-repo", "path": str(repo_path), "provider": "gemini"}],
+            "schedule": {"monday": "security"},
+            "reports_dir": str(tmp_path / "reports"),
+            "model": "gemini-2.5-flash",
+        }
+        cfg_path = tmp_path / "noxaudit.yml"
+        cfg_path.write_text(yaml.dump(config))
+        return str(cfg_path)
+
+    def test_submit_wires_to_gemini_submit_batch(self, tmp_path, monkeypatch):
+        """noxaudit submit calls GeminiProvider.submit_batch and saves batch ID."""
+        monkeypatch.chdir(tmp_path)
+        cfg = self._write_gemini_config(tmp_path)
+
+        instance = MagicMock()
+        instance.submit_batch.return_value = "batches/gemini-job-001"
+        provider_cls = MagicMock(return_value=instance)
+
+        runner = CliRunner()
+        with (
+            patch.dict("noxaudit.runner.PROVIDERS", {"gemini": provider_cls}),
+        ):
+            result = runner.invoke(
+                main,
+                ["--config", cfg, "submit", "--focus", "security"],
+                catch_exceptions=False,
+            )
+
+        assert result.exit_code == 0, result.output
+        instance.submit_batch.assert_called_once()
+        # Batch ID should appear in output or be saved to pending file
+        assert (
+            "batches/gemini-job-001" in result.output
+            or (tmp_path / ".noxaudit" / "pending-batch.json").exists()
+            or "submitted" in result.output.lower()
+        )
+
+    def test_retrieve_wires_to_gemini_retrieve_batch(self, tmp_path, monkeypatch):
+        """noxaudit retrieve calls GeminiProvider.retrieve_batch and returns findings."""
+        monkeypatch.chdir(tmp_path)
+        cfg = self._write_gemini_config(tmp_path)
+
+        # Write a pending batch file
+        import json as _json
+
+        pending = {
+            "submitted_at": "2026-02-25T10:00:00",
+            "focus": "security",
+            "focus_names": ["security"],
+            "batches": [
+                {
+                    "repo": "test-repo",
+                    "batch_id": "batches/gemini-job-001",
+                    "provider": "gemini",
+                    "file_count": 1,
+                }
+            ],
+        }
+        noxaudit_dir = tmp_path / ".noxaudit"
+        noxaudit_dir.mkdir(exist_ok=True)
+        (noxaudit_dir / "pending-batch.json").write_text(_json.dumps(pending))
+
+        finding = Finding(
+            id="abc123def456",
+            severity=Severity.HIGH,
+            file="app.py",
+            line=1,
+            title="Security issue",
+            description="A security problem",
+            focus="security",
+        )
+
+        instance = MagicMock()
+        instance.retrieve_batch.return_value = {
+            "batch_id": "batches/gemini-job-001",
+            "status": "ended",
+            "request_counts": {"processing": 0, "succeeded": 1, "errored": 0},
+            "findings": [finding],
+        }
+        instance.get_last_usage.return_value = {
+            "input_tokens": 100,
+            "output_tokens": 50,
+            "cache_read_tokens": 0,
+            "cache_write_tokens": 0,
+        }
+        provider_cls = MagicMock(return_value=instance)
+
+        runner = CliRunner()
+        with (
+            patch.dict("noxaudit.runner.PROVIDERS", {"gemini": provider_cls}),
+            patch("noxaudit.runner.save_latest_findings"),
+        ):
+            result = runner.invoke(
+                main,
+                ["--config", cfg, "retrieve"],
+                catch_exceptions=False,
+            )
+
+        assert result.exit_code == 0, result.output
+        instance.retrieve_batch.assert_called_once_with(
+            "batches/gemini-job-001", default_focus="security"
+        )
+
+    def test_retrieve_shows_still_processing_when_not_done(self, tmp_path, monkeypatch):
+        """noxaudit retrieve reports still processing when batch not yet complete."""
+        monkeypatch.chdir(tmp_path)
+        cfg = self._write_gemini_config(tmp_path)
+
+        import json as _json
+
+        pending = {
+            "submitted_at": "2026-02-25T10:00:00",
+            "focus": "security",
+            "focus_names": ["security"],
+            "batches": [
+                {
+                    "repo": "test-repo",
+                    "batch_id": "batches/gemini-job-002",
+                    "provider": "gemini",
+                    "file_count": 1,
+                }
+            ],
+        }
+        noxaudit_dir = tmp_path / ".noxaudit"
+        noxaudit_dir.mkdir(exist_ok=True)
+        (noxaudit_dir / "pending-batch.json").write_text(_json.dumps(pending))
+
+        instance = MagicMock()
+        instance.retrieve_batch.return_value = {
+            "batch_id": "batches/gemini-job-002",
+            "status": "processing",
+            "request_counts": {"processing": 1, "succeeded": 0, "errored": 0},
+        }
+        provider_cls = MagicMock(return_value=instance)
+
+        runner = CliRunner()
+        with patch.dict("noxaudit.runner.PROVIDERS", {"gemini": provider_cls}):
+            result = runner.invoke(
+                main,
+                ["--config", cfg, "retrieve"],
+                catch_exceptions=False,
+            )
+
+        assert result.exit_code == 0, result.output
+        assert "processing" in result.output.lower() or "No results ready" in result.output
