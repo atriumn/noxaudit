@@ -82,6 +82,13 @@ class FrameConfig:
     overrides: dict[str, bool] = field(default_factory=dict)
 
 
+@dataclass
+class ProviderConfig:
+    """Per-provider configuration (e.g., model overrides)."""
+
+    model: str | None = None
+
+
 ALL_FOCUS_NAMES = [
     "security",
     "docs",
@@ -134,6 +141,7 @@ class NoxauditConfig:
     decisions: DecisionConfig = field(default_factory=DecisionConfig)
     issues: IssuesConfig = field(default_factory=IssuesConfig)
     prepass: PrepassConfig = field(default_factory=PrepassConfig)
+    providers: dict[str, ProviderConfig] = field(default_factory=dict)
     reports_dir: str = ".noxaudit/reports"
     model: str = "claude-sonnet-4-5-20250929"
 
@@ -159,6 +167,13 @@ class NoxauditConfig:
                 providers = repo.provider_rotation
                 return providers[run_index % len(providers)]
         return "gemini"
+
+    def get_model_for_provider(self, provider_name: str) -> str:
+        """Get the model for a provider, considering provider-specific overrides."""
+        provider_config = self.providers.get(provider_name)
+        if provider_config and provider_config.model:
+            return provider_config.model
+        return self.model
 
 
 def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
@@ -231,6 +246,11 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
         auto_disable=not prepass_raw.get("auto", True),
     )
 
+    providers: dict[str, ProviderConfig] = {}
+    for provider_name, provider_cfg in raw.get("providers", {}).items():
+        if isinstance(provider_cfg, dict):
+            providers[provider_name] = ProviderConfig(model=provider_cfg.get("model"))
+
     return NoxauditConfig(
         repos=repos,
         schedule=schedule,
@@ -240,6 +260,7 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
         decisions=decisions,
         issues=issues,
         prepass=prepass,
+        providers=providers,
         reports_dir=raw.get("reports_dir", ".noxaudit/reports"),
         model=raw.get("model", "claude-sonnet-4-5-20250929"),
     )
