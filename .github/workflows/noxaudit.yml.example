@@ -1,0 +1,161 @@
+name: Noxaudit Audit
+
+# Run on a schedule (6am UTC daily) and allow manual triggering
+on:
+  schedule:
+    # Cron format: minute hour day-of-month month day-of-week
+    # 0 6 * * * = 6am UTC every day
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+    inputs:
+      focus:
+        description: 'Focus area(s) — name, comma-separated, or "all"'
+        required: false
+        default: ''
+        type: string
+
+jobs:
+  audit:
+    name: Run Noxaudit Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Use the noxaudit GitHub Action (reusable action from this repo)
+      # This action runs noxaudit with SARIF output for GitHub Code Scanning
+      - uses: atriumn/noxaudit/action@main
+        with:
+          mode: submit  # Submit to batch API (cheaper, can be retrieved later)
+          config: noxaudit.yml
+          focus: ${{ inputs.focus || '' }}
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          telegram-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN || '' }}
+          telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID || '' }}
+
+      # Optional: For batch API workflow, retrieve results with a separate scheduled job.
+      # Create a second workflow (e.g., noxaudit-retrieve.yml) that runs a few hours later:
+      #
+      #   on:
+      #     schedule:
+      #       - cron: '0 12 * * *'  # Run at 12pm UTC (6 hours after submit)
+      #   jobs:
+      #     retrieve:
+      #       runs-on: ubuntu-latest
+      #       steps:
+      #         - uses: actions/checkout@v4
+      #         - uses: atriumn/noxaudit/action@main
+      #           with:
+      #             mode: retrieve
+      #             format: sarif
+      #             upload-sarif: true
+      #             anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+
+# === SETUP INSTRUCTIONS ===
+#
+# 1. Copy this file to `.github/workflows/noxaudit.yml` in your repository
+#    cp .github/workflows/noxaudit.yml.example .github/workflows/noxaudit.yml
+#
+# 2. Create a `noxaudit.yml` config file in your repo root:
+#    cp noxaudit.yml.example noxaudit.yml
+#    # Edit noxaudit.yml to match your project structure and preferences
+#
+# 3. Add GitHub Secrets (Settings > Secrets and variables > Actions):
+#    REQUIRED:
+#    - ANTHROPIC_API_KEY: your Anthropic API key (sk-ant-...)
+#
+#    OPTIONAL (for notifications):
+#    - TELEGRAM_BOT_TOKEN: Telegram bot token
+#    - TELEGRAM_CHAT_ID: Telegram chat ID
+#
+# 4. Commit both files:
+#    git add .github/workflows/noxaudit.yml noxaudit.yml
+#    git commit -m "chore: add noxaudit GitHub Actions workflow"
+#
+# 5. GitHub Code Scanning (SARIF upload) setup:
+#    - If using GitHub Advanced Security (enterprise), SARIF upload is automatic
+#    - If using free GitHub, you may need to enable Code Scanning first
+#    - Results will appear in: Settings > Code security > Code scanning alerts
+#
+# === BATCH API WORKFLOW (recommended for cost savings) ===
+#
+# The default approach uses the batch API for 50% cost savings:
+# - Submit job runs at 6am UTC (submits to Anthropic batch API)
+# - Results process asynchronously and are cached for 24 hours
+# - Retrieve job should run a few hours later (e.g., at 12pm UTC)
+#
+# To implement batch workflow:
+# 1. Keep this noxaudit.yml with mode: submit at 6am
+# 2. Create .github/workflows/noxaudit-retrieve.yml with mode: retrieve at 12pm:
+#
+#    name: Noxaudit Retrieve Results
+#    on:
+#      schedule:
+#        - cron: '0 12 * * *'  # 12pm UTC (6+ hours after submit)
+#    jobs:
+#      retrieve:
+#        runs-on: ubuntu-latest
+#        steps:
+#          - uses: actions/checkout@v4
+#          - uses: atriumn/noxaudit/action@main
+#            with:
+#              mode: retrieve
+#              format: sarif
+#              upload-sarif: true
+#              anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+#
+# === SIMPLE ALTERNATIVE: Direct audit (no batch API) ===
+#
+# If you prefer simpler setup without batch API, edit this workflow to use mode: retrieve
+# instead of mode: submit (assuming you run both submit and retrieve in one workflow).
+# Or switch to pip install approach below for more control.
+#
+# === ALTERNATIVE: Direct CLI invocation with pip ===
+#
+# If you prefer direct control over the audit, use pip install instead:
+#
+#   jobs:
+#     audit:
+#       runs-on: ubuntu-latest
+#       steps:
+#         - uses: actions/checkout@v4
+#         - uses: actions/setup-python@v4
+#           with:
+#             python-version: '3.12'
+#         - name: Install noxaudit
+#           run: pip install noxaudit
+#         - name: Run audit
+#           env:
+#             ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+#           run: noxaudit run --config noxaudit.yml --focus all
+#         - name: Upload SARIF results to GitHub Code Scanning
+#           uses: github/codeql-action/upload-sarif@v3
+#           if: always()
+#           with:
+#             sarif_file: .noxaudit/reports/
+#             category: noxaudit
+#
+# === CUSTOMIZATION ===
+#
+# - Change the cron schedule (6am UTC):
+#   https://crontab.guru/ — paste your preferred time
+#   Example: 0 22 * * * = 10pm UTC
+#
+# - Change focus areas in noxaudit.yml schedule section:
+#   schedule:
+#     monday: security
+#     tuesday: patterns
+#     wednesday: [security, performance]  # grouped for cost savings
+#     thursday: off
+#
+# - Disable notifications by removing telegram-bot-token and telegram-chat-id inputs
+#
+# - Run on multiple branches:
+#   Change from:   branches: [main]
+#   To:            branches: [main, develop]
+#
+# === MONITORING ===
+#
+# - **Workflow runs**: Actions tab > Noxaudit Audit
+# - **Reports**: Artifacts section of workflow run (30-day retention)
+# - **Code Scanning**: Security tab > Code scanning alerts
+# - **Notifications**: Check Telegram (if configured)
