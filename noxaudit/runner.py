@@ -12,7 +12,7 @@ from noxaudit.decisions import filter_findings, format_decision_context, load_de
 from noxaudit.focus import FOCUS_AREAS
 from noxaudit.focus.base import build_combined_prompt, gather_files_combined
 from noxaudit.issues import create_issues_for_findings
-from noxaudit.mcp.state import save_latest_findings
+from noxaudit.mcp.state import append_findings_history, save_latest_findings
 from noxaudit.models import AuditResult, FileContent
 from noxaudit.notifications.telegram import send_telegram
 from noxaudit.pricing import MODEL_PRICING
@@ -390,6 +390,14 @@ def _retrieve_repo(config, batch_info, focus_label, default_focus, output_format
         focus=focus_label,
         timestamp=audit_result.timestamp,
         resolved_count=resolved_count,
+        provider=pname,
+    )
+    append_findings_history(
+        findings=new_findings,
+        repo=repo_name,
+        focus=focus_label,
+        timestamp=audit_result.timestamp,
+        provider=pname,
     )
 
     # Generate and save report
@@ -519,6 +527,14 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
         focus=label,
         timestamp=result.timestamp,
         resolved_count=resolved_count,
+        provider=pname,
+    )
+    append_findings_history(
+        findings=new_findings,
+        repo=repo.name,
+        focus=label,
+        timestamp=result.timestamp,
+        provider=pname,
     )
 
     report = generate_report(result)

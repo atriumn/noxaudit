@@ -7,7 +7,9 @@ import json
 import pytest
 
 from noxaudit.mcp.state import (
+    FINDINGS_HISTORY_FILE,
     LATEST_FINDINGS_FILE,
+    append_findings_history,
     load_latest_findings,
     load_latest_metadata,
     save_latest_findings,
@@ -71,6 +73,72 @@ class TestSaveLatestFindings:
         )
         data = json.loads((tmp_path / LATEST_FINDINGS_FILE).read_text())
         assert data["resolved_count"] == 5
+
+    def test_includes_provider(self, tmp_path, findings):
+        save_latest_findings(
+            findings,
+            repo="r",
+            focus="f",
+            timestamp="t",
+            provider="anthropic",
+            base_path=tmp_path,
+        )
+        data = json.loads((tmp_path / LATEST_FINDINGS_FILE).read_text())
+        assert data["provider"] == "anthropic"
+
+    def test_includes_new_findings_count(self, tmp_path, findings):
+        save_latest_findings(
+            findings,
+            repo="r",
+            focus="f",
+            timestamp="t",
+            base_path=tmp_path,
+        )
+        data = json.loads((tmp_path / LATEST_FINDINGS_FILE).read_text())
+        assert data["new_findings_count"] == len(findings)
+
+    def test_provider_defaults_to_empty_string(self, tmp_path, findings):
+        save_latest_findings(findings, repo="r", focus="f", timestamp="t", base_path=tmp_path)
+        data = json.loads((tmp_path / LATEST_FINDINGS_FILE).read_text())
+        assert data["provider"] == ""
+
+
+class TestAppendFindingsHistory:
+    def test_creates_file(self, tmp_path, findings):
+        path = append_findings_history(
+            findings,
+            repo="my-app",
+            focus="security",
+            timestamp="2026-02-18T10:00:00",
+            provider="anthropic",
+            base_path=tmp_path,
+        )
+        assert path.exists()
+        lines = path.read_text().splitlines()
+        assert len(lines) == 1
+        record = json.loads(lines[0])
+        assert record["repo"] == "my-app"
+        assert record["focus"] == "security"
+        assert record["timestamp"] == "2026-02-18T10:00:00"
+        assert record["provider"] == "anthropic"
+        assert len(record["findings"]) == 2
+
+    def test_appends_multiple_runs(self, tmp_path, findings):
+        append_findings_history(
+            findings, repo="r", focus="security", timestamp="t1", base_path=tmp_path
+        )
+        append_findings_history(
+            findings[:1], repo="r", focus="patterns", timestamp="t2", base_path=tmp_path
+        )
+        lines = (tmp_path / FINDINGS_HISTORY_FILE).read_text().splitlines()
+        assert len(lines) == 2
+        assert json.loads(lines[0])["focus"] == "security"
+        assert json.loads(lines[1])["focus"] == "patterns"
+
+    def test_creates_parent_dirs(self, tmp_path, findings):
+        base = tmp_path / "nested" / "dir"
+        path = append_findings_history(findings, repo="r", focus="f", timestamp="t", base_path=base)
+        assert path.exists()
 
 
 class TestLoadLatestFindings:
