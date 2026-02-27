@@ -24,3 +24,4 @@ nightwatch.yml
 .ralph-prompt.txt
 .ralph-fix-prompt.txt
 .worktrees/
+site/

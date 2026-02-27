@@ -36,6 +36,10 @@ dev = [
     "pytest>=8.0",
     "ruff>=0.8",
 ]
+docs = [
+    "mkdocs-material>=9.5",
+    "mkdocs-minify-plugin>=0.8",
+]
 mcp = ["mcp>=1.2.0"]
 openai = ["openai>=1.50"]
 google = ["google-genai>=1.0"]
@@ -45,6 +49,7 @@ noxaudit = "noxaudit.cli:main"
 
 [project.urls]
 Homepage = "https://github.com/atriumn/noxaudit"
+Documentation = "https://noxaudit.com"
 Issues = "https://github.com/atriumn/noxaudit/issues"
 
 [tool.hatch.build.targets.wheel]
