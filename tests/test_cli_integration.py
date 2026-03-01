@@ -36,7 +36,6 @@ def _write_config(tmp_path: Path, provider: str = "gemini") -> str:
 
     config = {
         "repos": [{"name": "test-repo", "path": str(repo_path), "provider": provider}],
-        "schedule": {"monday": "security"},
         "reports_dir": str(tmp_path / "reports"),
     }
     cfg_path = tmp_path / "noxaudit.yml"
@@ -78,7 +77,6 @@ class TestPrepassCLIIntegration:
         # Write config with prepass explicitly enabled (low threshold so it triggers)
         config = {
             "repos": [{"name": "test-repo", "path": str(repo_path)}],
-            "schedule": {"monday": "security"},
             "reports_dir": str(tmp_path / "reports"),
             "model": "claude-opus-4-6",
             "prepass": {"enabled": True, "threshold_tokens": 0},
@@ -127,7 +125,6 @@ class TestPrepassCLIIntegration:
 
         config = {
             "repos": [{"name": "test-repo", "path": str(repo_path)}],
-            "schedule": {"monday": "security"},
             "reports_dir": str(tmp_path / "reports"),
             "model": "claude-opus-4-6",
             "prepass": {"enabled": True, "threshold_tokens": 0},
@@ -179,7 +176,6 @@ class TestPrepassCLIIntegration:
 
         config = {
             "repos": [{"name": "test-repo", "path": str(repo_path), "provider": "gemini"}],
-            "schedule": {"monday": "security"},
             "reports_dir": str(tmp_path / "reports"),
             "model": "gemini-2.5-flash",
         }
@@ -588,7 +584,6 @@ class TestGeminiBatchCLIIntegration:
 
         config = {
             "repos": [{"name": "test-repo", "path": str(repo_path), "provider": "gemini"}],
-            "schedule": {"monday": "security"},
             "reports_dir": str(tmp_path / "reports"),
             "model": "gemini-2.5-flash",
         }

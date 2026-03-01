@@ -28,7 +28,6 @@ def _make_config(tmp_path, provider="anthropic"):
     return NoxauditConfig(
         repos=[RepoConfig(name="test-repo", path=str(repo_path), provider_rotation=[provider])],
         reports_dir=str(tmp_path / "reports"),
-        schedule={"monday": "security"},
     )
 
 
@@ -238,7 +237,6 @@ def _write_cli_config(tmp_path):
 
     config = {
         "repos": [{"name": "test-repo", "path": str(repo_path)}],
-        "schedule": {"monday": "security"},
         "reports_dir": str(tmp_path / "reports"),
     }
     cfg_path = tmp_path / "noxaudit.yml"

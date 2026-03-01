@@ -9,36 +9,7 @@ repos:
       - vendor
       - generated
 
-# Frame-based schedule (preferred)
-# Frames are the five organizing lenses for code quality:
-#   does_it_work        → security, testing
-#   does_it_feel_right  → (Phase 2: ux-copy, help-content)
-#   can_everyone_use_it → (Phase 2: a11y)
-#   does_it_last        → patterns, hygiene, docs, dependencies
-#   can_we_prove_it     → performance
-#
-# You can also use individual focus area names (backward compatible):
-#   monday: security                   # single focus area
-#   monday: [security, dependencies]   # grouped (one API call, files deduped)
-#   monday: all                        # all 7 focus areas in one call
-schedule:
-  monday: does_it_work        # → security + testing
-  tuesday: does_it_last       # → patterns + hygiene + docs + dependencies
-  wednesday: does_it_work     # second run this week
-  thursday: does_it_last
-  friday: can_we_prove_it     # → performance
-  saturday: off
-  sunday: off
-
-# Optional: override which focus areas are active within a frame
-# frames:
-#   does_it_last:
-#     patterns: true
-#     hygiene: true
-#     docs: true
-#     dependencies: false     # skip dependency audits
-
-# AI model to use (any Anthropic model ID)
+# AI model to use (any supported model ID)
 model: claude-sonnet-4-5-20250929
 
 # Token budget per run
@@ -65,3 +36,9 @@ issues:
   severity_threshold: medium  # low, medium, or high
   labels: [noxaudit]
   assignees: []
+
+# Usage:
+#   noxaudit run                              # all 7 focus areas (default)
+#   noxaudit run --focus security             # single area
+#   noxaudit run --focus security,performance # multiple areas (files deduped)
+#   noxaudit run --dry-run                    # preview without calling AI

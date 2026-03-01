@@ -22,7 +22,7 @@ noxaudit estimate --focus security
   Alternatives:
     gemini (gemini-2.0-flash)                ~$0.01   93% cheaper — recommended for daily audits
 
-  Monthly estimate: ~$0.84 (6 runs/week at current schedule)
+  Monthly estimate: ~$4.20 (assuming daily runs)
 ```
 
 No API key is needed for estimation — it counts files and tokens locally.
@@ -99,7 +99,7 @@ noxaudit baseline --undo
 
 ## Step 6: Check Status
 
-See your configuration, schedule, and cost history:
+See your configuration and cost history:
 
 ```bash
 noxaudit status
@@ -120,15 +120,13 @@ Model: claude-sonnet-4-5-20250929
 Decisions: .noxaudit/decisions.jsonl
 Reports: .noxaudit/reports
 
-Today's focus: security
-
 Cost (last 30 days):
   Audits run:          1
   Total input tokens:  87K
   Total output tokens: 8K
   Estimated spend:     $0.14
   Avg per audit:       $0.14
-  Projected monthly:   ~$0.84
+  Projected monthly:   ~$4.20
 ```
 
 ## Step 7: Set Up Nightly Runs
@@ -136,12 +134,12 @@ Cost (last 30 days):
 Once you're happy with the results, automate it. See the [GitHub Actions integration](../integrations/github-actions.md) or set up a cron job:
 
 ```bash
-# Run the scheduled focus area(s) for today
+# Run all focus areas daily at 6 AM
 0 6 * * * cd /path/to/project && noxaudit run
 ```
 
 ## What's Next
 
-- [Scheduling](../guides/scheduling.md) — customize which focus areas run on which days
+- [Usage Patterns](../guides/scheduling.md) — on-demand, CI, and rotation examples
 - [Cost Management](../guides/cost-management.md) — budget controls and optimization
 - [Decision Memory](../guides/decisions.md) — advanced decision management

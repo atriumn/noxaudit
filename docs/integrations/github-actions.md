@@ -93,7 +93,7 @@ jobs:
 | Input | Description | Required | Default |
 |-------|-------------|----------|---------|
 | `mode` | `submit` or `retrieve` | no | `submit` |
-| `focus` | Focus area(s): name, comma-separated, or `all` | no | today's schedule |
+| `focus` | Focus area(s): name, comma-separated, or `all` | no | `all` |
 | `config` | Path to `noxaudit.yml` | no | `noxaudit.yml` |
 | `anthropic-api-key` | Anthropic API key | no | — |
 | `openai-api-key` | OpenAI API key | no | — |

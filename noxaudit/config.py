@@ -3,31 +3,11 @@
 from __future__ import annotations
 
 import os
+import warnings
 from dataclasses import dataclass, field
 from pathlib import Path
 
 import yaml
-
-
-DEFAULT_SCHEDULE = {
-    "monday": "security",
-    "tuesday": "patterns",
-    "wednesday": "docs",
-    "thursday": "hygiene",
-    "friday": "performance",
-    "saturday": "dependencies",
-    "sunday": "off",
-}
-
-WEEKDAY_NAMES = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-]
 
 
 @dataclass
@@ -76,13 +56,6 @@ class PrepassConfig:
 
 
 @dataclass
-class FrameConfig:
-    """Per-focus boolean overrides for a frame."""
-
-    overrides: dict[str, bool] = field(default_factory=dict)
-
-
-@dataclass
 class ProviderConfig:
     """Per-provider configuration (e.g., model overrides)."""
 
@@ -104,11 +77,8 @@ def normalize_focus(raw: str | list[str] | bool) -> list[str]:
     """Normalize a focus value to a list of focus area names.
 
     "off"/False → [], "all" → all names, "security" → ["security"],
-    "does_it_work" → ["security", "testing"] (frame name expansion),
     "security,performance" → ["security", "performance"], list passthrough.
     """
-    from noxaudit.frames import resolve_schedule_entry
-
     # YAML parses bare `off` as False, `on` as True
     if isinstance(raw, bool) or raw is None:
         return [] if not raw else list(ALL_FOCUS_NAMES)
@@ -119,23 +89,15 @@ def normalize_focus(raw: str | list[str] | bool) -> list[str]:
         return []
     if raw == "all":
         return list(ALL_FOCUS_NAMES)
-    # Support comma-separated string from CLI (may include frame names)
+    # Support comma-separated string from CLI
     if "," in raw:
-        result: list[str] = []
-        for s in raw.split(","):
-            s = s.strip()
-            if s:
-                result.extend(resolve_schedule_entry(s))
-        return result
-    # Single entry — may be a frame name or a focus area name
-    return resolve_schedule_entry(raw)
+        return [s.strip() for s in raw.split(",") if s.strip()]
+    return [raw]
 
 
 @dataclass
 class NoxauditConfig:
     repos: list[RepoConfig] = field(default_factory=list)
-    schedule: dict[str, str | list[str]] = field(default_factory=lambda: dict(DEFAULT_SCHEDULE))
-    frames: dict[str, FrameConfig] = field(default_factory=dict)
     budget: BudgetConfig = field(default_factory=BudgetConfig)
     notifications: list[NotificationConfig] = field(default_factory=list)
     decisions: DecisionConfig = field(default_factory=DecisionConfig)
@@ -144,22 +106,6 @@ class NoxauditConfig:
     providers: dict[str, ProviderConfig] = field(default_factory=dict)
     reports_dir: str = ".noxaudit/reports"
     model: str = "claude-sonnet-4-5-20250929"
-
-    def get_today_focus(self) -> str | list[str]:
-        import datetime
-
-        from noxaudit.frames import FRAMES, get_enabled_focus_areas
-
-        day = WEEKDAY_NAMES[datetime.date.today().weekday()]
-        entry = self.schedule.get(day, "off")
-
-        # If the schedule entry is a frame name, apply per-focus overrides
-        if isinstance(entry, str) and entry in FRAMES:
-            fc = self.frames.get(entry)
-            overrides = fc.overrides if fc else None
-            return get_enabled_focus_areas(entry, overrides)
-
-        return entry
 
     def get_provider_for_repo(self, repo_name: str, run_index: int = 0) -> str:
         for repo in self.repos:
@@ -189,6 +135,22 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
     with open(config_path) as f:
         raw = yaml.safe_load(f) or {}
 
+    # Emit deprecation warnings for removed config keys
+    if "schedule" in raw:
+        warnings.warn(
+            "The 'schedule' config key is deprecated and ignored. "
+            "Use --focus or set up cron-based scheduling instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+    if "frames" in raw:
+        warnings.warn(
+            "The 'frames' config key is deprecated and ignored. "
+            "Use --focus or set up cron-based scheduling instead.",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
     repos = []
     for r in raw.get("repos", []):
         repos.append(
@@ -199,14 +161,6 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
                 exclude_patterns=r.get("exclude", []),
             )
         )
-
-    schedule = dict(DEFAULT_SCHEDULE)
-    schedule.update(raw.get("schedule", {}))
-
-    frames: dict[str, FrameConfig] = {}
-    for frame_name, overrides in raw.get("frames", {}).items():
-        if isinstance(overrides, dict):
-            frames[frame_name] = FrameConfig(overrides=overrides)
 
     budget_raw = raw.get("budget", {})
     budget = BudgetConfig(
@@ -253,8 +207,6 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
 
     return NoxauditConfig(
         repos=repos,
-        schedule=schedule,
-        frames=frames,
         budget=budget,
         notifications=notifications,
         decisions=decisions,

@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from noxaudit.config import normalize_focus
-
 
 @dataclass
 class ModelPricing:
@@ -117,17 +115,6 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         batch_discount=0.50,
         context_window=400_000,
     ),
-}
-
-# Maps each focus area to its "frame" question
-FOCUS_FRAMES: dict[str, str] = {
-    "security": "Does it work?",
-    "testing": "Does it work?",
-    "patterns": "Does it last?",
-    "hygiene": "Does it last?",
-    "docs": "Does it last?",
-    "dependencies": "Does it last?",
-    "performance": "Does it scale?",
 }
 
 # Provider name for each model key
@@ -261,22 +248,6 @@ def estimate_prepass_reduction(files: list, total_tokens: int) -> dict:
     }
 
 
-def get_frame_label(focus_names: list[str]) -> str | None:
-    """Return shared frame label if all focus areas belong to the same frame."""
-    if not focus_names:
-        return None
-    frames = {FOCUS_FRAMES.get(name) for name in focus_names if name in FOCUS_FRAMES}
-    frames.discard(None)  # type: ignore[arg-type]
-    if len(frames) == 1:
-        return next(iter(frames))
-    return None
-
-
-def count_weekly_runs(schedule: dict) -> int:
-    """Count active (non-off) days per week in a schedule dict."""
-    return sum(1 for v in schedule.values() if normalize_focus(v))
-
-
 def _fmt_tokens(n: int) -> str:
     """Format a token count as a human-readable string (287000 → '287K')."""
     if n >= 1_000_000:
@@ -292,17 +263,13 @@ def build_estimate_report(
     files: list,
     provider_name: str,
     model_key: str,
-    schedule: dict,
 ) -> str:
     """Assemble a human-readable cost estimate report."""
     lines: list[str] = [""]
 
     # Header
     focus_display = " + ".join(focus_names)
-    frame = get_frame_label(focus_names)
     header = f"  {repo_name} — {focus_display}"
-    if frame:
-        header += f" ({frame})"
     lines.append(header)
     lines.append("")
 
@@ -401,13 +368,10 @@ def build_estimate_report(
         )
         lines.append("")
 
-    # Monthly projection
-    active_days = count_weekly_runs(schedule)
-    monthly_runs = active_days * 52 / 12
+    # Monthly projection (assuming daily runs)
+    monthly_runs = 30
     monthly_cost = cost * monthly_runs
-    lines.append(
-        f"  Monthly estimate: ~${monthly_cost:.2f} ({active_days} runs/week at current schedule)"
-    )
+    lines.append(f"  Monthly estimate: ~${monthly_cost:.2f} (assuming daily runs)")
 
     if alternatives:
         cheapest_key, cheapest_provider, cheapest_cost, _ = alternatives[0]

@@ -18,28 +18,19 @@
 
 ## How It Works
 
-```
-Mon: Security → Tue: Patterns → Wed: Docs → Thu: Hygiene → Fri: Performance → Sat: Dependencies
-```
+Tell noxaudit what to audit — it does the rest. Default is all 7 focus areas:
 
-You can also group multiple focus areas into a single API call to save on input tokens (source files are sent once instead of repeated per focus area):
-
-```yaml
-# ~80% savings on input tokens vs running each separately
-schedule:
-  monday: [security, dependencies]
-  wednesday: [patterns, hygiene, docs]
-  friday: [performance, testing]
+```bash
+noxaudit run                              # all focus areas (default)
+noxaudit run --focus security             # single area
+noxaudit run --focus security,performance # multiple areas (files deduped, ~80% token savings)
 ```
 
-Or run everything at once: `noxaudit run --focus all`
-
-Each night, Noxaudit:
-1. Picks today's focus area(s) from the schedule
-2. Gathers relevant files from your codebase (deduped across focus areas)
-3. Sends them to an AI provider (Claude, GPT, Gemini) with a focused prompt
-4. Filters results against your decision history (so resolved issues don't resurface)
-5. Generates a report and sends you a notification
+Each run, Noxaudit:
+1. Gathers relevant files from your codebase (deduped across focus areas)
+2. Sends them to an AI provider (Claude, GPT, Gemini) with focused prompts
+3. Filters results against your decision history (so resolved issues don't resurface)
+4. Generates a report and sends you a notification
 
 ## Quick Start
 
@@ -60,9 +51,6 @@ noxaudit run --focus security,performance
 
 # Run all focus areas at once
 noxaudit run --focus all
-
-# See the schedule
-noxaudit schedule
 
 # Review a finding and dismiss it
 noxaudit decide abc123def456 --action dismiss --reason "This is test code"
@@ -194,7 +182,6 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 |--------|-------------|---------|
 | `repos[].path` | Path to repository | `.` |
 | `repos[].provider_rotation` | AI providers to rotate through (see [Providers](#providers) section) | `[anthropic]` |
-| `schedule` | Day-of-week to focus area(s) — single name, list, or `all` | Security Mon, Patterns Tue, ... |
 | `model` | AI model to use (see [Providers](#providers) section for provider-specific setup) | `claude-sonnet-4-5-20250929` |
 | `providers.<name>.model` | Override model for a specific provider (e.g., `providers.gemini.model`) | (uses global `model`) |
 | `prepass` | Pre-pass filtering configuration (see [Providers](#providers) section) | disabled |
@@ -288,12 +275,6 @@ prepass:
   enabled: true
   threshold_tokens: 600_000  # Auto-enable if codebase exceeds this
   auto: true
-
-# Rotate through different providers each audit run
-schedule:
-  monday: does_it_work      # security + testing
-  wednesday: does_it_work   # second run with different provider
-  friday: can_we_prove_it   # performance check
 ```
 
 Each audit will cycle through `provider_rotation`: first run uses Anthropic (with default model), second uses Gemini (with `gemini-2.0-flash`), third uses OpenAI (with `gpt-5-mini`), then repeat. Use `providers.<name>.model` to set provider-specific models that override the global `model` setting. See [Key Options](#key-options) for all configuration.

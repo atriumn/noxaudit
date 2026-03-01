@@ -8,43 +8,16 @@ from click.testing import CliRunner
 from noxaudit.cli import main
 
 
-def _write_config(tmp_path, schedule=None):
+def _write_config(tmp_path):
     """Write a minimal config pointing at tmp_path as the repo."""
-    schedule = schedule or {"monday": "security", "sunday": "off"}
     import yaml
 
     config = {
         "repos": [{"name": "test-repo", "path": str(tmp_path)}],
-        "schedule": schedule,
     }
     cfg_path = tmp_path / "noxaudit.yml"
     cfg_path.write_text(yaml.dump(config))
     return str(cfg_path)
-
-
-class TestScheduleCommand:
-    def test_displays_single_focus(self, tmp_path):
-        cfg = _write_config(tmp_path)
-        runner = CliRunner()
-        result = runner.invoke(main, ["--config", cfg, "schedule"])
-        assert result.exit_code == 0
-        assert "security" in result.output
-        assert "off" in result.output
-
-    def test_displays_list_focus(self, tmp_path):
-        cfg = _write_config(
-            tmp_path,
-            schedule={
-                "monday": ["security", "dependencies"],
-                "wednesday": ["patterns", "docs"],
-                "sunday": "off",
-            },
-        )
-        runner = CliRunner()
-        result = runner.invoke(main, ["--config", cfg, "schedule"])
-        assert result.exit_code == 0
-        assert "security, dependencies" in result.output
-        assert "patterns, docs" in result.output
 
 
 class TestStatusCommand:
@@ -87,6 +60,14 @@ class TestRunDryRun:
         assert result.exit_code == 0
         assert "7 focus area" in result.output
 
+    def test_no_focus_defaults_to_all(self, tmp_path):
+        (tmp_path / "app.py").write_text("x = 1")
+        cfg = _write_config(tmp_path)
+        runner = CliRunner()
+        result = runner.invoke(main, ["--config", cfg, "run", "--dry-run"])
+        assert result.exit_code == 0
+        assert "7 focus area" in result.output
+
     def test_unknown_focus_errors(self, tmp_path):
         cfg = _write_config(tmp_path)
         runner = CliRunner()
@@ -98,7 +79,6 @@ class TestRunDryRun:
         runner = CliRunner()
         result = runner.invoke(main, ["--config", cfg, "run", "--focus", "off", "--dry-run"])
         assert result.exit_code == 0
-        assert "off" in result.output.lower()
 
 
 class TestSubmitDryRun:

@@ -42,8 +42,8 @@ def _resolve_focus_names(
     focus_override: str | None,
     config: NoxauditConfig,
 ) -> list[str]:
-    """Resolve focus names from override or today's schedule. Returns list of names."""
-    raw = focus_override or config.get_today_focus()
+    """Resolve focus names from override or default (all). Returns list of names."""
+    raw = focus_override or "all"
     names = normalize_focus(raw)
     if not names:
         return []
@@ -131,7 +131,6 @@ def submit_audit(
     """Submit batch audit(s). Returns pending batch info to be retrieved later."""
     focus_names = _resolve_focus_names(focus_name, config)
     if not focus_names:
-        print("Today is scheduled as off. Use --focus to override.")
         return None
 
     repos = config.repos
@@ -212,7 +211,6 @@ def run_audit(
     """Submit and wait for results (convenience for local CLI use)."""
     focus_names = _resolve_focus_names(focus_name, config)
     if not focus_names:
-        print("Today is scheduled as off. Use --focus to override.")
         return []
 
     repos = config.repos

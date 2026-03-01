@@ -11,10 +11,6 @@ All configuration lives in `noxaudit.yml` in your project root.
 | `repos[].path` | string | — | Path to repository root |
 | `repos[].provider_rotation` | list[string] | `[gemini]` | AI providers to rotate through |
 | `repos[].exclude` | list[string] | `[]` | Directory names to exclude from file gathering |
-| `schedule` | mapping | see below | Day-of-week to focus area(s) mapping |
-| `schedule.<day>` | string \| list | — | Focus area name, frame name, comma-separated list, `all`, or `off` |
-| `frames` | mapping | `{}` | Per-frame focus area overrides |
-| `frames.<frame>.<focus>` | bool | `true` | Enable/disable a focus area within a frame |
 | `model` | string | `claude-sonnet-4-5-20250929` | AI model to use (any supported model ID) |
 | `budget` | mapping | — | Cost control settings |
 | `budget.max_per_run_usd` | float | `2.00` | Maximum cost per audit run in USD |
@@ -38,21 +34,6 @@ All configuration lives in `noxaudit.yml` in your project root.
 | `prepass.threshold_tokens` | int | `600000` | Token count above which pre-pass activates |
 | `prepass.auto` | bool | `true` | Auto-enable pre-pass when token count exceeds threshold |
 
-## Default Schedule
-
-When no `schedule` is specified, noxaudit uses:
-
-```yaml
-schedule:
-  monday: security
-  tuesday: patterns
-  wednesday: docs
-  thursday: hygiene
-  friday: performance
-  saturday: dependencies
-  sunday: off
-```
-
 ## Example Configuration
 
 ```yaml
@@ -63,15 +44,6 @@ repos:
     exclude:
       - vendor
       - generated
-
-schedule:
-  monday: does_it_work        # → security + testing
-  tuesday: does_it_last       # → patterns + hygiene + docs + dependencies
-  wednesday: does_it_work
-  thursday: does_it_last
-  friday: can_we_prove_it     # → performance
-  saturday: off
-  sunday: off
 
 model: claude-sonnet-4-5-20250929
 
@@ -95,6 +67,10 @@ issues:
   labels: [noxaudit]
   assignees: []
 ```
+
+## Deprecated Keys
+
+The `schedule` and `frames` config keys are deprecated and ignored. If present, a deprecation warning is emitted. Use `--focus` on the command line or set up cron-based scheduling instead. See [Usage Patterns](../guides/scheduling.md) for examples.
 
 ## Environment Variables
 

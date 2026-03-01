@@ -62,43 +62,6 @@ model: claude-sonnet-4-5-20250929
 
 The model must match the provider. See [Providers](../reference/providers.md) for all available models.
 
-## Schedule
-
-Control which focus areas run on which days:
-
-```yaml
-schedule:
-  monday: security
-  tuesday: patterns
-  wednesday: docs
-  thursday: hygiene
-  friday: performance
-  saturday: dependencies
-  sunday: off
-```
-
-You can use **frame names** to group related focus areas:
-
-```yaml
-schedule:
-  monday: does_it_work        # → security + testing
-  tuesday: does_it_last       # → patterns + hygiene + docs + dependencies
-  friday: can_we_prove_it     # → performance
-  saturday: off
-  sunday: off
-```
-
-Or explicitly list multiple areas:
-
-```yaml
-schedule:
-  monday: [security, dependencies]
-  wednesday: [patterns, hygiene, docs]
-  friday: [performance, testing]
-```
-
-See [Scheduling](scheduling.md) for the full guide.
-
 ## Budget
 
 Set cost limits per run:

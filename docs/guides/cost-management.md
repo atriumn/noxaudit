@@ -24,8 +24,8 @@ noxaudit estimate --focus security
     openai (gpt-5-nano)                      ~$0.01   95% cheaper
     gemini (gemini-2.5-flash)                ~$0.03   79% cheaper
 
-  Monthly estimate: ~$0.84 (6 runs/week at current schedule)
-  Monthly with gemini-2.0-flash: ~$0.06
+  Monthly estimate: ~$4.20 (assuming daily runs)
+  Monthly with gemini-2.0-flash: ~$0.30
 ```
 
 The estimate includes:
@@ -33,7 +33,7 @@ The estimate includes:
 - File and token counts
 - Cost with your current model (including batch discounts)
 - Cheaper alternatives with savings percentages
-- Monthly projection based on your schedule
+- Monthly projection assuming daily runs
 - Pre-pass potential for large codebases
 
 ## Budget Controls
@@ -97,11 +97,10 @@ noxaudit run --focus all --provider anthropic
 
 Running multiple focus areas together deduplicates source files, saving ~80% on input tokens:
 
-```yaml
-schedule:
-  monday: [security, dependencies]      # 1 API call
-  wednesday: [patterns, hygiene, docs]   # 1 API call
-  friday: [performance, testing]         # 1 API call
+```bash
+noxaudit run --focus security,dependencies      # 1 API call
+noxaudit run --focus patterns,hygiene,docs       # 1 API call
+noxaudit run --focus performance,testing         # 1 API call
 ```
 
 ### 3. Use Batch API
@@ -169,15 +168,15 @@ The `estimate` command shows pre-pass savings when applicable:
 
 Estimated cost per audit for a medium-sized codebase (~100 files, ~100K tokens):
 
-| Model | Per Run | Monthly (6x/week) |
-|-------|---------|-------------------|
-| `gemini-2.0-flash` | ~$0.01 | ~$0.26 |
-| `gpt-5-nano` | ~$0.01 | ~$0.26 |
-| `gpt-5-mini` | ~$0.04 | ~$1.04 |
-| `gemini-2.5-flash` | ~$0.05 | ~$1.30 |
-| `gemini-2.5-pro` | ~$0.19 | ~$4.94 |
-| `claude-sonnet-4-5` | ~$0.14 | ~$3.64 |
-| `gpt-5.2` | ~$0.22 | ~$5.72 |
-| `claude-opus-4-6` | ~$0.38 | ~$9.88 |
+| Model | Per Run | Monthly (daily) |
+|-------|---------|-----------------|
+| `gemini-2.0-flash` | ~$0.01 | ~$0.30 |
+| `gpt-5-nano` | ~$0.01 | ~$0.30 |
+| `gpt-5-mini` | ~$0.04 | ~$1.20 |
+| `gemini-2.5-flash` | ~$0.05 | ~$1.50 |
+| `gemini-2.5-pro` | ~$0.19 | ~$5.70 |
+| `claude-sonnet-4-5` | ~$0.14 | ~$4.20 |
+| `gpt-5.2` | ~$0.22 | ~$6.60 |
+| `claude-opus-4-6` | ~$0.38 | ~$11.40 |
 
 All Anthropic costs include 50% batch API discount.

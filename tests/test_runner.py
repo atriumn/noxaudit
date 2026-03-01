@@ -43,10 +43,13 @@ class TestResolveFocusNames:
         names = _resolve_focus_names("all", config)
         assert len(names) == 7
 
+    def test_no_override_defaults_to_all(self):
+        config = NoxauditConfig()
+        names = _resolve_focus_names(None, config)
+        assert len(names) == 7
+
     def test_off_returns_empty(self):
-        config = NoxauditConfig(schedule={"monday": "off"})
-        # When override is None, uses today's schedule.
-        # We test the "off" path by passing it as override.
+        config = NoxauditConfig()
         names = _resolve_focus_names("off", config)
         assert names == []
 

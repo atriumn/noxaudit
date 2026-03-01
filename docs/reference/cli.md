@@ -1,6 +1,6 @@
 # CLI Reference
 
-Noxaudit provides 10 commands. All commands accept a `--config` / `-c` flag to specify the path to `noxaudit.yml` (defaults to the current directory).
+Noxaudit provides 9 commands. All commands accept a `--config` / `-c` flag to specify the path to `noxaudit.yml` (defaults to the current directory).
 
 ```bash
 noxaudit [--config PATH] <command> [options]
@@ -17,13 +17,13 @@ noxaudit run [options]
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--repo` | `-r` | Audit a specific repo | all repos |
-| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | today's schedule |
+| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | `all` |
 | `--provider` | `-p` | AI provider override | from config |
 | `--dry-run` | | Show what would be audited without calling AI | off |
 | `--format` | `-F` | Output format: `markdown` or `sarif` | `markdown` |
 
 ```bash
-# Run today's scheduled audit
+# Run all focus areas (default)
 noxaudit run
 
 # Security audit only
@@ -53,7 +53,7 @@ noxaudit submit [options]
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--repo` | `-r` | Audit a specific repo | all repos |
-| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | today's schedule |
+| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | `all` |
 | `--provider` | `-p` | AI provider override | from config |
 | `--dry-run` | | Show what would be submitted without calling AI | off |
 
@@ -133,26 +133,6 @@ noxaudit baseline --undo
 noxaudit baseline --undo --repo my-app
 ```
 
-## `schedule`
-
-Show the weekly audit schedule.
-
-```bash
-noxaudit schedule
-```
-
-```
-Weekly Schedule:
-
-  ▶ Monday       Does it work? (security, testing) ← today
-  ▶ Tuesday      Does it last? (patterns, hygiene, docs, dependencies)
-  ▶ Wednesday    Does it work? (security, testing)
-  ▶ Thursday     Does it last? (patterns, hygiene, docs, dependencies)
-  ▶ Friday       Can we prove it? (performance)
-    Saturday     off
-    Sunday       off
-```
-
 ## `status`
 
 Show current configuration, focus areas, decisions, and cost tracking.
@@ -167,7 +147,6 @@ Displays:
 - Available focus areas with descriptions
 - Active model
 - Decision and report paths
-- Today's scheduled focus
 - Cost summary for the last 30 days (audits run, tokens, spend, projected monthly)
 - Last 5 audit details
 
@@ -200,7 +179,7 @@ noxaudit estimate [options]
 | Flag | Short | Description | Default |
 |------|-------|-------------|---------|
 | `--repo` | `-r` | Estimate for a specific repo | all repos |
-| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | today's schedule |
+| `--focus` | `-f` | Focus area(s): name, comma-separated, or `all` | `all` |
 | `--provider` | `-p` | AI provider override | from config |
 
 ```bash
@@ -214,7 +193,7 @@ The estimate includes:
 - Cost with current model
 - Cheaper alternatives with savings percentages
 - Pre-pass potential (for large codebases on Anthropic)
-- Monthly projection based on schedule
+- Monthly projection assuming daily runs
 
 ## `mcp-server`
 

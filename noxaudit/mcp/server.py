@@ -250,7 +250,7 @@ async def run_audit(
         return f"Error running audit: {e}"
 
     if not results:
-        return "No results. Check that focus area is valid and not scheduled as 'off'."
+        return "No results. Check that focus area is valid."
 
     lines = []
     for result in results:

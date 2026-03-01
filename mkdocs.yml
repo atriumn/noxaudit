@@ -44,7 +44,7 @@ nav:
       - Configuration: guides/configuration.md
       - Focus Areas: guides/focus-areas.md
       - Decision Memory: guides/decisions.md
-      - Scheduling: guides/scheduling.md
+      - Usage Patterns: guides/scheduling.md
       - Cost Management: guides/cost-management.md
       - Notifications: guides/notifications.md
   - Integrations:

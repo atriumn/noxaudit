@@ -24,19 +24,14 @@ Codebases drift. Docs go stale, security issues creep in, patterns diverge, dead
 
 ## The Solution
 
-Noxaudit runs a focused AI audit every night, rotating through different concerns. It remembers what you've already reviewed so it only surfaces genuinely new findings.
+Noxaudit runs focused AI audits across 7 specialized areas — security, patterns, docs, hygiene, performance, dependencies, and testing. It remembers what you've already reviewed so it only surfaces genuinely new findings.
 
-```
-Mon: Security → Tue: Patterns → Wed: Docs → Thu: Hygiene → Fri: Performance → Sat: Dependencies
-```
+Each run, Noxaudit:
 
-Each night, Noxaudit:
-
-1. Picks today's focus area(s) from the schedule
-2. Gathers relevant files from your codebase (deduped across focus areas)
-3. Sends them to an AI provider (Claude, GPT, Gemini) with a focused prompt
-4. Filters results against your decision history (so resolved issues don't resurface)
-5. Generates a report and sends you a notification
+1. Gathers relevant files from your codebase (deduped across focus areas)
+2. Sends them to an AI provider (Claude, GPT, Gemini) with focused prompts
+3. Filters results against your decision history (so resolved issues don't resurface)
+4. Generates a report and sends you a notification
 
 ---
 

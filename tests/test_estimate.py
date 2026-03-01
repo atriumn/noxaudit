@@ -6,15 +6,12 @@ import yaml
 from click.testing import CliRunner
 
 from noxaudit.cli import main
-from noxaudit.config import DEFAULT_SCHEDULE
 from noxaudit.models import FileContent
 from noxaudit.pricing import (
     MODEL_PRICING,
-    count_weekly_runs,
     estimate_cost,
     estimate_output_tokens,
     estimate_prepass_reduction,
-    get_frame_label,
 )
 
 
@@ -146,70 +143,13 @@ class TestEstimatePrepassReduction:
 
 
 # ---------------------------------------------------------------------------
-# get_frame_label
-# ---------------------------------------------------------------------------
-
-
-class TestGetFrameLabel:
-    def test_single_focus_security(self):
-        assert get_frame_label(["security"]) == "Does it work?"
-
-    def test_single_focus_patterns(self):
-        assert get_frame_label(["patterns"]) == "Does it last?"
-
-    def test_same_frame(self):
-        assert get_frame_label(["security", "testing"]) == "Does it work?"
-
-    def test_all_does_it_last(self):
-        assert get_frame_label(["patterns", "hygiene", "docs", "dependencies"]) == "Does it last?"
-
-    def test_mixed_frames_returns_none(self):
-        assert get_frame_label(["security", "patterns"]) is None
-
-    def test_empty_returns_none(self):
-        assert get_frame_label([]) is None
-
-
-# ---------------------------------------------------------------------------
-# count_weekly_runs
-# ---------------------------------------------------------------------------
-
-
-class TestCountWeeklyRuns:
-    def test_default_schedule(self):
-        # monday–saturday active, sunday off → 6
-        assert count_weekly_runs(DEFAULT_SCHEDULE) == 6
-
-    def test_all_off(self):
-        schedule = {
-            d: "off"
-            for d in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        }
-        assert count_weekly_runs(schedule) == 0
-
-    def test_two_active_days(self):
-        schedule = {
-            "monday": "security",
-            "tuesday": "off",
-            "wednesday": "patterns",
-            "thursday": "off",
-            "friday": "off",
-            "saturday": "off",
-            "sunday": "off",
-        }
-        assert count_weekly_runs(schedule) == 2
-
-
-# ---------------------------------------------------------------------------
 # CLI estimate command
 # ---------------------------------------------------------------------------
 
 
-def _write_config(tmp_path, schedule=None, model="gemini-2.0-flash", provider="gemini"):
-    schedule = schedule or {"monday": "security", "sunday": "off"}
+def _write_config(tmp_path, model="gemini-2.0-flash", provider="gemini"):
     config = {
         "repos": [{"name": "test-repo", "path": str(tmp_path), "provider_rotation": [provider]}],
-        "schedule": schedule,
         "model": model,
     }
     cfg_path = tmp_path / "noxaudit.yml"
@@ -264,7 +204,6 @@ class TestEstimateCLI:
                             "provider_rotation": ["gemini"],
                         }
                     ],
-                    "schedule": {"monday": "security"},
                     "model": "gemini-2.0-flash",
                 }
             )
@@ -292,29 +231,15 @@ class TestEstimateCLI:
         runner = CliRunner()
         result = runner.invoke(main, ["--config", cfg, "estimate", "--focus", "security"])
         assert result.exit_code == 0, result.output
-        assert "Monthly" in result.output
+        assert "assuming daily runs" in result.output
 
     def test_no_repos_configured(self, tmp_path):
         cfg_path = tmp_path / "noxaudit.yml"
-        cfg_path.write_text(yaml.dump({"schedule": {"monday": "security"}}))
+        cfg_path.write_text(yaml.dump({}))
         runner = CliRunner()
         result = runner.invoke(main, ["--config", str(cfg_path), "estimate", "--focus", "security"])
         assert result.exit_code == 0, result.output
         assert "No repos configured" in result.output
-
-    def test_off_schedule_without_focus_override(self, tmp_path):
-        """When today is off and no --focus given, show 'off' message."""
-        (tmp_path / "app.py").write_text("x = 1")
-        # Set all days to off
-        schedule = {
-            d: "off"
-            for d in ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
-        }
-        cfg = _write_config(tmp_path, schedule=schedule)
-        runner = CliRunner()
-        result = runner.invoke(main, ["--config", cfg, "estimate"])
-        assert result.exit_code == 0, result.output
-        assert "off" in result.output.lower()
 
     def test_provider_override(self, tmp_path):
         """--provider flag overrides config provider."""
