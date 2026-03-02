@@ -1,0 +1,74 @@
+# Noxaudit Benchmark Corpus
+#
+# Machine-readable matrix config for scripts/benchmark.py.
+# Run with: python scripts/benchmark.py matrix benchmark/corpus.yml
+#
+# Before running:
+#   1. Clone the corpus repos (see benchmark/CORPUS.md for commands)
+#   2. Update the `path:` entries below to match your local clone locations
+
+matrix:
+  # --- Provider × model combinations to test ---
+  providers:
+    - name: gemini
+      models:
+        - gemini-2.0-flash
+
+    - name: anthropic
+      models:
+        - claude-haiku-4-5-20251001
+        - claude-sonnet-4-5-20250929
+
+  # --- Focus tiers ---
+  # "security" for targeted security-only runs; "all" for full 7-area audits
+  focus:
+    - security
+    - all
+
+  # --- Number of runs per combination (for variance measurement) ---
+  runs: 3
+
+  # --- Corpus repos (pinned commit SHAs) ---
+  repos:
+    - name: noxaudit
+      path: ~/benchmark-repos/noxaudit  # update to your local path
+      commit: 1503cbf22b08bbe7e64962221c7075474ed33f57
+      exclude:
+        - "*.lock"
+        - ".venv/**"
+
+    - name: tokencost-dev
+      path: ~/benchmark-repos/tokencost-dev  # update to your local path
+      commit: 7ee1423562cdc6dbecfd4959da789fc11da4a3b1
+      exclude:
+        - "node_modules/**"
+        - "dist/**"
+        - "*.lock"
+
+    - name: cryyer
+      path: ~/benchmark-repos/cryyer  # update to your local path
+      commit: 4f7ec8270bb9957e4276c063ca421a560daafd67
+      exclude:
+        - "node_modules/**"
+        - "dist/**"
+        - "*.lock"
+
+    - name: fastapi
+      path: ~/benchmark-repos/fastapi  # update to your local path
+      commit: ca5f60ee72f35fb2134d8b5d26bbb75965bcff66
+      exclude:
+        - "*.lock"
+        - "docs/**"
+
+    - name: python-dotenv
+      path: ~/benchmark-repos/python-dotenv  # update to your local path
+      commit: da0c82054f1ec1e03d57356d49b0b9ad09eb4209
+      exclude: []
+
+  # --- Output ---
+  output_dir: benchmark/results
+
+  # --- Rate limiting ---
+  rate_limit:
+    sleep_between_runs: 5   # seconds between successful runs
+    backoff_on_error: 30    # seconds to wait after a failed run
