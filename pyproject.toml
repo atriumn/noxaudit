@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "noxaudit"
-version = "0.1.0"
+version = "1.0.0"
 description = "Nightly AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory"
 readme = "README.md"
 license = "MIT"
