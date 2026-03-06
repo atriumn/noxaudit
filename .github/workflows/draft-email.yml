@@ -1,0 +1,42 @@
+name: Draft Email
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  draft:
+    if: startsWith(github.head_ref, 'release-please--')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          fetch-depth: 0
+
+      - name: Extract version from PR title
+        id: version
+        run: |
+          VERSION=$(echo "${{ github.event.pull_request.title }}" | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Generate draft
+        uses: atriumn/cryyer/.github/actions/draft-file@v0
+        id: draft
+        with:
+          product: noxaudit
+          version: ${{ steps.version.outputs.value }}
+          llm-api-key: ${{ secrets.GOOGLE_API_KEY }}
+          llm-provider: gemini
+          llm-model: gemini-3-flash-preview
+
+      - name: Commit draft
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add ${{ steps.draft.outputs.draft-path }}
+          git diff --cached --quiet || git commit -m "chore: draft email for v${{ steps.version.outputs.value }}"
+          git push

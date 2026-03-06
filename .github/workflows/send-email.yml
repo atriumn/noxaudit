@@ -1,0 +1,29 @@
+name: Send Email
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${{ github.event.release.tag_name }}
+          VERSION="${VERSION#v}"
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Send emails
+        uses: atriumn/cryyer/.github/actions/send-file@v0
+        with:
+          product: noxaudit
+          draft-path: drafts/v${{ steps.version.outputs.value }}.md
+          from-email: ${{ secrets.FROM_EMAIL }}
+          email-provider: resend
+          subscriber-store: json
+          email-api-key: ${{ secrets.RESEND_API_KEY }}

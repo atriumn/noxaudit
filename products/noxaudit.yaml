@@ -1,0 +1,7 @@
+# Product configuration for Noxaudit
+id: noxaudit
+name: Noxaudit
+repo: atriumn/noxaudit
+emailSubjectTemplate: "Noxaudit {{version}} Released"
+voice: Developer-focused, concise, technical but approachable. Lead with what
+  changed and why it matters. Skip marketing fluff.

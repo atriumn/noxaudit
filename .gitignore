@@ -25,3 +25,7 @@ nightwatch.yml
 .ralph-fix-prompt.txt
 .worktrees/
 site/
+
+# cryyer
+subscribers.json
+email-log.json
