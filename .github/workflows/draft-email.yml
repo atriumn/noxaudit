@@ -24,7 +24,18 @@ jobs:
           VERSION=$(echo "${{ github.event.pull_request.title }}" | grep -oP '\d+\.\d+\.\d+' || echo "0.0.0")
           echo "value=$VERSION" >> "$GITHUB_OUTPUT"
 
+      - name: Check if draft already exists
+        id: check
+        run: |
+          DRAFT_PATH="drafts/v${{ steps.version.outputs.value }}.md"
+          if [ -f "$DRAFT_PATH" ]; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Generate draft
+        if: steps.check.outputs.exists == 'false'
         uses: atriumn/cryyer/.github/actions/draft-file@v0
         id: draft
         with:
@@ -35,6 +46,7 @@ jobs:
           llm-model: gemini-3-flash-preview
 
       - name: Commit draft
+        if: steps.check.outputs.exists == 'false'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
