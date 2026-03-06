@@ -11,8 +11,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Write subscribers from secret
-        run: echo '${{ secrets.SUBSCRIBERS_JSON }}' > subscribers.json
+      - name: Fetch subscribers from private repo
+        run: |
+          gh api repos/atriumn/noxaudit-private/contents/subscribers.json \
+            --jq '.content' | base64 -d > subscribers.json
+        env:
+          GH_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Extract version from tag
         id: version
