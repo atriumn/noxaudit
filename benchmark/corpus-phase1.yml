@@ -1,0 +1,53 @@
+# Benchmark Phase 1: Quality Floor
+#
+# 10 models × 2 repos × all focus areas × 1 run = 20 runs
+# All batch API (50% discount). Actual cost: $2.13.
+#
+# Repos:
+#   python-dotenv — canary (small, clean codebase for cross-model consensus)
+#   noxaudit — dogfood (known codebase with real findings)
+
+matrix:
+  providers:
+    - name: anthropic
+      models:
+        - claude-haiku-4-5
+        - claude-sonnet-4-6
+        - claude-opus-4-6
+
+    - name: gemini
+      models:
+        - gemini-2.5-flash
+        - gemini-3-flash-preview
+        - gemini-2.5-pro
+
+    - name: openai
+      models:
+        - gpt-5-nano
+        - gpt-5-mini
+        - o4-mini
+        - gpt-5.4
+
+  focus:
+    - all
+
+  runs: 1
+
+  repos:
+    - name: python-dotenv
+      path: ~/benchmark-repos/python-dotenv
+      commit: da0c82054f1ec1e03d57356d49b0b9ad09eb4209
+      exclude: []
+
+    - name: noxaudit
+      path: ~/benchmark-repos/noxaudit
+      commit: 1503cbf22b08bbe7e64962221c7075474ed33f57
+      exclude:
+        - "*.lock"
+        - ".venv/**"
+
+  output_dir: benchmark/results
+
+  rate_limit:
+    sleep_between_runs: 5
+    backoff_on_error: 30

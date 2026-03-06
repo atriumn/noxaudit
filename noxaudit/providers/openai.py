@@ -84,7 +84,7 @@ class OpenAIProvider(BaseProvider):
             "url": "/v1/chat/completions",
             "body": {
                 "model": self.model,
-                "max_tokens": max_tokens,
+                "max_completion_tokens": max_tokens,
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": user_message},
@@ -139,6 +139,19 @@ class OpenAIProvider(BaseProvider):
             },
         }
 
+        if is_done and batch.error_file_id and not batch.output_file_id:
+            # Batch completed with errors, no output
+            err_content = self.client.files.content(batch.error_file_id).read().decode("utf-8")
+            for line in err_content.splitlines():
+                if not line.strip():
+                    continue
+                entry = json.loads(line)
+                response = entry.get("response", {})
+                body = response.get("body", {})
+                error = body.get("error", {})
+                err_msg = error.get("message", "unknown batch error")
+                raise RuntimeError(f"OpenAI batch error: {err_msg}")
+
         if is_done and batch.output_file_id:
             findings = []
             content = self.client.files.content(batch.output_file_id)
@@ -162,6 +175,11 @@ class OpenAIProvider(BaseProvider):
                     if choices:
                         message_content = choices[0]["message"]["content"]
                         findings = self._parse_text(message_content, default_focus=default_focus)
+                else:
+                    body = response.get("body", {})
+                    error = body.get("error", {})
+                    err_msg = error.get("message", "unknown error")
+                    raise RuntimeError(f"OpenAI batch error: {err_msg}")
             result["findings"] = findings
 
         return result
@@ -226,7 +244,7 @@ Return ONLY the JSON object, no other text."""
         elif "```" in text:
             text = text.split("```")[1].split("```")[0]
 
-        data = json.loads(text.strip())
+        data = self._safe_json_loads(text.strip())
         findings = []
 
         for f in data.get("findings", []):

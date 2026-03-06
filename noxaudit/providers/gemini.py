@@ -50,7 +50,7 @@ FINDING_SCHEMA = {
 class GeminiProvider(BaseProvider):
     name = "gemini"
 
-    def __init__(self, model: str = "gemini-2.5-flash-lite"):
+    def __init__(self, model: str = "gemini-2.5-flash"):
         if genai is None:
             raise ImportError(
                 "google-genai is not installed. Install with: pip install google-genai"
@@ -87,8 +87,11 @@ class GeminiProvider(BaseProvider):
         }
         jsonl_bytes = (json.dumps(request) + "\n").encode("utf-8")
 
+        buf = io.BytesIO(jsonl_bytes)
+        buf.name = "batch_request.jsonl"
         uploaded = self._api_client.files.upload(
-            file=io.BytesIO(jsonl_bytes),
+            file=buf,
+            config={"mime_type": "application/jsonl"},
         )
 
         batch_job = self._api_client.batches.create(
@@ -128,16 +131,23 @@ class GeminiProvider(BaseProvider):
         if state_name == "JOB_STATE_SUCCEEDED":
             findings = []
             content = self._api_client.files.download(file=batch_job.dest.file_name)
-            text = (
+            raw_text = (
                 content.decode("utf-8")
                 if isinstance(content, bytes)
                 else content.read().decode("utf-8")
             )
+            result["raw_response"] = raw_text
 
-            for line in text.splitlines():
+            for line in raw_text.splitlines():
                 if not line.strip():
                     continue
                 entry = json.loads(line)
+
+                # Check for error responses (e.g. deprecated models)
+                if "error" in entry and "response" not in entry:
+                    err_msg = entry["error"].get("message", "unknown error")
+                    raise RuntimeError(f"Gemini batch error: {err_msg}")
+
                 response = entry.get("response", {})
                 candidates = response.get("candidates", [])
                 if candidates:
@@ -170,28 +180,25 @@ class GeminiProvider(BaseProvider):
         num_focus_areas: int = 1,
         default_focus: str | None = None,
     ) -> list[Finding]:
-        """Run an audit synchronously and return findings."""
-        user_message = self._build_user_message(files, decision_context)
+        """Synchronous audit: submit batch and poll until done."""
+        import time
 
-        response = self._api_client.models.generate_content(
-            model=self.model,
-            contents=user_message,
-            config={"system_instruction": system_prompt},
+        batch_id = self.submit_batch(
+            files,
+            system_prompt,
+            decision_context,
+            num_focus_areas=num_focus_areas,
         )
+        print(f"  Batch submitted: {batch_id}")
 
-        # Store usage information for later retrieval
-        if hasattr(response, "usage_metadata") and response.usage_metadata:
-            self._last_usage = {
-                "input_tokens": response.usage_metadata.prompt_token_count or 0,
-                "output_tokens": response.usage_metadata.candidates_token_count or 0,
-                "cache_read_tokens": getattr(
-                    response.usage_metadata, "cached_content_input_token_count", 0
-                )
-                or 0,
-                "cache_write_tokens": 0,  # Gemini doesn't provide cache write tokens
-            }
+        while True:
+            result = self.retrieve_batch(batch_id, default_focus=default_focus)
+            if result["status"] == "ended":
+                return result.get("findings", [])
 
-        return self._parse_response(response, default_focus=default_focus)
+            processing = result["request_counts"]["processing"]
+            print(f"  Waiting... ({processing} processing)")
+            time.sleep(60)
 
     def _build_user_message(self, files: list[FileContent], decision_context: str) -> str:
         file_contents = self._format_files(files)
@@ -227,7 +234,7 @@ Return ONLY the JSON object, no other text."""
         elif "```" in text:
             text = text.split("```")[1].split("```")[0]
 
-        data = json.loads(text.strip())
+        data = self._safe_json_loads(text.strip())
         findings = []
 
         for f in data.get("findings", []):

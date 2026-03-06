@@ -20,7 +20,7 @@ class TestCostLedgerAppend:
                 repo="test-repo",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1000,
                 output_tokens=500,
                 cache_read_tokens=0,
@@ -38,7 +38,7 @@ class TestCostLedgerAppend:
                 repo="test-repo",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1000,
                 output_tokens=500,
                 cache_read_tokens=0,
@@ -50,7 +50,7 @@ class TestCostLedgerAppend:
                 repo="test-repo",
                 focus="performance",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=2000,
                 output_tokens=1000,
                 cache_read_tokens=0,
@@ -98,12 +98,12 @@ class TestCostLedgerAppend:
         """Cost is calculated correctly using pricing data."""
         ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
         with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
-            # Gemini pricing: $0.10/M input, $0.40/M output
+            # Gemini pricing: $0.30/M input, $2.50/M output
             CostLedger.append_entry(
                 repo="test",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1_000_000,
                 output_tokens=1_000_000,
                 cache_read_tokens=0,
@@ -112,8 +112,8 @@ class TestCostLedgerAppend:
             )
 
             entry = CostLedger.read_entries()[0]
-            # 1M input * $0.10 + 1M output * $0.40 = $0.50
-            expected_cost = 0.10 + 0.40
+            # 1M input * $0.30 + 1M output * $2.50 = $2.80
+            expected_cost = 0.30 + 2.50
             assert abs(entry["cost_estimate_usd"] - expected_cost) < 0.01
 
     def test_batch_discount_applied_for_anthropic(self, tmp_path):
@@ -126,7 +126,7 @@ class TestCostLedgerAppend:
                 repo="test",
                 focus="security",
                 provider="anthropic",
-                model="claude-sonnet-4-5",
+                model="claude-sonnet-4-6",
                 input_tokens=1_000_000,
                 output_tokens=1_000_000,
                 cache_read_tokens=0,
@@ -151,7 +151,7 @@ class TestCostLedgerAppend:
                 repo="test",
                 focus="security",
                 provider="anthropic",
-                model="claude-sonnet-4-5",
+                model="claude-sonnet-4-6",
                 input_tokens=0,
                 output_tokens=0,
                 cache_read_tokens=1_000_000,
@@ -172,7 +172,7 @@ class TestCostLedgerAppend:
                 repo="test",
                 focus="security",
                 provider="anthropic",
-                model="claude-sonnet-4-5",
+                model="claude-sonnet-4-6",
                 input_tokens=0,
                 output_tokens=0,
                 cache_read_tokens=0,
@@ -204,7 +204,7 @@ class TestCostLedgerRead:
                     repo=f"repo-{i}",
                     focus="security",
                     provider="gemini",
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     input_tokens=1000,
                     output_tokens=500,
                     cache_read_tokens=0,
@@ -226,7 +226,7 @@ class TestCostLedgerRead:
                 repo="test",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1000,
                 output_tokens=500,
                 cache_read_tokens=0,
@@ -252,7 +252,7 @@ class TestCostLedgerRead:
                     repo=f"repo-{i}",
                     focus="security",
                     provider="gemini",
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     input_tokens=1000,
                     output_tokens=500,
                     cache_read_tokens=0,
@@ -276,7 +276,7 @@ class TestCostLedgerRead:
                 repo="old",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1000,
                 output_tokens=500,
                 cache_read_tokens=0,
@@ -291,7 +291,7 @@ class TestCostLedgerRead:
                 repo="recent",
                 focus="security",
                 provider="gemini",
-                model="gemini-2.0-flash",
+                model="gemini-2.5-flash",
                 input_tokens=1000,
                 output_tokens=500,
                 cache_read_tokens=0,
@@ -342,7 +342,7 @@ class TestStatusCommandCostDisplay:
                     repo=f"repo-{i}",
                     focus="security",
                     provider="gemini",
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     input_tokens=1000,
                     output_tokens=500,
                     cache_read_tokens=0,
@@ -373,7 +373,7 @@ class TestStatusCommandCostDisplay:
                     repo=f"repo-{i}",
                     focus="security",
                     provider="gemini",
-                    model="gemini-2.0-flash",
+                    model="gemini-2.5-flash",
                     input_tokens=1000 * (i + 1),
                     output_tokens=500 * (i + 1),
                     cache_read_tokens=0,

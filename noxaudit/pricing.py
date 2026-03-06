@@ -21,6 +21,7 @@ class ModelPricing:
 
 
 MODEL_PRICING: dict[str, ModelPricing] = {
+    # --- Anthropic (verified 2026-03-06 from platform.claude.com) ---
     "claude-opus-4-6": ModelPricing(
         input_per_million=5.00,
         output_per_million=25.00,
@@ -29,10 +30,10 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         output_per_million_high=37.50,
         batch_discount=0.50,
         context_window=200_000,
-        cache_read_per_million=0.50,  # 10% of $5.00/M input
-        cache_write_per_million=6.25,  # 125% of $5.00/M input
+        cache_read_per_million=0.50,
+        cache_write_per_million=6.25,
     ),
-    "claude-sonnet-4-5": ModelPricing(
+    "claude-sonnet-4-6": ModelPricing(
         input_per_million=3.00,
         output_per_million=15.00,
         tier_threshold=200_000,
@@ -40,8 +41,38 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         output_per_million_high=22.50,
         batch_discount=0.50,
         context_window=200_000,
-        cache_read_per_million=0.30,  # 10% of $3.00/M input
-        cache_write_per_million=3.75,  # 125% of $3.00/M input
+        cache_read_per_million=0.30,
+        cache_write_per_million=3.75,
+    ),
+    "claude-haiku-4-5": ModelPricing(
+        input_per_million=1.00,
+        output_per_million=5.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=200_000,
+        cache_read_per_million=0.10,
+        cache_write_per_million=1.25,
+    ),
+    # --- Google Gemini (verified 2026-03-06 from ai.google.dev/gemini-api/docs/pricing) ---
+    "gemini-2.5-flash": ModelPricing(
+        input_per_million=0.30,
+        output_per_million=2.50,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=1_000_000,
+    ),
+    "gemini-3-flash-preview": ModelPricing(
+        input_per_million=0.50,
+        output_per_million=3.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=1_000_000,
     ),
     "gemini-2.5-pro": ModelPricing(
         input_per_million=1.25,
@@ -52,54 +83,10 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         batch_discount=0.50,
         context_window=1_000_000,
     ),
-    "gemini-3.1-pro-preview": ModelPricing(
-        input_per_million=2.00,
-        output_per_million=12.00,
-        tier_threshold=200_000,
-        input_per_million_high=4.00,
-        output_per_million_high=18.00,
-        batch_discount=0.50,
-        context_window=1_000_000,
-    ),
-    "gemini-2.5-flash": ModelPricing(
-        input_per_million=0.30,
-        output_per_million=2.50,
-        tier_threshold=None,
-        input_per_million_high=None,
-        output_per_million_high=None,
-        batch_discount=0.50,
-        context_window=1_000_000,
-    ),
-    "gemini-3-flash": ModelPricing(
-        input_per_million=0.50,
-        output_per_million=3.00,
-        tier_threshold=None,
-        input_per_million_high=None,
-        output_per_million_high=None,
-        batch_discount=0.50,
-        context_window=1_000_000,
-    ),
-    "gemini-2.5-flash-lite": ModelPricing(
-        input_per_million=0.10,
+    # --- OpenAI (verified 2026-03-06 from developers.openai.com/api/docs/pricing) ---
+    "gpt-5-nano": ModelPricing(
+        input_per_million=0.05,
         output_per_million=0.40,
-        tier_threshold=None,
-        input_per_million_high=None,
-        output_per_million_high=None,
-        batch_discount=0.50,
-        context_window=1_000_000,
-    ),
-    "gpt-5.2": ModelPricing(
-        input_per_million=1.75,
-        output_per_million=14.00,
-        tier_threshold=None,
-        input_per_million_high=None,
-        output_per_million_high=None,
-        batch_discount=0.50,
-        context_window=400_000,
-    ),
-    "gpt-5": ModelPricing(
-        input_per_million=1.25,
-        output_per_million=10.00,
         tier_threshold=None,
         input_per_million_high=None,
         output_per_million_high=None,
@@ -115,30 +102,38 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         batch_discount=0.50,
         context_window=400_000,
     ),
-    "gpt-5-nano": ModelPricing(
-        input_per_million=0.05,
-        output_per_million=0.40,
+    "o4-mini": ModelPricing(
+        input_per_million=1.10,
+        output_per_million=4.40,
         tier_threshold=None,
         input_per_million_high=None,
         output_per_million_high=None,
         batch_discount=0.50,
-        context_window=400_000,
+        context_window=200_000,
+    ),
+    "gpt-5.4": ModelPricing(
+        input_per_million=2.50,
+        output_per_million=15.00,
+        tier_threshold=272_000,
+        input_per_million_high=5.00,
+        output_per_million_high=22.50,
+        batch_discount=0.50,
+        context_window=1_050_000,
     ),
 }
 
 # Provider name for each model key
 _MODEL_PROVIDER: dict[str, str] = {
     "claude-opus-4-6": "anthropic",
-    "claude-sonnet-4-5": "anthropic",
-    "gemini-2.5-pro": "gemini",
+    "claude-sonnet-4-6": "anthropic",
+    "claude-haiku-4-5": "anthropic",
     "gemini-2.5-flash": "gemini",
-    "gemini-3-flash": "gemini",
-    "gemini-2.5-flash-lite": "gemini",
-    "gemini-3.1-pro-preview": "gemini",
-    "gpt-5.2": "openai",
-    "gpt-5": "openai",
-    "gpt-5-mini": "openai",
+    "gemini-3-flash-preview": "gemini",
+    "gemini-2.5-pro": "gemini",
     "gpt-5-nano": "openai",
+    "gpt-5-mini": "openai",
+    "o4-mini": "openai",
+    "gpt-5.4": "openai",
 }
 
 
@@ -153,26 +148,28 @@ def resolve_model_key(provider: str, model: str) -> str:
     if provider == "anthropic":
         if "opus" in model_lower:
             return "claude-opus-4-6"
-        return "claude-sonnet-4-5"
+        if "haiku" in model_lower:
+            return "claude-haiku-4-5"
+        return "claude-sonnet-4-6"
     elif provider == "gemini":
-        if "3.1" in model_lower and "pro" in model_lower:
-            return "gemini-3.1-pro-preview"
         if "3" in model_lower and "flash" in model_lower:
-            return "gemini-3-flash"
+            return "gemini-3-flash-preview"
         if "pro" in model_lower:
             return "gemini-2.5-pro"
         if "2.5" in model or "2-5" in model:
-            if "lite" in model_lower:
-                return "gemini-2.5-flash-lite"
             return "gemini-2.5-flash"
-        return "gemini-2.5-flash-lite"
+        return "gemini-2.5-flash"
     elif provider == "openai":
         if "nano" in model_lower:
             return "gpt-5-nano"
-        if "mini" in model_lower:
+        if "mini" in model_lower and "o4" not in model_lower:
             return "gpt-5-mini"
-        return "gpt-5.2"
-    return "gemini-2.5-flash-lite"
+        if model_lower.startswith("o4"):
+            return "o4-mini"
+        if "5.4" in model:
+            return "gpt-5.4"
+        return "gpt-5.4"
+    return "gemini-2.5-flash"
 
 
 def estimate_cost(
