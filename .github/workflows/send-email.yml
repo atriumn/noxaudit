@@ -11,6 +11,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Write subscribers from secret
+        run: echo '${{ secrets.SUBSCRIBERS_JSON }}' > subscribers.json
+
       - name: Extract version from tag
         id: version
         run: |
