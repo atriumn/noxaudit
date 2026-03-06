@@ -57,7 +57,7 @@ repos:
 Set the AI model to use:
 
 ```yaml
-model: claude-sonnet-4-5-20250929
+model: claude-sonnet-4-6
 ```
 
 The model must match the provider. See [Providers](../reference/providers.md) for all available models.

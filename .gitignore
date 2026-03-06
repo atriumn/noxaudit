@@ -26,6 +26,14 @@ nightwatch.yml
 .worktrees/
 site/
 
+# Artifacts
+.coverage
+*.bak
+*.local-bak
+
+# Local tool config
+ralph.yml
+
 # cryyer
 subscribers.json
 email-log.json

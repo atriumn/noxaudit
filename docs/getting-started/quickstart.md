@@ -12,7 +12,7 @@ repos:
     path: .
     provider_rotation: [anthropic]
 
-model: claude-sonnet-4-5-20250929
+model: claude-sonnet-4-6
 ```
 
 Or copy the example config:

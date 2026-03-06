@@ -10,7 +10,7 @@ repos:
       - generated
 
 # AI model to use (any supported model ID)
-model: claude-sonnet-4-5-20250929
+model: claude-sonnet-4-6
 
 # Token budget per run
 budget:

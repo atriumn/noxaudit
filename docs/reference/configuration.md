@@ -11,7 +11,7 @@ All configuration lives in `noxaudit.yml` in your project root.
 | `repos[].path` | string | — | Path to repository root |
 | `repos[].provider_rotation` | list[string] | `[gemini]` | AI providers to rotate through |
 | `repos[].exclude` | list[string] | `[]` | Directory names to exclude from file gathering |
-| `model` | string | `claude-sonnet-4-5-20250929` | AI model to use (any supported model ID) |
+| `model` | string | `claude-sonnet-4-6` | AI model to use (any supported model ID) |
 | `budget` | mapping | — | Cost control settings |
 | `budget.max_per_run_usd` | float | `2.00` | Maximum cost per audit run in USD |
 | `budget.alert_threshold_usd` | float | `1.50` | Cost threshold that triggers a warning |
@@ -45,7 +45,7 @@ repos:
       - vendor
       - generated
 
-model: claude-sonnet-4-5-20250929
+model: claude-sonnet-4-6
 
 budget:
   max_per_run_usd: 2.00
