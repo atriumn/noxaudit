@@ -14,15 +14,16 @@ noxaudit estimate --focus security
   my-app — security
 
   Files:     42 files, 87K tokens
-  Provider:  anthropic (claude-sonnet-4-5)
+  Provider:  openai (gpt-5-mini)
 
-  Cost estimate: ~$0.14
+  Cost estimate: ~$0.03
     Batch API 50% discount applied.
 
   Alternatives:
-    gemini (gemini-2.0-flash)                ~$0.01   93% cheaper — recommended for daily audits
+    openai (gpt-5-nano)                      ~$0.01   67% cheaper
+    anthropic (claude-sonnet-4-6)            ~$0.14   more expensive — deeper analysis
 
-  Monthly estimate: ~$4.20 (assuming daily runs)
+  Monthly estimate: ~$0.90 (assuming daily runs)
 ```
 
 No API key is needed for estimation — it counts files and tokens locally.
@@ -116,7 +117,7 @@ Focus areas:
   docs: README accuracy, stale comments, API doc drift
   ...
 
-Model: claude-sonnet-4-5-20250929
+Model: claude-sonnet-4-6
 Decisions: .noxaudit/decisions.jsonl
 Reports: .noxaudit/reports
 

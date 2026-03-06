@@ -77,12 +77,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: atriumn/noxaudit/action@main
-        with:
-          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-          focus: ${{ inputs.focus }}
-          telegram-bot-token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          telegram-chat-id: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - uses: astral-sh/setup-uv@v7
+
+      - run: uv pip install 'noxaudit[openai]'
+
+      - run: noxaudit run --focus ${{ inputs.focus || 'all' }}
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
 ```
 
 ## What It Looks Like
@@ -101,19 +102,19 @@ $ noxaudit report
 # Security Audit — my-app
 ## 2025-01-14
 
-### 🔴 HIGH: Hardcoded API key in test fixture
+### HIGH: Hardcoded API key in test fixture
 **File:** tests/fixtures/config.py:12
 The string `sk-proj-abc123` is committed to the repo. Even in test fixtures,
 real credentials in source control are a liability.
 **Suggestion:** Replace with `os.environ.get("TEST_API_KEY", "sk-test-placeholder")`.
 
-### 🟡 MEDIUM: SQL string interpolation in query builder
+### MEDIUM: SQL string interpolation in query builder
 **File:** src/db/queries.py:87
 `cursor.execute(f"SELECT * FROM users WHERE id = {user_id}")` is vulnerable
 to SQL injection. Use parameterized queries.
 **Suggestion:** `cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))`
 
-### 🟡 MEDIUM: Permissive CORS in production config
+### MEDIUM: Permissive CORS in production config
 **File:** src/config/cors.py:23
 `allow_origins=["*"]` in the production config allows any origin.
 **Suggestion:** Restrict to known domains before shipping.
@@ -125,17 +126,17 @@ to SQL injection. Use parameterized queries.
 ### Telegram notification
 
 ```
-🔒 Security Audit — my-app
-3 new findings: 🔴 1 high, 🟡 2 medium
+Security Audit — my-app
+3 new findings: 1 high, 2 medium
 
-🔴 Hardcoded API key in test fixture
+Hardcoded API key in test fixture
    tests/fixtures/config.py
-🟡 SQL string interpolation in query builder
+SQL string interpolation in query builder
    src/db/queries.py
-🟡 Permissive CORS in production config
+Permissive CORS in production config
    src/config/cors.py
 
-✅ 5 previous findings still resolved
+5 previous findings still resolved
 ```
 
 ### MCP server (Cursor / Claude / Windsurf)
@@ -182,8 +183,8 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 |--------|-------------|---------|
 | `repos[].path` | Path to repository | `.` |
 | `repos[].provider_rotation` | AI providers to rotate through (see [Providers](#providers) section) | `[anthropic]` |
-| `model` | AI model to use (see [Providers](#providers) section for provider-specific setup) | `claude-sonnet-4-5-20250929` |
-| `providers.<name>.model` | Override model for a specific provider (e.g., `providers.gemini.model`) | (uses global `model`) |
+| `model` | AI model to use (see [Providers](#providers) section for provider-specific setup) | `claude-sonnet-4-6` |
+| `providers.<name>.model` | Override model for a specific provider (e.g., `providers.openai.model`) | (uses global `model`) |
 | `prepass` | Pre-pass filtering configuration (see [Providers](#providers) section) | disabled |
 | `decisions.expiry_days` | Days before a decision expires | `90` |
 | `notifications` | Where to send summaries | (none) |
@@ -193,6 +194,7 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 | Area | What It Checks |
 |------|---------------|
 | **security** | Secrets, injection vulnerabilities, permissions, dependency CVEs |
+| **testing** | Missing coverage, edge cases, test quality, flaky tests |
 | **docs** | README accuracy, stale comments, API doc drift |
 | **patterns** | Naming conventions, architecture consistency, duplicated logic |
 | **performance** | Missing caching, expensive patterns, bundle size |
@@ -224,15 +226,15 @@ Reports are saved as markdown in `.noxaudit/reports/{repo}/{date}-{focus}.md`.
 
 ## Providers
 
-Noxaudit supports multiple AI providers. Rotate between them to get different perspectives, or choose one per your preference and budget.
+Noxaudit supports three AI providers with 10 models. We [benchmarked all of them](https://noxaudit.com/benchmark/) against real repos to find which ones actually deliver.
 
-**Provider strengths:**
+**Benchmark-informed tiers:**
 
-| Provider | Strength | Best For |
-|----------|----------|----------|
-| **Anthropic** | Stronger security reasoning, native batch API support | Security-focused audits, batch processing |
-| **Gemini** | Larger context window, lower cost | Large repos, cost optimization |
-| **OpenAI** | Fast, structured analysis | Quick turnarounds, diverse analysis |
+| Tier | Model | Cost/Run | Why |
+|------|-------|----------|-----|
+| **Daily** | `gpt-5-mini` | ~$0.03 | 5/6 consensus issues, minimal noise — best value |
+| **Deep dive** | `gpt-5.4` | ~$0.26 | 84 findings, beats Sonnet at 68% the cost |
+| **Premium** | `claude-opus-4-6` | ~$0.65 | Most findings overall, maximum depth |
 
 ### Basic Setup
 
@@ -261,12 +263,12 @@ repos:
     exclude: [vendor, generated, node_modules]
 
 # Use Anthropic by default
-model: claude-sonnet-4-5-20250929
+model: claude-sonnet-4-6
 
 # Optional: Set provider-specific models (overrides `model` for that provider)
 providers:
   gemini:
-    model: gemini-2.0-flash
+    model: gemini-2.5-flash
   openai:
     model: gpt-5-mini
 
@@ -277,17 +279,24 @@ prepass:
   auto: true
 ```
 
-Each audit will cycle through `provider_rotation`: first run uses Anthropic (with default model), second uses Gemini (with `gemini-2.0-flash`), third uses OpenAI (with `gpt-5-mini`), then repeat. Use `providers.<name>.model` to set provider-specific models that override the global `model` setting. See [Key Options](#key-options) for all configuration.
+Each audit will cycle through `provider_rotation`: first run uses Anthropic (with default model), second uses Gemini (with `gemini-2.5-flash`), third uses OpenAI (with `gpt-5-mini`), then repeat. Use `providers.<name>.model` to set provider-specific models that override the global `model` setting. See [Key Options](#key-options) for all configuration.
 
 ### Supported Models
 
-| Provider | Model | Input/M | Output/M |
-|----------|-------|---------|----------|
-| **Anthropic** | `claude-sonnet-4-5-20250929` | $3.00 | $15.00 |
-| **OpenAI** | `gpt-5.2` | $1.75 | $7.00 |
-| **OpenAI** | `gpt-5-mini` | $0.25 | $1.00 |
-| **OpenAI** | `gpt-5-nano` | $0.05 | $0.15 |
-| **Gemini** | `gemini-2.0-flash` | $0.10 | $0.40 |
+| Provider | Model | Input/M | Output/M | Batch |
+|----------|-------|---------|----------|-------|
+| **Anthropic** | `claude-opus-4-6` | $5.00 | $25.00 | 50% off |
+| **Anthropic** | `claude-sonnet-4-6` | $3.00 | $15.00 | 50% off |
+| **Anthropic** | `claude-haiku-4-5` | $1.00 | $5.00 | 50% off |
+| **Google** | `gemini-2.5-pro` | $1.25 | $10.00 | 50% off |
+| **Google** | `gemini-3-flash-preview` | $0.50 | $3.00 | 50% off |
+| **Google** | `gemini-2.5-flash` | $0.30 | $2.50 | 50% off |
+| **OpenAI** | `gpt-5.4` | $2.50 | $15.00 | 50% off |
+| **OpenAI** | `o4-mini` | $1.10 | $4.40 | 50% off |
+| **OpenAI** | `gpt-5-mini` | $0.25 | $2.00 | 50% off |
+| **OpenAI** | `gpt-5-nano` | $0.05 | $0.40 | 50% off |
+
+Full pricing details, tiered rates, and cache pricing in the [Provider Reference](https://noxaudit.com/reference/providers/).
 
 ## License
 

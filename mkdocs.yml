@@ -56,6 +56,7 @@ nav:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md
       - Providers: reference/providers.md
+  - Benchmark: benchmark.md
   - Contributing: contributing/index.md
   - Changelog: changelog.md
 

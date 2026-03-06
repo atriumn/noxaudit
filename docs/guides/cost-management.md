@@ -14,18 +14,18 @@ noxaudit estimate --focus security
   my-app — security
 
   Files:     42 files, 87K tokens
-  Provider:  anthropic (claude-sonnet-4-5)
+  Provider:  openai (gpt-5-mini)
 
-  Cost estimate: ~$0.14
+  Cost estimate: ~$0.03
     Batch API 50% discount applied.
 
   Alternatives:
-    gemini (gemini-2.0-flash)                ~$0.01   93% cheaper — recommended for daily audits
-    openai (gpt-5-nano)                      ~$0.01   95% cheaper
-    gemini (gemini-2.5-flash)                ~$0.03   79% cheaper
+    openai (gpt-5-nano)                      ~$0.01   67% cheaper
+    gemini (gemini-2.5-flash)                ~$0.03   similar cost
+    anthropic (claude-sonnet-4-6)            ~$0.14   more expensive — deeper analysis
 
-  Monthly estimate: ~$4.20 (assuming daily runs)
-  Monthly with gemini-2.0-flash: ~$0.30
+  Monthly estimate: ~$0.90 (assuming daily runs)
+  Monthly with gpt-5-nano: ~$0.30
 ```
 
 The estimate includes:
@@ -62,13 +62,13 @@ Cost (last 30 days):
   Cache read tokens:   800K
   Cache write tokens:  400K
   Cache savings:       40.0% served from cache
-  Estimated spend:     $1.68
-  Avg per audit:       $0.14
-  Projected monthly:   ~$4.20
+  Estimated spend:     $0.36
+  Avg per audit:       $0.03
+  Projected monthly:   ~$0.90
 
   Last 5 audits:
-    Feb 27  security           claude-sonnet-4-5     42 files    95K tok  $0.14
-    Feb 26  patterns,hygiene   claude-sonnet-4-5     67 files   142K tok  $0.21
+    Feb 27  security           gpt-5-mini            42 files    95K tok  $0.03
+    Feb 26  patterns,hygiene   gpt-5-mini            67 files   142K tok  $0.04
     ...
 ```
 
@@ -76,21 +76,21 @@ Cost tracking uses retroactive repricing — stored token counts are recalculate
 
 ## Optimization Strategies
 
-### 1. Use Gemini for Daily Audits
+### 1. Use gpt-5-mini for Daily Audits
 
-Gemini 2.0 Flash costs ~$0.01 per run vs ~$0.14 for Claude Sonnet. For daily monitoring, the cheaper model catches most issues:
+Our [benchmark](../benchmark.md) showed gpt-5-mini ($0.03/run) hits 5/6 cross-model consensus issues with minimal noise — the best daily value of all 10 models tested:
 
 ```yaml
 repos:
   - name: my-app
-    provider_rotation: [gemini]
-model: gemini-2.0-flash
+    provider_rotation: [openai]
+model: gpt-5-mini
 ```
 
-Reserve Claude for periodic deep dives:
+Reserve deeper models for periodic deep dives:
 
 ```bash
-noxaudit run --focus all --provider anthropic
+noxaudit run --focus all --provider anthropic --model claude-opus-4-6
 ```
 
 ### 2. Group Focus Areas
@@ -105,7 +105,7 @@ noxaudit run --focus performance,testing         # 1 API call
 
 ### 3. Use Batch API
 
-Anthropic's batch API provides a 50% discount. Use the submit/retrieve workflow:
+All three providers support batch API with a 50% discount. Use the submit/retrieve workflow:
 
 ```bash
 noxaudit submit --focus security
@@ -161,22 +161,22 @@ The `estimate` command shows pre-pass savings when applicable:
   Pre-pass estimate:
     Gemini Flash triage: ~$0.02
     Expected reduction: 450K → ~200K tokens (high: 12 files, medium: 25, low/skip: 45)
-    With pre-pass, claude-sonnet-4-5 stays in standard pricing tier ($3.00/M vs $6.00/M)
+    With pre-pass, claude-sonnet-4-6 stays in standard pricing tier ($3.00/M vs $6.00/M)
 ```
 
 ## Cost Comparison
 
-Estimated cost per audit for a medium-sized codebase (~100 files, ~100K tokens):
+Estimated cost per audit for a medium-sized codebase (~100 files, ~100K tokens), with batch API discount:
 
 | Model | Per Run | Monthly (daily) |
 |-------|---------|-----------------|
-| `gemini-2.0-flash` | ~$0.01 | ~$0.30 |
 | `gpt-5-nano` | ~$0.01 | ~$0.30 |
-| `gpt-5-mini` | ~$0.04 | ~$1.20 |
+| `gpt-5-mini` | ~$0.03 | ~$0.90 |
 | `gemini-2.5-flash` | ~$0.05 | ~$1.50 |
-| `gemini-2.5-pro` | ~$0.19 | ~$5.70 |
-| `claude-sonnet-4-5` | ~$0.14 | ~$4.20 |
-| `gpt-5.2` | ~$0.22 | ~$6.60 |
-| `claude-opus-4-6` | ~$0.38 | ~$11.40 |
-
-All Anthropic costs include 50% batch API discount.
+| `gemini-3-flash-preview` | ~$0.06 | ~$1.80 |
+| `claude-haiku-4-5` | ~$0.11 | ~$3.30 |
+| `o4-mini` | ~$0.20 | ~$6.00 |
+| `gpt-5.4` | ~$0.26 | ~$7.80 |
+| `gemini-2.5-pro` | ~$0.33 | ~$9.90 |
+| `claude-sonnet-4-6` | ~$0.38 | ~$11.40 |
+| `claude-opus-4-6` | ~$0.65 | ~$19.50 |
