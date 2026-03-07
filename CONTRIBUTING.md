@@ -200,7 +200,7 @@ pip install -e .
 
 # Test the CLI
 noxaudit --help
-noxaudit schedule
+noxaudit status
 
 # Run the full test suite
 pytest tests/ -v
@@ -217,11 +217,11 @@ Create a test configuration file `noxaudit.yml`:
 ```yaml
 ai_provider: anthropic  # or gemini
 anthropic_api_key: your-test-key
-model: claude-sonnet-4.5
+model: claude-sonnet-4-6
 
-focus_schedule:
-  security: 0
-  patterns: 1
+focus:
+  - security
+  - patterns
   # ... other focus areas
 
 # Optional: Test notifications

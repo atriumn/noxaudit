@@ -1,0 +1,46 @@
+name: Bug Report
+description: Report a bug in Noxaudit
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What happened? What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to Reproduce
+      description: How can we reproduce this?
+      placeholder: |
+        1. Run `noxaudit run --focus security`
+        2. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Noxaudit Version
+      description: Output of `noxaudit --version`
+      placeholder: "1.1.0"
+    validations:
+      required: true
+  - type: dropdown
+    id: provider
+    attributes:
+      label: AI Provider
+      options:
+        - Anthropic
+        - Gemini
+        - OpenAI
+        - N/A
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant Log Output
+      description: Paste any error messages or logs (redact API keys!)
+      render: shell
