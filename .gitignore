@@ -20,9 +20,9 @@ noxaudit.yml
 .nightwatch/
 nightwatch.yml
 .ralph/
-.ralph-monitor.log
-.ralph-prompt.txt
-.ralph-fix-prompt.txt
+.ralph-*.log
+.ralph-*.txt
+.ralph-*.sh
 .worktrees/
 site/
 
