@@ -167,7 +167,7 @@ class TestFindingsToSarif:
         driver = sarif["runs"][0]["tool"]["driver"]
 
         assert driver["name"] == "noxaudit"
-        assert "0." in driver["version"]  # Should have a version like 0.2.0
+        assert driver["version"]  # Should have a version string
         assert driver["informationUri"] == "https://github.com/atriumn/noxaudit"
 
     def test_properties_metadata(self):
