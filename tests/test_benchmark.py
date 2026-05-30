@@ -7,6 +7,7 @@ import json
 from pathlib import Path
 
 import pytest
+import yaml
 
 
 # ---------------------------------------------------------------------------
@@ -267,3 +268,56 @@ class TestRunOneSkipLogic:
         assert record["meta"]["error"] is not None
         assert "findings_count" in record
         assert "tokens" in record
+
+
+# ---------------------------------------------------------------------------
+# corpus.yml validation
+# ---------------------------------------------------------------------------
+
+_CORPUS_PATH = Path(__file__).parent.parent / "benchmark" / "corpus.yml"
+
+
+def _load_corpus_matrix():
+    with _CORPUS_PATH.open() as f:
+        return yaml.safe_load(f)["matrix"]
+
+
+class TestCorpusYmlFocusTokens:
+    """Every focus token in benchmark/corpus.yml must be a valid FOCUS_AREAS key or 'all'."""
+
+    def test_all_focus_tokens_valid(self):
+        from noxaudit.focus import FOCUS_AREAS
+
+        matrix = _load_corpus_matrix()
+        valid = set(FOCUS_AREAS.keys()) | {"all", "security"}
+        for token in matrix.get("focus", []):
+            assert token in valid, (
+                f"corpus.yml focus token {token!r} is not a valid focus area. "
+                f"Valid: {sorted(valid)}"
+            )
+
+    def test_focus_tokens_resolve_without_error(self):
+        from noxaudit.config import NoxauditConfig
+        from noxaudit.runner import _resolve_focus_names
+
+        matrix = _load_corpus_matrix()
+        config = NoxauditConfig()
+        for token in matrix.get("focus", []):
+            # Should not raise ValueError
+            resolved = _resolve_focus_names(token, config)
+            assert len(resolved) > 0, f"focus token {token!r} resolved to empty list"
+
+
+class TestCorpusYmlModelIds:
+    """Every model ID in benchmark/corpus.yml must be a key in MODEL_PRICING."""
+
+    def test_all_model_ids_in_pricing(self):
+        from noxaudit.pricing import MODEL_PRICING
+
+        matrix = _load_corpus_matrix()
+        for provider in matrix.get("providers", []):
+            for model in provider.get("models", []):
+                assert model in MODEL_PRICING, (
+                    f"corpus.yml model {model!r} (provider: {provider['name']!r}) "
+                    f"has no entry in MODEL_PRICING"
+                )

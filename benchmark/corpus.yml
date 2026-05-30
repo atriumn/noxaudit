@@ -12,11 +12,9 @@ matrix:
   providers:
     - name: gemini
       models:
-        - gemini-2.5-flash-lite
         - gemini-2.5-flash
-        - gemini-3-flash
+        - gemini-3-flash-preview
         - gemini-2.5-pro
-        - gemini-3.1-pro-preview
 
     - name: anthropic
       models:
@@ -27,13 +25,12 @@ matrix:
       models:
         - gpt-5-nano
         - gpt-5-mini
-        - gpt-5.2
+        - gpt-5.4
 
   # --- Focus tiers ---
-  # "security" for targeted security-only runs; "does_it_work" for basic functionality; "all" for full 7-area audits
+  # "security" for targeted security-only runs; "all" for full 7-area audits
   focus:
     - security
-    - does_it_work
     - all
 
   # --- Number of runs per combination (for variance measurement) ---
