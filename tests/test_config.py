@@ -73,6 +73,31 @@ class TestLoadConfig:
         assert "vendor" in config.repos[0].exclude_patterns
 
 
+class TestNotificationConfig:
+    def test_webhook_key_ignored_on_load(self, tmp_config):
+        path = tmp_config("""\
+            notifications:
+              - channel: telegram
+                target: "12345"
+                webhook: "https://example.com/hook"
+        """)
+        config = load_config(path)
+        assert len(config.notifications) == 1
+        assert config.notifications[0].channel == "telegram"
+        assert config.notifications[0].target == "12345"
+        assert not hasattr(config.notifications[0], "webhook")
+
+    def test_notification_without_webhook_loads(self, tmp_config):
+        path = tmp_config("""\
+            notifications:
+              - channel: telegram
+                target: "12345"
+        """)
+        config = load_config(path)
+        assert len(config.notifications) == 1
+        assert config.notifications[0].target == "12345"
+
+
 class TestDeprecationWarnings:
     def test_schedule_key_emits_warning(self, tmp_config):
         path = tmp_config("""\

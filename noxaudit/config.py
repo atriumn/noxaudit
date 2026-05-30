@@ -28,7 +28,6 @@ class BudgetConfig:
 class NotificationConfig:
     channel: str = "telegram"
     target: str = ""
-    webhook: str = ""
 
 
 @dataclass
@@ -197,7 +196,6 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
             NotificationConfig(
                 channel=n.get("channel", "telegram"),
                 target=n.get("target", ""),
-                webhook=n.get("webhook", ""),
             )
         )
 

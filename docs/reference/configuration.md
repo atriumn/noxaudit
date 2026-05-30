@@ -26,7 +26,6 @@ All configuration lives in `noxaudit.yml` in your project root.
 | `notifications` | list | `[]` | Notification channel configurations |
 | `notifications[].channel` | string | `telegram` | Notification channel type |
 | `notifications[].target` | string | `""` | Channel-specific target (e.g., Telegram chat ID) |
-| `notifications[].webhook` | string | `""` | Webhook URL (for webhook-based channels) |
 | `issues` | mapping | — | GitHub issue creation settings |
 | `issues.enabled` | bool | `false` | Enable auto-creation of GitHub issues |
 | `issues.severity_threshold` | string | `medium` | Minimum severity for issue creation: `low`, `medium`, or `high` |
