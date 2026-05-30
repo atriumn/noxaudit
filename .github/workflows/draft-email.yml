@@ -9,14 +9,13 @@ jobs:
     if: startsWith(github.head_ref, 'release-please--')
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       pull-requests: read
     steps:
       - uses: actions/checkout@v6
         with:
           ref: ${{ github.head_ref }}
           fetch-depth: 0
-          token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
 
       - name: Extract version and compute since
         id: version
@@ -68,11 +67,3 @@ jobs:
           LLM_MODEL: gemini-3-flash-preview
           GEMINI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
 
-      - name: Commit drafts
-        if: steps.check.outputs.needs_draft == 'true'
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add -f drafts/
-          git diff --cached --quiet || git commit -m "chore: draft emails for v${{ steps.version.outputs.value }}"
-          git push
