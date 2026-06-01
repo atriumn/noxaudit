@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4](https://github.com/atriumn/noxaudit/compare/v1.2.3...v1.2.4) (2026-05-30)
+
+
+### Bug Fixes
+
+* **benchmark:** drop invalid focus token and phantom model IDs in corpus.yml ([#162](https://github.com/atriumn/noxaudit/issues/162)) ([ec85982](https://github.com/atriumn/noxaudit/commit/ec859823546e97b2e449a87301d77385344f3f90))
+* remove dead webhook field from NotificationConfig ([#161](https://github.com/atriumn/noxaudit/issues/161)) ([c77b0af](https://github.com/atriumn/noxaudit/commit/c77b0af767bd14f22674e125bcbff229a9f916df)), closes [#158](https://github.com/atriumn/noxaudit/issues/158)
+* route pre-pass to gpt-5-mini to avoid long-context SKU ([#151](https://github.com/atriumn/noxaudit/issues/151)) ([2de80de](https://github.com/atriumn/noxaudit/commit/2de80deabb794d8aa1d96ca4b75b666f409945c3))
+
+
+### Miscellaneous
+
+* add arqo issue templates ([#156](https://github.com/atriumn/noxaudit/issues/156)) ([c2ae679](https://github.com/atriumn/noxaudit/commit/c2ae679b9715c50e263196b6e4280ad5207d483e))
+* **deps:** bump amondnet/vercel-action from 25 to 42 ([#155](https://github.com/atriumn/noxaudit/issues/155)) ([f4cb63d](https://github.com/atriumn/noxaudit/commit/f4cb63d45eef2d92ef301167a2ab193a9691db81))
+* remove npm dependabot entry — no package.json in this repo ([#153](https://github.com/atriumn/noxaudit/issues/153)) ([dd2d069](https://github.com/atriumn/noxaudit/commit/dd2d0691ed0da9976c166e89d34af4c72228b71f))
+* stop committing drafts/; remove orphaned retrieve_chunked.py ([#160](https://github.com/atriumn/noxaudit/issues/160)) ([05743b8](https://github.com/atriumn/noxaudit/commit/05743b88fe60d35d171fa7ebd04677870386727c)), closes [#157](https://github.com/atriumn/noxaudit/issues/157)
+
 ## [1.2.3](https://github.com/atriumn/noxaudit/compare/v1.2.2...v1.2.3) (2026-03-27)
 
 
