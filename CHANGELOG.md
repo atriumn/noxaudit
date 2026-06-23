@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5](https://github.com/atriumn/noxaudit/compare/v1.2.4...v1.2.5) (2026-06-23)
+
+
+### Miscellaneous
+
+* **deps:** bump actions/checkout from 6 to 7 ([#163](https://github.com/atriumn/noxaudit/issues/163)) ([fdc72a4](https://github.com/atriumn/noxaudit/commit/fdc72a422174de814f44cbc2ad75c278e7c33a1e))
+
 ## [1.2.4](https://github.com/atriumn/noxaudit/compare/v1.2.3...v1.2.4) (2026-05-30)
 
 
