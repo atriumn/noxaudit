@@ -12,6 +12,10 @@
 
 <p align="center">AI-powered codebase audits with rotating focus areas, multi-provider support, and decision memory.</p>
 
+<p align="center"><a href="https://noxaudit.com">noxaudit.com</a> · <a href="https://docs.noxaudit.com">Docs</a> · <a href="https://docs.noxaudit.com/benchmark">Model benchmark</a></p>
+
+> **Project status:** maintained, not under active development. The CLI and GitHub Action are complete and work as documented; there is no hosted service. Bug reports and PRs are welcome.
+
 **The problem**: Codebases drift. Security issues creep in, docs go stale, patterns diverge, dead code accumulates. Linters catch syntax — they miss semantics.
 
 **The solution**: Noxaudit runs focused AI audits, rotating through different concerns. It remembers what you've already reviewed so only genuinely new findings surface.
@@ -40,13 +44,20 @@ Each run, Noxaudit:
 ### Local CLI
 
 ```bash
-pip install noxaudit
+pip install 'noxaudit[openai]'
 
-# Create config (edit to match your project)
-cp noxaudit.yml.example noxaudit.yml
+# Minimal config (see noxaudit.yml.example for every option)
+cat > noxaudit.yml <<'YAML'
+repos:
+  - name: my-app
+    path: .
+    provider_rotation: [openai]
+model: gpt-5-mini
+YAML
 
-# Run a security audit
-export ANTHROPIC_API_KEY=sk-...
+# Preview cost, then run a security audit
+export OPENAI_API_KEY=sk-...
+noxaudit estimate --focus security
 noxaudit run --focus security
 
 # Run multiple focus areas in one call
@@ -200,7 +211,7 @@ After the AI provider returns raw findings, Noxaudit runs three post-processing 
 
 **Confidence scoring** — Cross-run frequency analysis using `.noxaudit/findings-history.jsonl`. Findings that recur across multiple runs get higher confidence (60%+ = high, 30%+ = medium, below = low). This upgrades but never downgrades the confidence assigned during validation. Runs automatically.
 
-See [Finding Quality](https://docs.noxaudit.com/finding-quality/) in the docs for details.
+See the [Configuration guide](https://docs.noxaudit.com/guides/configuration) for the `validate` and `dedup` options.
 
 ### `.noxaudit/` directory layout
 
@@ -232,7 +243,7 @@ See [Finding Quality](https://docs.noxaudit.com/finding-quality/) in the docs fo
 | `noxaudit baseline` | Mass-suppress existing findings for adoption (`--focus`, `--severity`, `--undo`, `--list`) |
 | `noxaudit mcp-server` | Start the MCP server for editor integration |
 
-See [CLI Reference](https://docs.noxaudit.com/cli/) for full usage.
+See [CLI Reference](https://docs.noxaudit.com/reference/cli) for full usage.
 
 ## Configuration
 
@@ -243,7 +254,7 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 | Option | Description | Default |
 |--------|-------------|---------|
 | `repos[].path` | Path to repository | `.` |
-| `repos[].provider_rotation` | AI providers to rotate through (see [Providers](#providers) section) | `[anthropic]` |
+| `repos[].provider_rotation` | AI providers to rotate through (see [Providers](#providers) section) | `[gemini]` |
 | `model` | AI model to use (see [Providers](#providers) section for provider-specific setup) | `claude-sonnet-4-6` |
 | `providers.<name>.model` | Override model for a specific provider (e.g., `providers.openai.model`) | (uses global `model`) |
 | `prepass` | Pre-pass filtering configuration (see [Providers](#providers) section) | disabled |
@@ -259,7 +270,7 @@ Create a `noxaudit.yml` in your project root. See [noxaudit.yml.example](noxaudi
 | `decisions.expiry_days` | Days before a decision expires | `90` |
 | `notifications` | Where to send summaries | (none) |
 
-Full configuration reference at [docs.noxaudit.com/config](https://docs.noxaudit.com/config/).
+Full configuration reference at [docs.noxaudit.com/reference/configuration](https://docs.noxaudit.com/reference/configuration).
 
 ## Focus Areas
 
@@ -298,7 +309,7 @@ Reports are saved as markdown in `.noxaudit/reports/{repo}/{date}-{focus}.md`.
 
 ## Providers
 
-Noxaudit supports three AI providers with 10 models. We [benchmarked all of them](https://noxaudit.com/benchmark/) against real repos to find which ones actually deliver.
+Noxaudit supports three AI providers with 10 models. We [benchmarked all of them](https://docs.noxaudit.com/benchmark) against real repos to find which ones actually deliver.
 
 **Benchmark-informed tiers:**
 
@@ -384,7 +395,7 @@ Each audit will cycle through `provider_rotation`: first run uses Anthropic (wit
 | **OpenAI** | `gpt-5-mini` | $0.25 | $2.00 | 50% off |
 | **OpenAI** | `gpt-5-nano` | $0.05 | $0.40 | 50% off |
 
-Full pricing details, tiered rates, and cache pricing in the [Provider Reference](https://noxaudit.com/reference/providers/).
+Full pricing details, tiered rates, and cache pricing in the [Provider Reference](https://docs.noxaudit.com/reference/providers).
 
 ## License
 

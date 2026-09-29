@@ -19,11 +19,7 @@ repos:
 model: claude-sonnet-4-6
 ```
 
-Or copy the example config:
-
-```bash
-cp noxaudit.yml.example noxaudit.yml
-```
+For every available option, see [`noxaudit.yml.example`](https://github.com/atriumn/noxaudit/blob/main/noxaudit.yml.example).
 
 ## 2. Set Your API Key
 

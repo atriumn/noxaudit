@@ -8,13 +8,7 @@ Noxaudit is configured through a `noxaudit.yml` file in your project root.
 
 ## Getting Started
 
-Copy the example config:
-
-```bash
-cp noxaudit.yml.example noxaudit.yml
-```
-
-Or create a minimal one:
+Create a minimal `noxaudit.yml` (the full [`noxaudit.yml.example`](https://github.com/atriumn/noxaudit/blob/main/noxaudit.yml.example) lists every option):
 
 ```yaml
 repos:

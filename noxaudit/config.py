@@ -126,7 +126,7 @@ class NoxauditConfig:
     dedup: DedupConfig = field(default_factory=DedupConfig)
     providers: dict[str, ProviderConfig] = field(default_factory=dict)
     reports_dir: str = ".noxaudit/reports"
-    model: str = "claude-sonnet-4-5-20250929"
+    model: str = "claude-sonnet-4-6"
     chunk_size: int = 0  # 0 = no chunking, >0 = files per chunk
 
     def get_provider_for_repo(self, repo_name: str, run_index: int = 0) -> str:
@@ -253,6 +253,6 @@ def load_config(config_path: str | Path | None = None) -> NoxauditConfig:
         dedup=dedup,
         providers=providers,
         reports_dir=raw.get("reports_dir", ".noxaudit/reports"),
-        model=raw.get("model", "claude-sonnet-4-5-20250929"),
+        model=raw.get("model", "claude-sonnet-4-6"),
         chunk_size=raw.get("chunk_size", 0),
     )
