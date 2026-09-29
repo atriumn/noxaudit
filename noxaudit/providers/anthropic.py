@@ -40,7 +40,7 @@ FINDING_SCHEMA = {
 class AnthropicProvider(BaseProvider):
     name = "anthropic"
 
-    def __init__(self, model: str = "claude-sonnet-4-5-20250929"):
+    def __init__(self, model: str = "claude-sonnet-4-6"):
         api_key = os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
             raise ValueError("ANTHROPIC_API_KEY environment variable is required")
