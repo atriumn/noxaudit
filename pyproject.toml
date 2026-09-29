@@ -34,7 +34,7 @@ dev = [
     "jsonschema>=4.0",
     "pre-commit>=4.0",
     "pytest>=8.0",
-    "ruff>=0.8",
+    "ruff==0.15.1",
 ]
 docs = [
     "mkdocs-material>=9.5",
@@ -68,5 +68,5 @@ markers = [
 [dependency-groups]
 dev = [
     "pytest>=9.0.2",
-    "ruff>=0.15.1",
+    "ruff==0.15.1",
 ]

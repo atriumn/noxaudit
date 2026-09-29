@@ -833,7 +833,7 @@ wheels = [
 
 [[package]]
 name = "noxaudit"
-version = "1.1.6"
+version = "1.2.4"
 source = { editable = "." }
 dependencies = [
     { name = "anthropic" },
@@ -883,14 +883,14 @@ requires-dist = [
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pyyaml", specifier = ">=6.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
+    { name = "ruff", marker = "extra == 'dev'", specifier = "==0.15.1" },
 ]
 provides-extras = ["dev", "docs", "mcp", "openai", "google"]
 
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=9.0.2" },
-    { name = "ruff", specifier = ">=0.15.1" },
+    { name = "ruff", specifier = "==0.15.1" },
 ]
 
 [[package]]
