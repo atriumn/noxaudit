@@ -35,7 +35,7 @@ def _write_config(tmp_path: Path, provider: str = "gemini") -> str:
     (repo_path / "app.py").write_text("x = 1\n")
 
     config = {
-        "repos": [{"name": "test-repo", "path": str(repo_path), "provider": provider}],
+        "repos": [{"name": "test-repo", "path": str(repo_path), "provider_rotation": [provider]}],
         "reports_dir": str(tmp_path / "reports"),
     }
     cfg_path = tmp_path / "noxaudit.yml"

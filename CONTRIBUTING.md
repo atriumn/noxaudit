@@ -215,21 +215,18 @@ ruff format --check noxaudit/ tests/
 Create a test configuration file `noxaudit.yml`:
 
 ```yaml
-ai_provider: anthropic  # or gemini
-anthropic_api_key: your-test-key
+repos:
+  - name: my-test-repo
+    path: .
+    provider_rotation: [anthropic]  # or openai, gemini
+
 model: claude-sonnet-4-6
 
-focus:
-  - security
-  - patterns
-  # ... other focus areas
-
-# Optional: Test notifications
-telegram:
-  enabled: false  # Set to true for testing
-  bot_token: your-bot-token
-  chat_id: your-chat-id
+budget:
+  max_per_run_usd: 0.50
 ```
+
+API keys come from the environment (`ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_API_KEY`), never the config file. Pick focus areas per run with `noxaudit run --focus security,patterns`. See `noxaudit.yml.example` for every option.
 
 ## Getting Help
 
