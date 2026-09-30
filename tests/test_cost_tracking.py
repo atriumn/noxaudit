@@ -5,6 +5,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta
 from unittest import mock
 
+import pytest
 
 from noxaudit.cost_ledger import CostLedger
 
@@ -98,7 +99,7 @@ class TestCostLedgerAppend:
         """Cost is calculated correctly using pricing data."""
         ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
         with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
-            # Gemini pricing: $0.30/M input, $2.50/M output
+            # Gemini pricing: $0.30/M input, $2.50/M output, sync call (no batch discount)
             CostLedger.append_entry(
                 repo="test",
                 focus="security",
@@ -109,6 +110,7 @@ class TestCostLedgerAppend:
                 cache_read_tokens=0,
                 cache_write_tokens=0,
                 file_count=100,
+                batch=False,
             )
 
             entry = CostLedger.read_entries()[0]
@@ -141,6 +143,57 @@ class TestCostLedgerAppend:
             # Total: $27.90, with 50% batch discount = $13.95
             expected_cost = 13.95
             assert abs(entry["cost_estimate_usd"] - expected_cost) < 0.01
+
+    @pytest.mark.parametrize(
+        ("provider", "model", "full_cost"),
+        [
+            # 1M input + 1M output at list price
+            ("openai", "gpt-5-mini", 0.25 + 2.00),
+            ("gemini", "gemini-2.5-flash", 0.30 + 2.50),
+        ],
+    )
+    def test_batch_discount_applied_for_every_provider(self, tmp_path, provider, model, full_cost):
+        """Batch runs are discounted for OpenAI and Gemini too, not just Anthropic."""
+        ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
+        with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
+            for batch in (True, False):
+                CostLedger.append_entry(
+                    repo="test",
+                    focus="security",
+                    provider=provider,
+                    model=model,
+                    input_tokens=1_000_000,
+                    output_tokens=1_000_000,
+                    cache_read_tokens=0,
+                    cache_write_tokens=0,
+                    file_count=100,
+                    batch=batch,
+                )
+            batch_entry, sync_entry = CostLedger.read_entries()
+            assert batch_entry["batch"] is True
+            assert sync_entry["batch"] is False
+            assert abs(batch_entry["cost_estimate_usd"] - full_cost / 2) < 0.001
+            assert abs(sync_entry["cost_estimate_usd"] - full_cost) < 0.001
+
+    def test_sync_anthropic_run_not_discounted(self, tmp_path):
+        """A sync (non-batch) Anthropic run is recorded at full price."""
+        ledger_path = tmp_path / ".noxaudit" / "cost-ledger.jsonl"
+        with mock.patch.object(CostLedger, "LEDGER_PATH", ledger_path):
+            CostLedger.append_entry(
+                repo="test",
+                focus="security",
+                provider="anthropic",
+                model="claude-sonnet-4-6",
+                input_tokens=0,
+                output_tokens=0,
+                cache_read_tokens=1_000_000,
+                cache_write_tokens=0,
+                file_count=10,
+                batch=False,
+            )
+            entry = CostLedger.read_entries()[0]
+            # 1M cache read * $0.30/M, no discount
+            assert abs(entry["cost_estimate_usd"] - 0.30) < 0.001
 
     def test_cache_read_tokens_included_in_cost(self, tmp_path):
         """Cache read tokens are included in cost calculation."""
@@ -437,3 +490,32 @@ class TestProviderTokenTracking:
                 usage = provider.get_last_usage()
                 assert usage["input_tokens"] == 200
                 assert usage["output_tokens"] == 100
+
+
+class TestRepriceEntry:
+    """Retroactive repricing in `noxaudit status` honours the batch flag."""
+
+    @staticmethod
+    def _entry(**extra):
+        return {
+            "provider": "openai",
+            "model": "gpt-5-mini",
+            "input_tokens": 1_000_000,
+            "output_tokens": 1_000_000,
+            **extra,
+        }
+
+    def test_batch_entry_discounted(self):
+        from noxaudit.cli import _reprice_entry
+
+        assert abs(_reprice_entry(self._entry(batch=True)) - 1.125) < 0.001
+
+    def test_sync_entry_full_price(self):
+        from noxaudit.cli import _reprice_entry
+
+        assert abs(_reprice_entry(self._entry(batch=False)) - 2.25) < 0.001
+
+    def test_legacy_entry_treated_as_batch(self):
+        from noxaudit.cli import _reprice_entry
+
+        assert abs(_reprice_entry(self._entry()) - 1.125) < 0.001

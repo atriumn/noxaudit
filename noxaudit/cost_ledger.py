@@ -27,10 +27,12 @@ class CostLedger:
         cache_write_tokens: int,
         file_count: int,
         timestamp: str | None = None,
+        batch: bool = True,
     ) -> None:
         """Append an entry to the cost ledger.
 
-        Creates the ledger file if it doesn't exist.
+        `batch` is whether the usage went through a provider's batch API, which
+        every supported provider discounts. Creates the ledger file if it doesn't exist.
         """
         if timestamp is None:
             timestamp = datetime.now().isoformat()
@@ -41,13 +43,11 @@ class CostLedger:
         if not pricing:
             cost_estimate = 0.0
         else:
-            # Use batch API discount if provider is Anthropic
-            use_batch = provider.lower() == "anthropic"
             cost_estimate = estimate_cost(
                 input_tokens,
                 output_tokens,
                 pricing,
-                use_batch=use_batch,
+                use_batch=batch,
                 cache_read_tokens=cache_read_tokens,
                 cache_write_tokens=cache_write_tokens,
             )
@@ -63,6 +63,7 @@ class CostLedger:
             "cache_read_tokens": cache_read_tokens,
             "cache_write_tokens": cache_write_tokens,
             "file_count": file_count,
+            "batch": batch,
             "cost_estimate_usd": round(cost_estimate, 4),
         }
 

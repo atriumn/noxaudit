@@ -500,6 +500,7 @@ def _retrieve_repo(config, batch_info, focus_label, default_focus, output_format
             cache_read_tokens=usage.get("cache_read_tokens", 0),
             cache_write_tokens=usage.get("cache_write_tokens", 0),
             file_count=file_count,
+            batch=True,
         )
 
     # Find repo config for path
@@ -710,6 +711,7 @@ def _run_repo_sync(config, repo, focus_names, provider_name, dry_run, output_for
         cache_read_tokens=usage.get("cache_read_tokens", 0),
         cache_write_tokens=usage.get("cache_write_tokens", 0),
         file_count=len(files),
+        batch=False,
     )
 
     new_findings, resolved_count = filter_findings(

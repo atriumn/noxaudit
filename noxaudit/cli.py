@@ -47,12 +47,12 @@ def _reprice_entry(entry: dict) -> float:
     if not pricing:
         return entry.get("cost_estimate_usd", 0.0)
 
-    use_batch = provider.lower() == "anthropic"
+    # Entries written before the "batch" field came from submit/retrieve, the batch path
     return estimate_cost(
         input_tokens=entry.get("input_tokens", 0),
         output_tokens=entry.get("output_tokens", 0),
         pricing=pricing,
-        use_batch=use_batch,
+        use_batch=entry.get("batch", True),
         cache_read_tokens=entry.get("cache_read_tokens", 0),
         cache_write_tokens=entry.get("cache_write_tokens", 0),
     )
