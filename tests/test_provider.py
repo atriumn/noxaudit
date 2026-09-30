@@ -180,4 +180,4 @@ class TestSubmitBatchMaxTokens:
 
         call_args = provider.client.messages.batches.create.call_args
         params = call_args[1]["requests"][0]["params"]
-        assert params["max_tokens"] == 4096 * 3
+        assert params["max_tokens"] == min(16384 * 3, 64000)

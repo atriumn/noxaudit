@@ -262,6 +262,7 @@ class TestRetrieveBatch:
         batch = MagicMock()
         batch.status = status
         batch.output_file_id = output_file_id
+        batch.errors = None
         counts = MagicMock()
         counts.total = total
         counts.completed = completed
@@ -317,6 +318,17 @@ class TestRetrieveBatch:
         result = provider.retrieve_batch("batch_123")
         assert result["status"] == "ended"
         assert result.get("findings", []) == []
+
+    def test_batch_rejected_at_validation_raises(self, provider):
+        batch = self._make_batch("failed", total=0)
+        batch.error_file_id = None
+        err = MagicMock()
+        err.message = "The provided model 'x' is not supported by the Batch API."
+        batch.errors = MagicMock(data=[err])
+        provider.client.batches.retrieve.return_value = batch
+
+        with pytest.raises(RuntimeError, match="not supported by the Batch API"):
+            provider.retrieve_batch("batch_123")
 
     def test_tracks_token_usage(self, provider):
         batch = self._make_batch("completed", output_file_id="file-out", total=1, completed=1)

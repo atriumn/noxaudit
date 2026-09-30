@@ -159,7 +159,9 @@ class GeminiProvider(BaseProvider):
                 if usage:
                     self._last_usage = {
                         "input_tokens": usage.get("promptTokenCount", 0) or 0,
-                        "output_tokens": usage.get("candidatesTokenCount", 0) or 0,
+                        # Thinking tokens are billed as output but reported separately.
+                        "output_tokens": (usage.get("candidatesTokenCount", 0) or 0)
+                        + (usage.get("thoughtsTokenCount", 0) or 0),
                         "cache_read_tokens": usage.get("cachedContentTokenCount", 0) or 0,
                         "cache_write_tokens": 0,
                     }
@@ -214,7 +216,8 @@ class GeminiProvider(BaseProvider):
         if usage:
             self._last_usage = {
                 "input_tokens": getattr(usage, "prompt_token_count", 0) or 0,
-                "output_tokens": getattr(usage, "candidates_token_count", 0) or 0,
+                "output_tokens": (getattr(usage, "candidates_token_count", 0) or 0)
+                + (getattr(usage, "thoughts_token_count", 0) or 0),
                 "cache_read_tokens": 0,
                 "cache_write_tokens": 0,
             }
