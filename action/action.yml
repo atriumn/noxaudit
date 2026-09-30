@@ -19,6 +19,12 @@ inputs:
   anthropic-api-key:
     description: 'Anthropic API key'
     required: false
+  openai-api-key:
+    description: 'OpenAI API key'
+    required: false
+  google-api-key:
+    description: 'Google API key'
+    required: false
   telegram-bot-token:
     description: 'Telegram bot token for notifications'
     required: false
@@ -70,18 +76,25 @@ runs:
       shell: bash
       env:
         ANTHROPIC_API_KEY: ${{ inputs.anthropic-api-key }}
+        OPENAI_API_KEY: ${{ inputs.openai-api-key }}
+        GOOGLE_API_KEY: ${{ inputs.google-api-key }}
         TELEGRAM_BOT_TOKEN: ${{ inputs.telegram-bot-token }}
         TELEGRAM_CHAT_ID: ${{ inputs.telegram-chat-id }}
         GH_TOKEN: ${{ inputs.github-token }}
+        # Inputs reach the script only through env vars, never interpolated into it
+        NOXAUDIT_MODE: ${{ inputs.mode }}
+        NOXAUDIT_CONFIG: ${{ inputs.config }}
+        NOXAUDIT_FOCUS: ${{ inputs.focus }}
+        NOXAUDIT_FORMAT: ${{ inputs.format }}
       run: |
-        if [ "${{ inputs.mode }}" = "submit" ]; then
-          ARGS="--config ${{ inputs.config }}"
-          if [ -n "${{ inputs.focus }}" ]; then
-            ARGS="$ARGS --focus ${{ inputs.focus }}"
+        if [ "$NOXAUDIT_MODE" = "submit" ]; then
+          ARGS=()
+          if [ -n "$NOXAUDIT_FOCUS" ]; then
+            ARGS+=(--focus "$NOXAUDIT_FOCUS")
           fi
-          noxaudit submit $ARGS
+          noxaudit --config "$NOXAUDIT_CONFIG" submit "${ARGS[@]}"
         else
-          noxaudit retrieve --config ${{ inputs.config }} --format ${{ inputs.format }}
+          noxaudit --config "$NOXAUDIT_CONFIG" retrieve --format "$NOXAUDIT_FORMAT"
         fi
 
     - name: Cache pending batch (submit mode)

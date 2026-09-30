@@ -102,7 +102,7 @@ jobs:
 | `anthropic-api-key` | Anthropic API key | no | — |
 | `openai-api-key` | OpenAI API key | no | — |
 | `google-api-key` | Google API key | no | — |
-| `output-format` | `markdown` or `sarif` | no | `markdown` |
+| `format` | `markdown` or `sarif` | no | `markdown` |
 | `upload-sarif` | Upload SARIF to GitHub Code Scanning | no | `false` |
 | `telegram-bot-token` | Telegram bot token | no | — |
 | `telegram-chat-id` | Telegram chat ID | no | — |
@@ -115,7 +115,7 @@ Generate SARIF output and upload to GitHub Code Scanning:
 - uses: atriumn/noxaudit/action@main
   with:
     anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    output-format: sarif
+    format: sarif
     upload-sarif: true
 ```
 
