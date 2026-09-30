@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5](https://github.com/atriumn/noxaudit/compare/v1.2.4...v1.2.5) (2026-09-30)
+
+
+### Bug Fixes
+
+* **action:** pass inputs via env vars, fix --config placement, add OpenAI/Google key inputs ([#172](https://github.com/atriumn/noxaudit/issues/172)) ([b1617f7](https://github.com/atriumn/noxaudit/commit/b1617f756b46f4ea1889548be16d3d8f8519445c))
+* apply the batch discount by API path, not provider ([#175](https://github.com/atriumn/noxaudit/issues/175)) ([a1dc775](https://github.com/atriumn/noxaudit/commit/a1dc775800f80e3c4dc99e63d255ac07936bce60))
+* never send secrets files to the model provider ([#173](https://github.com/atriumn/noxaudit/issues/173)) ([d63e015](https://github.com/atriumn/noxaudit/commit/d63e015ca12d6475f591cb2113386eb9167c5a38))
+* pin ruff and mcp&lt;2 to fix CI and the mcp extra ([#168](https://github.com/atriumn/noxaudit/issues/168)) ([ddfbb99](https://github.com/atriumn/noxaudit/commit/ddfbb997bbdeb9cf7b67db5e1ecc2f328a6032be))
+* support Claude 5.5 thinking output, count Gemini thinking tokens, surface rejected OpenAI batches ([6d886ba](https://github.com/atriumn/noxaudit/commit/6d886babc18da79c444f635d9344d4869d31aa8b))
+
+
+### Miscellaneous
+
+* **deps:** bump actions/checkout from 6 to 7 ([#163](https://github.com/atriumn/noxaudit/issues/163)) ([fdc72a4](https://github.com/atriumn/noxaudit/commit/fdc72a422174de814f44cbc2ad75c278e7c33a1e))
+* **deps:** bump actions/setup-python from 6 to 7 ([#165](https://github.com/atriumn/noxaudit/issues/165)) ([15ec712](https://github.com/atriumn/noxaudit/commit/15ec712e322273426c2abf3293706f0bb14d4b88))
+* **deps:** bump vulnerable Python and docs-site dependencies ([#170](https://github.com/atriumn/noxaudit/issues/170)) ([2528a42](https://github.com/atriumn/noxaudit/commit/2528a42e84b1644b900870615884c0da0a4815c4))
+
+
+### Documentation
+
+* fix quick start, stale links, and default model for maintenance mode ([#167](https://github.com/atriumn/noxaudit/issues/167)) ([4f157f2](https://github.com/atriumn/noxaudit/commit/4f157f295f268c8321c0e7e15f71b313edb34775))
+* September 2026 benchmark refresh — 10 models, same repos and commits ([85b0176](https://github.com/atriumn/noxaudit/commit/85b0176577ac1645cac7eca1d4fae6b671ec94cb))
+
+
+### Tests
+
+* use the real provider_rotation key in the CLI integration fixture ([#174](https://github.com/atriumn/noxaudit/issues/174)) ([951a4f7](https://github.com/atriumn/noxaudit/commit/951a4f7b4a4ead43cb5688f910721568b7516f25))
+
 ## [1.2.4](https://github.com/atriumn/noxaudit/compare/v1.2.3...v1.2.4) (2026-05-30)
 
 
