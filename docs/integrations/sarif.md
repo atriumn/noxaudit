@@ -56,7 +56,7 @@ Use the action's built-in SARIF upload:
 - uses: atriumn/noxaudit/action@main
   with:
     anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    output-format: sarif
+    format: sarif
     upload-sarif: true
 ```
 
@@ -66,7 +66,7 @@ Or use the standard `github/codeql-action/upload-sarif` action:
 - uses: atriumn/noxaudit/action@main
   with:
     anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    output-format: sarif
+    format: sarif
 
 - uses: github/codeql-action/upload-sarif@v3
   with:
@@ -101,6 +101,6 @@ Or in GitHub Actions:
   with:
     mode: retrieve
     anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
-    output-format: sarif
+    format: sarif
     upload-sarif: true
 ```
