@@ -52,7 +52,17 @@ All configuration lives in `noxaudit.yml` in your project root.
 
 The following paths are **always excluded** from file gathering, regardless of config:
 
-`node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `dist`, `build`, `site`, `.noxaudit`, `.env`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `benchmark/results`, `htmlcov`, `egg-info`
+`node_modules`, `.git`, `__pycache__`, `.venv`, `venv`, `dist`, `build`, `site`, `.noxaudit`, `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `benchmark/results`, `htmlcov`, `egg-info`
+
+Secrets files are never read or sent to a provider, for any focus area:
+
+- env files: `.env`, `.env.*`, `*.env`, `.envrc`
+- keys and certificates: `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.jks`, `*.keystore`, `id_rsa*`, `id_ed25519*` and the other SSH key names
+- credential files: `.npmrc`, `.pypirc`, `.netrc`, `.pgpass`, `.htpasswd`, `credentials`, `credentials.json`, `service-account*.json`, `secrets.{yml,yaml,json,toml}`
+- Terraform: `*.tfvars`, `*.tfstate`
+- anything under `.env/`, `.envs/`, `.ssh/`, `.gnupg/` or `.aws/`
+
+Env templates (`.env.example`, `.env.sample`, `.env.template`, `.env.dist`) are still audited, since they are committed on purpose and hold no values.
 
 Use `repos[].exclude` to add project-specific exclusions on top of these:
 

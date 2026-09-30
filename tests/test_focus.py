@@ -2,11 +2,14 @@
 
 from __future__ import annotations
 
+import pytest
+
 from noxaudit.focus import FOCUS_AREAS
 from noxaudit.focus.base import (
     BaseFocus,
     build_combined_prompt,
     gather_files_combined,
+    is_secret_file,
 )
 
 
@@ -97,6 +100,57 @@ class TestGatherFilesCombined:
         assert len(combined) > 0
         paths = [f.path for f in combined]
         assert len(paths) == len(set(paths))
+
+
+SECRET_FILES = [
+    ".env",
+    ".env.local",
+    ".env.production",
+    "app/prod.env",
+    ".envrc",
+    ".envs/prod.json",
+    "credentials.json",
+    "service-account-prod.json",
+    ".aws/credentials",
+    ".ssh/config",
+    "certs/server.key",
+    "certs/server.pem",
+    "id_rsa",
+    ".npmrc",
+    ".pypirc",
+    ".netrc",
+    "config/secrets.yml",
+    "infra/prod.tfvars",
+    "infra/terraform.tfstate",
+]
+
+
+class TestSecretFiles:
+    @pytest.mark.parametrize("path", SECRET_FILES)
+    def test_is_secret_file(self, path):
+        assert is_secret_file(path)
+
+    @pytest.mark.parametrize(
+        "path",
+        [".env.example", ".env.sample", "app/.env.template", "src/environment.py", "config.yml"],
+    )
+    def test_not_secret_file(self, path):
+        assert not is_secret_file(path)
+
+    def test_never_gathered_by_any_focus(self, tmp_repo):
+        for rel in SECRET_FILES + [".env.example"]:
+            path = tmp_repo / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("TOKEN=hunter2\n")
+
+        all_focus = [cls() for cls in FOCUS_AREAS.values()]
+        combined = {f.path for f in gather_files_combined(all_focus, tmp_repo)}
+        single = {f.path for focus in all_focus for f in focus.gather_files(tmp_repo)}
+
+        for paths in (combined, single):
+            assert not paths & set(SECRET_FILES)
+            assert "src/app.py" in paths
+        assert ".env.example" in combined
 
 
 class TestBuildCombinedPrompt:

@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from pathlib import Path
+from fnmatch import fnmatch
+from pathlib import Path, PurePath
 
 from noxaudit.models import FileContent
 
@@ -22,7 +23,6 @@ DEFAULT_EXCLUDES = {
     "build",
     "site",
     ".noxaudit",
-    ".env",
     ".pytest_cache",
     ".mypy_cache",
     ".ruff_cache",
@@ -30,6 +30,65 @@ DEFAULT_EXCLUDES = {
     "htmlcov",
     "egg-info",
 }
+
+# Files that hold secrets are never sent to a provider, whatever the focus or config.
+# Matched against the file name (case-insensitive).
+SECRET_FILE_PATTERNS = (
+    ".env",
+    ".env.*",
+    "*.env",
+    ".envrc",
+    "*.pem",
+    "*.key",
+    "*.p12",
+    "*.pfx",
+    "*.jks",
+    "*.keystore",
+    "id_rsa*",
+    "id_dsa*",
+    "id_ecdsa*",
+    "id_ed25519*",
+    ".npmrc",
+    ".pypirc",
+    ".netrc",
+    ".pgpass",
+    ".htpasswd",
+    "credentials",
+    "credentials.json",
+    "service-account*.json",
+    "secrets.yml",
+    "secrets.yaml",
+    "secrets.json",
+    "secrets.toml",
+    "*.tfvars",
+    "*.tfstate",
+    "*.tfstate.*",
+)
+
+# Env templates are committed on purpose and hold no values, so they stay auditable.
+SECRET_FILE_ALLOW = (
+    ".env.example",
+    ".env.sample",
+    ".env.template",
+    ".env.dist",
+    "*.env.example",
+    "*.env.sample",
+    "*.env.template",
+)
+
+# Directories whose contents are secrets (or a virtualenv named .env).
+SECRET_DIRS = {".env", ".envs", ".ssh", ".gnupg", ".aws"}
+
+
+def is_secret_file(rel_path: str) -> bool:
+    """Whether a repo-relative path is a secrets file that must never leave the machine."""
+    parts = PurePath(rel_path).parts
+    if any(part in SECRET_DIRS for part in parts[:-1]):
+        return True
+    name = parts[-1].lower()
+    if any(fnmatch(name, pattern) for pattern in SECRET_FILE_ALLOW):
+        return False
+    return any(fnmatch(name, pattern) for pattern in SECRET_FILE_PATTERNS)
 
 
 class BaseFocus(ABC):
@@ -67,7 +126,7 @@ class BaseFocus(ABC):
                 if path.stat().st_size > MAX_FILE_SIZE:
                     continue
                 rel = str(path.relative_to(repo))
-                if any(ex in rel for ex in exclude):
+                if any(ex in rel for ex in exclude) or is_secret_file(rel):
                     continue
                 try:
                     content = path.read_text(errors="replace")
@@ -163,7 +222,7 @@ def gather_files_combined(
             rel = str(path.relative_to(repo))
             if rel in seen_paths:
                 continue
-            if any(ex in rel for ex in exclude):
+            if any(ex in rel for ex in exclude) or is_secret_file(rel):
                 continue
             try:
                 content = path.read_text(errors="replace")
