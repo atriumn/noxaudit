@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "openai",
+    "model": "gpt-5-mini",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:52:42.882565",
+    "completed_at": "2026-09-29T22:53:44.588482",
+    "wall_clock_seconds": 61.71,
+    "error": null
+  },
+  "tokens": {
+    "input": 43997,
+    "output": 5382,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0109,
+  "findings_count": 18,
+  "findings": [
+    {
+      "id": "76a637410712",
+      "severity": "high",
+      "file": "tests/test_cli.py",
+      "line": null,
+      "title": "Test bug: undefined variable `format` used in test_list",
+      "description": "In test_list (parametrized) the code builds args and then checks `if format is not None:` to decide whether to append the --format option. The local variable in the test is named `output_format` (from parametrize). Using `format` (a builtin name) is a bug and will raise NameError or make the test behave incorrectly, causing test failures or skipped branches.",
+      "suggestion": "Change `if format is not None:` to `if output_format is not None:`. Review other tests for similar typos and run the test suite locally to ensure no other NameError-like issues exist.",
+      "focus": "testing"
+    },
+    {
+      "id": "6785ac0f031e",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": null,
+      "title": "Documentation commands contain invalid 'uv' prefix (typo) which will mislead contributors",
+      "description": "The CONTRIBUTING.md file shows example commands prefixed with `uv` (e.g. `uv venv`, `uv pip install -r requirements.txt`, `uv run pytest`). `uv` is not a standard command and appears to be a typo (probably meant to be `python -m` or nothing). Following these instructions will fail for contributors and CI onboarding.",
+      "suggestion": "Fix the commands to valid shell commands. For example: replace `uv venv` with `python -m venv venv` (or explain the recommended venv creation), replace `uv pip install -r requirements.txt` with `pip install -r requirements.txt`, and replace `uv run pytest` with `pytest` or `python -m pytest`. Update docs/contributing.md similarly.",
+      "focus": "docs"
+    },
+    {
+      "id": "cf84509077a7",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": null,
+      "title": "Duplicate contributing doc contains same 'uv' typos and will mislead users",
+      "description": "The docs/contributing.md file duplicates CONTRIBUTING.md and contains the same incorrect `uv`-prefixed commands. This means fixing only root CONTRIBUTING.md will leave the docs site and packaged docs with wrong instructions.",
+      "suggestion": "Update docs/contributing.md to match corrected CONTRIBUTING.md (remove `uv` typos, ensure mkdocs-friendly formatting). Consider maintaining a single source of truth or templating to avoid drift.",
+      "focus": "docs"
+    },
+    {
+      "id": "4daebb0e1182",
+      "severity": "medium",
+      "file": "docs/reference.md",
+      "line": 1,
+      "title": "Reference page is a placeholder and not useful",
+      "description": "docs/reference.md contains only a single line `# ::: dotenv`. This is likely a placeholder for mkdocstrings to generate API docs, but as-is it doesn't document the public API and may confuse readers of the docs site or users seeking API reference.",
+      "suggestion": "Ensure mkdocstrings is properly configured and that the reference page includes generated API docs when building. If generation requires additional config, document the generation step in contributing docs. If the placeholder is intentional, add a brief note explaining how to generate the full reference.",
+      "focus": "docs"
+    },
+    {
+      "id": "f5fca0c077d5",
+      "severity": "medium",
+      "file": "README.md",
+      "line": null,
+      "title": "Docs duplication between README and docs/index.md increases maintenance burden",
+      "description": "README.md and docs/index.md appear to be near-duplicates. Maintaining the same content in two places is error-prone and leads to drift (one may be updated while the other is not). Indeed there are small inconsistencies between root docs and docs/ folder (e.g. link formatting and minor wording).",
+      "suggestion": "Consolidate primary documentation. Use one canonical source (e.g., README.md) and include it into MkDocs using include plugins, or generate docs/index.md from README.md so there's a single source of truth.",
+      "focus": "docs"
+    },
+    {
+      "id": "6ba33fb84296",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": null,
+      "title": "Unpinned dependencies in requirements.txt (including runtime/development mix)",
+      "description": "requirements.txt contains many unpinned packages (e.g., click, ipython, pytest>=3.9, ruff, pre-commit). Unpinned dependencies make reproducible builds difficult and increase supply-chain risk (unexpected upgrades may introduce breaking changes or vulnerabilities). Also developer tools (ruff, pre-commit) are listed alongside runtime dependencies, mixing concerns.",
+      "suggestion": "Pin versions (use a lock file or specify exact versions) for production releases or clearly separate production vs dev dependencies. Move developer-only tools to an explicit dev requirements file (e.g., requirements-dev.txt) or specify them in pyproject optional/dev sections. Consider adopting poetry/poetry.lock or pip-tools to manage pinning.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "b1761eb3af35",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 33,
+      "title": "Dependency declaration inconsistency: click declared as optional but present in requirements.txt",
+      "description": "pyproject.toml marks `click` as an optional dependency (project.optional-dependencies.cli = ['click>=5.0']), while the top-level requirements.txt includes `click` without a pinned version. This creates confusion about whether CLI is optional and leads to possible version mismatches.",
+      "suggestion": "Decide whether click should be optional. If it is optional, remove it from requirements.txt; if it is required for tests or build, update pyproject optional-dependencies accordingly and pin versions consistently. Keep a single source of truth for dependencies.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "524cf663c89a",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 182,
+      "title": "Command execution environment may be influenced by .env values (intentional but notable)",
+      "description": "run_command merges the current process environment with the variables loaded from the `.env` file and then executes the provided command. A malicious or incorrect .env file may inject environment variables that influence the behavior of child processes (PATH, LD_LIBRARY_PATH, etc.). While this is expected behavior for a dotenv runner, it is a potential attack surface if .env files are untrusted.",
+      "suggestion": "Document this behavior clearly in the README and CLI help so users understand that variables from .env are added to the child process environment. Consider providing an option to whitelist keys or to sanitize/deny changes to certain sensitive environment variables (e.g., PATH, LD_PRELOAD) when running untrusted commands.",
+      "focus": "security"
+    },
+    {
+      "id": "f4684352b0b3",
+      "severity": "low",
+      "file": "tests/test_parser.py",
+      "line": null,
+      "title": "Test includes a realistic-looking secret string in test data",
+      "description": "There is a test case using a value 'S3cr3t_P4ssw#rD' inside tests/test_parser.py. While it's a test string, including anything that resembles a secret increases the chance of accidental leakage or being mistaken for a real credential.",
+      "suggestion": "Replace realistic-looking secrets in tests with clearly fake placeholders (e.g., 'TEST_SECRET') or mark them as non-sensitive in a comment.",
+      "focus": "security"
+    },
+    {
+      "id": "b2893cacd41d",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 330,
+      "title": "Potential performance / allocation inefficiency in resolve_variables",
+      "description": "In resolve_variables(), for every variable processed the function constructs a fresh `env` dict and copies values from os.environ and new_values depending on override flag. For large .env files or when parse_variables is called many times this leads to repeated allocations and copies.",
+      "suggestion": "Avoid rebuilding the environment dict for every variable. Build a single base environment mapping once (respecting override semantics) and update it incrementally as variables are resolved, or pass a read-only layered mapping to atom resolution to reduce allocations.",
+      "focus": "performance"
+    },
+    {
+      "id": "cccac2086b09",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": null,
+      "title": "Broken markdown/code fence formatting and empty mkdocs link",
+      "description": "The CONTRIBUTING.md has a reference to `[mkdocs]()` with an empty link target and uses nested triple-backticks/code fences that appear misformatted. This may render poorly on GitHub or in the docs site.",
+      "suggestion": "Fix the mkdocs link to point to the actual mkdocs project URL or remove the bracket. Clean up code fences to ensure proper markdown rendering. Consider previewing the resulting README in the docs site to confirm formatting.",
+      "focus": "docs"
+    },
+    {
+      "id": "4e43b46001a6",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 119,
+      "title": "CLI: Using click.Path(file_okay=True) with default file computed at import time",
+      "description": "The click CLI option default for `--file` is enumerate_env() which computes os.getcwd() at import time. When the CLI is invoked from a different working directory than when the module was imported, the default may be stale. Additionally, enumerate_env returns a path even if cwd doesn't exist (handled but may be surprising).",
+      "suggestion": "Make the default for the option a callable (Click supports `default=enumerate_env` as a callable) so evaluation happens at invocation time, or compute the default inside the CLI function to ensure the current cwd is used.",
+      "focus": "patterns"
+    },
+    {
+      "id": "b38ed40e0f97",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 98,
+      "title": "Fail-open pattern when parsing invalid .env lines only logs and continues",
+      "description": "with_warn_for_invalid_lines yields mappings with mapping.error True after catching parse errors and logs a warning but continues processing. While user-friendly, this may hide parsing errors for critical configuration lines and cause unexpected behavior in production if malformed lines are silently ignored.",
+      "suggestion": "Consider exposing a stricter mode (e.g., `strict=True`) for load_dotenv/dotenv_values to raise an exception on parse errors, or allow the caller to control whether parse errors should abort. Update docs to mention the default behavior and how to opt in to strict parsing.",
+      "focus": "security"
+    },
+    {
+      "id": "a7363d7c1252",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": 1,
+      "title": "build-system.requires uses a loose requirement range for setuptools",
+      "description": "pyproject.toml lists requires = [\"setuptools >= 77.0\"] which allows installing any later setuptools version. While generally acceptable, this can cause build nondeterminism across environments.",
+      "suggestion": "Consider pinning a narrower range or documenting supported setuptools versions. For reproducible builds, use a build isolation tool or include a lock file for build-time dependencies.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "250e0f5a1693",
+      "severity": "low",
+      "file": ".pre-commit-config.yaml",
+      "line": 3,
+      "title": "Pinned ruff-pre-commit rev may become outdated",
+      "description": "The pre-commit hook references ruff-pre-commit at rev v0.12.0. Pinning is good, but the repository should have a process to periodically update hooks to newer revs to pick up bug fixes and security fixes.",
+      "suggestion": "Add documentation on how to update pre-commit hooks and schedule periodic updates in CI, or consider pinning to a known-good commit hash if not using a version tag.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "3608cf9d8667",
+      "severity": "low",
+      "file": "docs/changelog.md",
+      "line": null,
+      "title": "Duplicate changelog (CHANGELOG.md and docs/changelog.md) increases maintenance burden",
+      "description": "There are two changelog files with identical content (CHANGELOG.md and docs/changelog.md). Maintaining both increases risk of drift and inconsistent release notes across places.",
+      "suggestion": "Keep a single source of truth for the changelog and include it in the docs website using MkDocs include plugin or symlink/automation during the docs build to avoid duplication.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "115f5857ca7e",
+      "severity": "low",
+      "file": "src/dotenv/__init__.py",
+      "line": 1,
+      "title": "get_cli_string doesn't shell-escape all parts consistently",
+      "description": "get_cli_string builds a CLI string by concatenation and uses simple quoting for values with spaces. It does not shell-escape keys, paths, or other arguments which could contain shell metacharacters leading to incorrect or unsafe CLI strings if the function is used to display or re-run user-provided content.",
+      "suggestion": "Either document that get_cli_string is only for display purposes and not for re-executing complex inputs, or use shlex.quote for all dynamic components (path, key, value) to produce a safe CLI string.",
+      "focus": "patterns"
+    },
+    {
+      "id": "41e068a1fce4",
+      "severity": "low",
+      "file": "requirements-docs.txt",
+      "line": null,
+      "title": "Docs requirements are not pinned and may produce different builds over time",
+      "description": "requirements-docs.txt contains minimum versions (e.g., mkdocs>=1.5.0) and other packages without pinned builds. This can lead to documentation build inconsistencies across machines or over time.",
+      "suggestion": "Pin versions (or provide a lock file) for building documentation reproducibly, or document the tested/known-good versions used by the project.",
+      "focus": "dependencies"
+    }
+  ]
+}

@@ -1,0 +1,53 @@
+# Benchmark Phase 3: September 2026 refresh
+#
+# 10 models × 2 repos × all focus areas × 1 run = 20 runs
+# Same repos and pinned commits as Phase 1. All batch API (50% discount).
+#
+# Continuity anchors (also in Phase 1): claude-haiku-4-5, claude-sonnet-4-6,
+# gpt-5-mini, gpt-5.4. They separate "the models got better" from
+# "noxaudit's prompts changed since March".
+
+matrix:
+  providers:
+    - name: anthropic
+      models:
+        - claude-haiku-4-5
+        - claude-sonnet-4-6
+        - claude-sonnet-5-5
+        - claude-opus-5-5
+
+    - name: gemini
+      models:
+        - gemini-3.8-flash
+        - gemini-3.1-pro-preview
+
+    - name: openai
+      models:
+        - gpt-6-luna
+        - gpt-5-mini
+        - gpt-5.4
+        - gpt-6-sol
+
+  focus:
+    - all
+
+  runs: 1
+
+  repos:
+    - name: python-dotenv
+      path: ~/benchmark-repos/python-dotenv
+      commit: da0c82054f1ec1e03d57356d49b0b9ad09eb4209
+      exclude: []
+
+    - name: noxaudit
+      path: ~/benchmark-repos/noxaudit
+      commit: 1503cbf22b08bbe7e64962221c7075474ed33f57
+      exclude:
+        - "*.lock"
+        - ".venv/**"
+
+  output_dir: benchmark/results-phase3
+
+  rate_limit:
+    sleep_between_runs: 5
+    backoff_on_error: 30

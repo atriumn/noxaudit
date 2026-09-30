@@ -4,6 +4,9 @@ title: Benchmark Results
 
 # Benchmark Results
 
+!!! info "September 2026 refresh"
+    We re-ran this benchmark with ten current models on the same repos and commits. See [What 10 LLMs found auditing the same codebase](blog/2026-09-30-llms-one-codebase.md). The results below are from March 2026.
+
 We benchmarked all 10 supported models to understand which ones actually find real issues vs. generate noise. This data directly informs our [recommended model tiers](reference/providers.md#recommended-setup).
 
 ## Methodology

@@ -1,0 +1,204 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:29.245223",
+    "completed_at": "2026-09-29T23:48:35.990572",
+    "wall_clock_seconds": 1566.75,
+    "error": null
+  },
+  "tokens": {
+    "input": 107163,
+    "output": 7935,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0073,
+  "findings_count": 18,
+  "findings": [
+    {
+      "id": "c2a3f45a544a",
+      "severity": "high",
+      "file": "action/action.yml",
+      "line": 56,
+      "title": "Workflow inputs are interpolated directly into shell code",
+      "description": "The `mode`, `config`, and `focus` inputs are inserted into a multiline `run` script using `${{ inputs.* }}`. A crafted input containing shell syntax can break out of the quoted values and execute commands on the GitHub runner, where API keys and other workflow credentials are available.",
+      "suggestion": "Pass inputs through environment variables and quote them as data, or use an action that handles arguments without generating shell source. Validate mode and focus against allowed values.",
+      "focus": "security"
+    },
+    {
+      "id": "35100bdc164d",
+      "severity": "medium",
+      "file": "noxaudit/focus/security.py",
+      "line": 12,
+      "title": "Audit gathering includes environment files that may contain live credentials",
+      "description": "The security focus explicitly gathers `**/*.env*` and `**/.env*`, then the runner sends gathered file contents to the configured AI provider. A normal `.env` containing production credentials can therefore be transmitted to a third party during an audit.",
+      "suggestion": "Exclude environment and secret files by default, add secret redaction before provider calls, and require an explicit opt-in with a clear warning to include them.",
+      "focus": "security"
+    },
+    {
+      "id": "8f0c77e9fa88",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 48,
+      "title": "File gathering can follow symlinks outside the repository",
+      "description": "`path.is_file()` accepts symlinks to regular files, and `read_text()` follows those links. A repository symlink matching an included pattern can cause files outside the configured repository (including local secrets) to be sent to the AI provider.",
+      "suggestion": "Resolve each candidate and verify it remains beneath the resolved repository root before reading it; consider skipping symlinks entirely.",
+      "focus": "security"
+    },
+    {
+      "id": "7b7bea58acef",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": 104,
+      "title": "AI-generated Markdown is inserted unescaped into automatically created GitHub issues",
+      "description": "Finding titles, descriptions, and suggestions are incorporated directly into GitHub issue Markdown. Repository-controlled content can influence model output; if that output includes attacker-controlled links or remote images, enabling issue creation can publish them for maintainers to view and potentially leak viewer information.",
+      "suggestion": "Treat model output as untrusted: escape or sanitize Markdown, remove remote image embeds and unsafe links, and consider requiring review before publishing issue bodies.",
+      "focus": "security"
+    },
+    {
+      "id": "4840daac01d5",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 36,
+      "title": "The action installs mutable code from the default branch",
+      "description": "The composite action installs the package from `git+https://github.com/atriumn/noxaudit.git` without a tag or commit pin. Each workflow run can therefore execute different code as the branch changes, making builds non-reproducible and increasing supply-chain exposure.",
+      "suggestion": "Install from a versioned release or immutable commit, and recommend consumers pin the action itself to a full commit SHA.",
+      "focus": "security"
+    },
+    {
+      "id": "d5dcf6dfcd98",
+      "severity": "high",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 108,
+      "title": "Synchronous audit polling can wait forever",
+      "description": "`run_audit()` polls the batch API in an unbounded `while True` loop and sleeps for 60 seconds whenever the batch has not ended. A batch stuck in a nonterminal state leaves the CLI process\u2014and any CI job\u2014running indefinitely.",
+      "suggestion": "Add an overall deadline or configurable maximum wait, handle terminal error states explicitly, and return a useful timeout error.",
+      "focus": "performance"
+    },
+    {
+      "id": "364828b23f3a",
+      "severity": "medium",
+      "file": "noxaudit/providers/openai.py",
+      "line": 178,
+      "title": "OpenAI synchronous batch polling has no timeout",
+      "description": "`run_audit()` also polls in an unbounded loop with a 60-second sleep. A batch that remains nonterminal can indefinitely consume a local process or CI runner.",
+      "suggestion": "Use a bounded polling deadline with backoff and report the batch ID and current status when the deadline expires.",
+      "focus": "performance"
+    },
+    {
+      "id": "316886b7a1cf",
+      "severity": "medium",
+      "file": "noxaudit/providers/gemini.py",
+      "line": 161,
+      "title": "Gemini synchronous batch polling has no timeout",
+      "description": "`run_audit()` repeatedly retrieves the batch until it reaches a terminal state, with no deadline or maximum number of polls. A stuck job can hold a process or CI runner indefinitely.",
+      "suggestion": "Add bounded polling with backoff and surface failed, cancelled, and timeout states distinctly.",
+      "focus": "performance"
+    },
+    {
+      "id": "56fee6ea28dd",
+      "severity": "low",
+      "file": "noxaudit/cost_ledger.py",
+      "line": 73,
+      "title": "The cost ledger is read and retained without a size bound",
+      "description": "`read_entries()` loads every JSONL entry into memory, and `get_last_n_days()` filters only after loading the complete file. The ledger grows on every audit and is never pruned, so status and cost summaries become progressively slower and more memory-intensive.",
+      "suggestion": "Prune entries beyond the retention period, or stream the file and retain only entries needed for the requested date range.",
+      "focus": "performance"
+    },
+    {
+      "id": "2e844e9ec147",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 322,
+      "title": "Provider-specific model overrides are ignored when running audits",
+      "description": "Configuration parsing and `NoxauditConfig.get_model_for_provider()` support `providers.<name>.model`, and the documentation says those values override the global model. The runner instead constructs providers with `config.model` in its submit, retrieve, and synchronous paths, so the documented override is not used and cost tracking can record a model different from the one actually intended.",
+      "suggestion": "Resolve the model with `config.get_model_for_provider(pname)` consistently for provider construction, audit submission, retrieval, and cost tracking.",
+      "focus": "docs"
+    },
+    {
+      "id": "81dae9e1aab9",
+      "severity": "high",
+      "file": "docs/integrations/github-actions.md",
+      "line": 65,
+      "title": "Documented SARIF action input does not exist",
+      "description": "The guide configures `output-format: sarif`, but `action/action.yml` defines the input as `format`. GitHub Actions will not pass the undocumented input to the action, so following the guide leaves the action using its default Markdown format and prevents the documented SARIF behavior.",
+      "suggestion": "Change the examples and input table to use `format: sarif`, or rename the action input and update all consumers consistently.",
+      "focus": "docs"
+    },
+    {
+      "id": "c64885a2e96e",
+      "severity": "high",
+      "file": "docs/integrations/github-actions.md",
+      "line": 54,
+      "title": "The documented action inputs and provider support do not match the action",
+      "description": "The input table lists `openai-api-key` and `google-api-key`, but neither input exists in `action/action.yml`; the action also installs the base package without the `openai` or `google` extras. Workflows following this reference cannot configure those providers through the action as documented.",
+      "suggestion": "Either add the provider inputs and install the corresponding extras, or document that the GitHub Action currently supports only the providers it actually installs and configures.",
+      "focus": "docs"
+    },
+    {
+      "id": "4e174ccf86b8",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 31,
+      "title": "The documented development install omits an extra required by the test suite",
+      "description": "The documented `uv pip install -e \".[dev]\"` command does not install the optional `mcp` extra, but `tests/test_mcp_server.py` imports `noxaudit.mcp.server`, which imports `mcp.server.fastmcp` unconditionally. Following the setup instructions can therefore make the full test suite fail during collection.",
+      "suggestion": "Include the MCP extra in the development test installation, or make the MCP tests optional and skip them when the extra is not installed.",
+      "focus": "docs"
+    },
+    {
+      "id": "1826487bed8e",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 35,
+      "title": "The test dependency set does not include the MCP package required for test collection",
+      "description": "MCP is declared only as an optional `mcp` extra, while the test suite imports the MCP server module directly. Installing the `dev` extra alone, as the contribution guide instructs, does not provide that dependency and can prevent the test suite from collecting.",
+      "suggestion": "Add MCP to a dedicated test/development dependency set, or guard and skip MCP tests when the optional extra is absent.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "38b4bfd4ee2d",
+      "severity": "medium",
+      "file": "tests/test_issues.py",
+      "line": null,
+      "title": "GitHub issue creation has no test coverage",
+      "description": "`noxaudit/issues.py` invokes external `gh` commands, applies severity filters, deduplicates issues, and formats user/model-provided content, but no issue-creation tests are included. Regressions in filtering, command arguments, failure handling, or issue content can affect real repositories without detection.",
+      "suggestion": "Add tests with mocked subprocess calls for disabled configuration, threshold boundaries, existing issues, command failures, and generated issue contents.",
+      "focus": "testing"
+    },
+    {
+      "id": "05223437917d",
+      "severity": "medium",
+      "file": "tests/test_telegram.py",
+      "line": null,
+      "title": "Telegram notification behavior has no test coverage",
+      "description": "`send_telegram()` handles credentials, HTTP requests, response failures, and error output, but no tests exercise these paths. In particular, network exceptions are not handled, which can abort a completed audit after reports have been written.",
+      "suggestion": "Add mocked HTTP tests for missing credentials, success, non-200 responses, and request exceptions; decide explicitly whether notification failures should fail an audit.",
+      "focus": "testing"
+    },
+    {
+      "id": "5b4346f1420b",
+      "severity": "low",
+      "file": "README.md",
+      "line": 96,
+      "title": "The focus-area summary omits the testing focus",
+      "description": "The README says there are seven focus areas, but its Focus Areas table lists only six and omits `testing`, despite the code registering it and the surrounding documentation listing it.",
+      "suggestion": "Add the testing row to the README table.",
+      "focus": "docs"
+    },
+    {
+      "id": "202c32ae1783",
+      "severity": "low",
+      "file": "docs/changelog.md",
+      "line": 1,
+      "title": "The changelog is duplicated in a second maintained location",
+      "description": "This file duplicates the root `CHANGELOG.md` content. The two copies can drift, leaving contributors and readers with inconsistent release history.",
+      "suggestion": "Choose one source of truth and include or link to it from the other location.",
+      "focus": "hygiene"
+    }
+  ]
+}

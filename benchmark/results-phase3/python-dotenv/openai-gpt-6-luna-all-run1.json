@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "openai",
+    "model": "gpt-6-luna",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:50:35.355295",
+    "completed_at": "2026-09-29T22:52:37.881227",
+    "wall_clock_seconds": 122.53,
+    "error": null
+  },
+  "tokens": {
+    "input": 43997,
+    "output": 6050,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0037,
+  "findings_count": 10,
+  "findings": [
+    {
+      "id": "9e3a96b67c2e",
+      "severity": "high",
+      "file": "src/dotenv/__init__.py",
+      "line": 25,
+      "title": "Shell command construction does not escape arguments",
+      "description": "`get_cli_string()` inserts `path`, `key`, and most `value` inputs directly into a string documented as suitable for execution by a shell. A value such as `$(...)` is interpolated by the shell even without spaces; paths and keys can also inject shell syntax. Adding double quotes only when a value contains spaces does not make it safe, since quotes, substitutions, and backslashes are not escaped.",
+      "suggestion": "Avoid constructing shell commands as strings where possible; return an argument list for subprocess use. If shell text is required, quote every argument with a shell-aware quoting function such as `shlex.quote` and document the shell-specific behavior.",
+      "focus": "security"
+    },
+    {
+      "id": "bbd54093edbe",
+      "severity": "high",
+      "file": "src/dotenv/main.py",
+      "line": null,
+      "title": "Export-mode output is not safe to source as a shell script",
+      "description": "`set_key()` writes the key verbatim and escapes apostrophes in values with a backslash, then wraps the value in single quotes. Backslash does not escape an apostrophe inside a POSIX shell single-quoted string, so a value containing an apostrophe can terminate the quote and inject shell commands when the resulting `export` file is sourced. An attacker-controlled key can also inject shell syntax. This affects the CLI's `--export` mode, which describes the output as an executable Bash script.",
+      "suggestion": "Use a shell-specific serializer for export output, safely quote values, and validate keys as shell identifiers. Keep dotenv-file serialization separate from shell-script serialization.",
+      "focus": "security"
+    },
+    {
+      "id": "927e926f196c",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 14,
+      "title": "Documented uv lint and format commands are invalid",
+      "description": "The instructions run `uv ruff check .` and `uv format .`, but uv does not provide these subcommands. Following the documented test instructions therefore stops before linting/formatting.",
+      "suggestion": "Use `uv run ruff check .` and `uv run ruff format .` (or the equivalent commands through the project's chosen environment).",
+      "focus": "docs"
+    },
+    {
+      "id": "3f525fd40d55",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 14,
+      "title": "Documented uv lint and format commands are invalid",
+      "description": "This duplicated guide also instructs contributors to run `uv ruff check .` and `uv format .`; these are not valid uv subcommands, so the documented workflow fails.",
+      "suggestion": "Use `uv run ruff check .` and `uv run ruff format .` and keep this copy synchronized with the root contributing guide.",
+      "focus": "docs"
+    },
+    {
+      "id": "33a8dcd303bd",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 130,
+      "title": "CLI get treats an existing empty value as a missing key",
+      "description": "`get()` checks `if stored_value`, so a key present as `KEY=` is treated as absent and exits with status 1 without printing the empty value. The key exists; the check should distinguish `None` from an empty string.",
+      "suggestion": "Check `stored_value is not None` and add a CLI test for retrieving a key whose value is empty.",
+      "focus": "testing"
+    },
+    {
+      "id": "c7f7ecc93e68",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 38,
+      "title": "List test uses the built-in format instead of the parameter",
+      "description": "The condition `if format is not None` refers to Python's built-in `format` function, which is always non-None, rather than the `output_format` parameter. For the case where `output_format` is `None`, the test passes `--format None` and Click rejects it, so the expected default-format case fails.",
+      "suggestion": "Change the condition to `if output_format is not None` and run the test suite to confirm the default-format case.",
+      "focus": "testing"
+    },
+    {
+      "id": "f9f53264150c",
+      "severity": "medium",
+      "file": "tests/test_ipython.py",
+      "line": 21,
+      "title": "Tests change the process working directory without restoring it",
+      "description": "The IPython tests call `os.chdir(tmp_path)` directly. The process-wide working directory then leaks into subsequent tests, making behavior dependent on test ordering and potentially leaving the suite in a temporary directory.",
+      "suggestion": "Use pytest's `monkeypatch.chdir(tmp_path)` fixture so the original working directory is restored after each test; apply the same approach to other tests that call `os.chdir` directly.",
+      "focus": "testing"
+    },
+    {
+      "id": "84b725a39408",
+      "severity": "low",
+      "file": "requirements-docs.txt",
+      "line": 2,
+      "title": "Unused documentation dependency",
+      "description": "`mkdocs-include-markdown-plugin` is declared here, but `mkdocs.yml` does not configure the `include-markdown` plugin and the provided documentation does not use its directives. It adds an unnecessary package to documentation setup.",
+      "suggestion": "Remove the dependency if it is no longer needed, or configure and use the plugin if its omission is accidental.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "b119d1761ac9",
+      "severity": "medium",
+      "file": "src/dotenv/parser.py",
+      "line": 48,
+      "title": "Parser reads the entire input into memory before parsing",
+      "description": "`Reader.__init__()` calls `stream.read()` without a bound, retaining the complete input string before producing any bindings. Large dotenv files\u2014or a FIFO that continues producing data\u2014can consume excessive memory and delay processing until EOF.",
+      "suggestion": "Consider parsing incrementally from the stream, or impose and document a reasonable input-size limit, especially for FIFO input.",
+      "focus": "performance"
+    },
+    {
+      "id": "0ef91769f9ea",
+      "severity": "low",
+      "file": "tests/test_zip_imports.py",
+      "line": 35,
+      "title": "Debug print remains in test helper",
+      "description": "`setup_zipfile()` prints every generated `__init__.py` path. This is leftover diagnostic output that can clutter test output when capture is disabled.",
+      "suggestion": "Remove the print or replace it with logging that is enabled only when explicitly requested.",
+      "focus": "hygiene"
+    }
+  ]
+}

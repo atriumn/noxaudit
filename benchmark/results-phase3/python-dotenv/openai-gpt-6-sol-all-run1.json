@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "openai",
+    "model": "gpt-6-sol",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:36:12.657695",
+    "completed_at": "2026-09-29T23:56:23.079821",
+    "wall_clock_seconds": 1210.42,
+    "error": null
+  },
+  "tokens": {
+    "input": 43997,
+    "output": 4486,
+    "cache_read": 4356,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0664,
+  "findings_count": 30,
+  "findings": [
+    {
+      "id": "0de54ca2bfc9",
+      "severity": "high",
+      "file": "src/dotenv/__init__.py",
+      "line": 22,
+      "title": "get_cli_string produces an injectable shell command",
+      "description": "The function inserts path, action, key, quote, and value directly into a shell command string. Double-quoting values containing spaces does not protect against shell expansion, embedded double quotes, or command substitutions. A caller that executes the returned string through a shell can execute attacker-controlled commands.",
+      "suggestion": "Return an argument list for subprocess calls. If a shell string is required, quote every argument with a platform-appropriate quoting function.",
+      "focus": "security"
+    },
+    {
+      "id": "acabc667273f",
+      "severity": "high",
+      "file": "src/dotenv/main.py",
+      "line": 192,
+      "title": "set_key accepts keys that can inject additional .env entries",
+      "description": "key_to_set is inserted directly into line_out. A key containing a newline can add arbitrary assignments to the file, which may subsequently be loaded into an application's or dotenv run's environment. The CLI exposes this behavior through its set command.",
+      "suggestion": "Reject keys containing line breaks and other invalid key characters before constructing the assignment.",
+      "focus": "security"
+    },
+    {
+      "id": "09dc39c614e6",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 137,
+      "title": "Symlink protection is subject to a filesystem race",
+      "description": "rewrite opens the source path before checking it with lstat, then later replaces the path by name. Another process can change that path between these operations, defeating the intended no-follow behavior or replacing a different file than the one read.",
+      "suggestion": "Use no-follow file-opening primitives where available, verify file identity with fstat, and document or otherwise mitigate the remaining atomic-replacement race.",
+      "focus": "security"
+    },
+    {
+      "id": "aa8a149db54f",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 122,
+      "title": "dotenv set prints the value it was asked to store",
+      "description": "On success, the set command echoes key=value, including passwords or tokens. This can expose secrets in CI logs and captured command output even when the .env file is protected.",
+      "suggestion": "Print a confirmation that omits the value, or provide an explicit option for displaying it.",
+      "focus": "security"
+    },
+    {
+      "id": "7fbb390b8670",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 135,
+      "title": "Concurrent .env updates can silently overwrite one another",
+      "description": "rewrite copies the existing file to a temporary file and replaces the original without locking or checking whether it changed during the copy. Two concurrent set_key or unset_key calls can each succeed while one discards the other's update.",
+      "suggestion": "Coordinate writers with a file lock or detect changes and retry before replacement.",
+      "focus": "patterns"
+    },
+    {
+      "id": "6f767a6f29f2",
+      "severity": "high",
+      "file": "src/dotenv/parser.py",
+      "line": 75,
+      "title": "The parser reads the entire input into memory",
+      "description": "Reader calls stream.read() without a size bound. Loading a very large .env file or a continuously written FIFO can consume unbounded memory before parsing begins.",
+      "suggestion": "Parse incrementally or enforce a configurable input-size limit, particularly for FIFO and externally supplied streams.",
+      "focus": "performance"
+    },
+    {
+      "id": "5b48ceeaf9dd",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 284,
+      "title": "Variable expansion repeatedly copies the environment",
+      "description": "For each assignment, resolve_variables builds a new dictionary containing os.environ and all previously resolved assignments. Parsing many entries therefore incurs quadratic copying in the number of .env keys.",
+      "suggestion": "Use a layered mapping or another lookup strategy that preserves override precedence without copying all earlier values for each key.",
+      "focus": "performance"
+    },
+    {
+      "id": "54acfe3e8ac0",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 193,
+      "title": "run_command docstring incorrectly says it never returns",
+      "description": "The docstring says the current process is replaced and the function does not return. On Windows, the implementation starts a subprocess, waits for it, and exits with its status; that is materially different process and signal behavior.",
+      "suggestion": "Document the Unix exec and Windows subprocess paths separately.",
+      "focus": "docs"
+    },
+    {
+      "id": "38fdd8dd9877",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 364,
+      "title": "load_dotenv docstring overstates its return value",
+      "description": "The docstring says True means at least one environment variable is set. DotEnv.set_as_environment_variables also returns True when the file has a parsed key but no assignment is made, such as a key without a value or an existing variable with override=False.",
+      "suggestion": "Describe True as indicating that at least one key was parsed, or change the implementation to track actual assignments.",
+      "focus": "docs"
+    },
+    {
+      "id": "a0d2301a91ec",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 418,
+      "title": "dotenv_values stream documentation is narrower than the API",
+      "description": "The stream parameter is documented as a StringIO object, but the implementation accepts general text streams, including open files, as the README and tests demonstrate.",
+      "suggestion": "Describe stream as an IO[str] text stream.",
+      "focus": "docs"
+    },
+    {
+      "id": "54a08f2f823f",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 39,
+      "title": "Parameterized list test checks the built-in format instead of output_format",
+      "description": "The condition `if format is not None` is always true because format refers to Python's built-in function. For the None parameter case, the test appends None as a CLI argument instead of exercising the default output format.",
+      "suggestion": "Change the condition to `if output_format is not None`.",
+      "focus": "testing"
+    },
+    {
+      "id": "6ffbf8c1ae6c",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 170,
+      "title": "CLI subprocess tests depend on Unix printenv",
+      "description": "Several run tests invoke printenv without a Windows skip or a portable substitute. They fail on systems that do not provide that external command, independently of dotenv's behavior.",
+      "suggestion": "Use sys.executable with a short Python command to inspect the environment, or skip these cases when printenv is unavailable.",
+      "focus": "testing"
+    },
+    {
+      "id": "840247922300",
+      "severity": "medium",
+      "file": "tests/test_ipython.py",
+      "line": 20,
+      "title": "IPython tests leave the process working directory changed",
+      "description": "The tests call os.chdir(tmp_path) without restoring the original directory. Later tests can run from a deleted temporary directory and behave differently depending on execution order.",
+      "suggestion": "Use monkeypatch.chdir(tmp_path), which restores the working directory after each test.",
+      "focus": "testing"
+    },
+    {
+      "id": "d12355135d1e",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 331,
+      "title": "find_dotenv tests leave the process working directory changed",
+      "description": "The find_dotenv tests call os.chdir(leaf) without restoring it. When the temporary directory is removed, subsequent tests can inherit a nonexistent working directory.",
+      "suggestion": "Use the monkeypatch.chdir fixture in each test that changes directories.",
+      "focus": "testing"
+    },
+    {
+      "id": "0acad883b404",
+      "severity": "medium",
+      "file": "tests/test_utils.py",
+      "line": 4,
+      "title": "Shell-command tests omit hostile arguments",
+      "description": "The get_cli_string tests cover ordinary values and spaces but not shell metacharacters, command substitution, embedded quotes, or hostile paths. They therefore do not detect the command-injection behavior in this public helper.",
+      "suggestion": "Add cases for every interpolated argument containing shell syntax and assert safe execution or a safely quoted result.",
+      "focus": "testing"
+    },
+    {
+      "id": "715e9b98b0f9",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 39,
+      "title": "Mutation tests do not cover invalid or multiline keys",
+      "description": "The set_key tests exercise values and existing-file behavior but do not test keys containing newlines or invalid syntax. This leaves the .env-entry injection path untested.",
+      "suggestion": "Add API and CLI tests that reject invalid keys and verify that the file remains unchanged.",
+      "focus": "testing"
+    },
+    {
+      "id": "e7a49a38e3f3",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 14,
+      "title": "Contributor instructions invoke the wrong formatter command",
+      "description": "`uv format .` is not the Ruff formatter command used by this project. Following the listed test workflow does not run the configured formatter.",
+      "suggestion": "Use `uv run ruff format .`, or `uvx ruff format .` if Ruff is not installed in the environment.",
+      "focus": "docs"
+    },
+    {
+      "id": "2697c913dc19",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 14,
+      "title": "Published contributor instructions invoke the wrong formatter command",
+      "description": "`uv format .` does not invoke the Ruff formatter configured in .pre-commit-config.yaml.",
+      "suggestion": "Replace it with `uv run ruff format .` and keep this published copy synchronized with CONTRIBUTING.md.",
+      "focus": "docs"
+    },
+    {
+      "id": "4340bec5cf06",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 24,
+      "title": "Pre-commit installation command names a nonexistent executable",
+      "description": "The installed package's executable is `pre-commit`, but the guide tells contributors to run `uv run precommit install`.",
+      "suggestion": "Use `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "c97ff0b7fd61",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 24,
+      "title": "Published pre-commit command names a nonexistent executable",
+      "description": "The guide uses `uv run precommit install`, while the dependency provides the `pre-commit` executable.",
+      "suggestion": "Use `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "69453016f723",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 27,
+      "title": "MkDocs link has no destination",
+      "description": "The text uses `[mkdocs]()` rather than linking to a destination, so the contributor guide provides a broken reference.",
+      "suggestion": "Link to the MkDocs documentation or remove the empty link syntax.",
+      "focus": "docs"
+    },
+    {
+      "id": "05255e77966a",
+      "severity": "medium",
+      "file": "docs/contributing.md",
+      "line": 27,
+      "title": "Published MkDocs link has no destination",
+      "description": "The published guide also uses `[mkdocs]()`, leaving its documentation-tool reference without a destination.",
+      "suggestion": "Provide a URL for MkDocs or render the name as plain text.",
+      "focus": "docs"
+    },
+    {
+      "id": "d6dcec667b05",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 182,
+      "title": "Variable expansion is described as general POSIX expansion",
+      "description": "The README says python-dotenv can interpolate variables using POSIX variable expansion. The regex in variables.py supports only `${name}` and `${name:-default}`; other POSIX forms such as `$name` and `${name:=default}` are not expanded.",
+      "suggestion": "Describe the supported forms explicitly rather than implying general POSIX expansion.",
+      "focus": "docs"
+    },
+    {
+      "id": "3d9294833aa8",
+      "severity": "medium",
+      "file": "docs/index.md",
+      "line": 182,
+      "title": "Published variable-expansion description overstates supported syntax",
+      "description": "The published copy describes POSIX variable expansion, while variables.py recognizes only `${name}` and `${name:-default}`.",
+      "suggestion": "List the supported forms and state that other shell expansion syntax is not implemented.",
+      "focus": "docs"
+    },
+    {
+      "id": "c369dcacef32",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": 461,
+      "title": "Version 1.0.0 comparison omits version 0.21.1",
+      "description": "The [1.0.0] link compares v0.21.0 to v1.0.0 even though this changelog lists v0.21.1 as the immediately preceding release. The comparison includes unrelated changes from that earlier patch release.",
+      "suggestion": "Compare v0.21.1 to v1.0.0.",
+      "focus": "docs"
+    },
+    {
+      "id": "34e19b404e7b",
+      "severity": "medium",
+      "file": "docs/changelog.md",
+      "line": 461,
+      "title": "Published 1.0.0 comparison omits version 0.21.1",
+      "description": "The [1.0.0] comparison starts at v0.21.0, not the preceding v0.21.1 release shown in this changelog.",
+      "suggestion": "Change the link to compare v0.21.1 to v1.0.0.",
+      "focus": "docs"
+    },
+    {
+      "id": "77386c99c5d1",
+      "severity": "medium",
+      "file": "requirements-docs.txt",
+      "line": 2,
+      "title": "Unused MkDocs include-markdown plugin is installed",
+      "description": "mkdocs-include-markdown-plugin is listed as a documentation dependency, but mkdocs.yml does not enable its plugin and the provided documentation does not use its include syntax.",
+      "suggestion": "Remove the dependency unless documentation includes are planned and configured.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "dffec2d61786",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Developer dependencies have no reproducible version bounds",
+      "description": "Most developer tools, including pytest, tox, Ruff, build, and pre-commit, have no upper bound or pinned version, and no lock file is provided. Fresh contributor installs can pick up incompatible releases and produce results different from CI or earlier installs.",
+      "suggestion": "Commit a development lock file or pin compatible tool versions and update them deliberately.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "6b1f701fd5c4",
+      "severity": "low",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "bumpversion has no visible use in the supplied project configuration",
+      "description": "bumpversion is installed for development, but the provided configuration, scripts, and contribution instructions contain no version-bump command or configuration for it.",
+      "suggestion": "Remove it if version bumps are handled another way, or document and configure its intended workflow.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "dd8354034f8d",
+      "severity": "low",
+      "file": "requirements-docs.txt",
+      "line": 1,
+      "title": "Documentation dependencies are not locked",
+      "description": "The documentation requirements use open-ended minimum versions with no lock file. A fresh installation may render or build the site differently after upstream releases.",
+      "suggestion": "Lock documentation-tool versions for reproducible builds, while updating the lock regularly.",
+      "focus": "dependencies"
+    }
+  ]
+}

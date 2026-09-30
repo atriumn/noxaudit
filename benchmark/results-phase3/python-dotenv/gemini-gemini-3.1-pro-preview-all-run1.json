@@ -1,0 +1,124 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "gemini",
+    "model": "gemini-3.1-pro-preview",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:54:50.293913",
+    "completed_at": "2026-09-29T22:58:55.314520",
+    "wall_clock_seconds": 245.02,
+    "error": null
+  },
+  "tokens": {
+    "input": 52065,
+    "output": 16504,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.1511,
+  "findings_count": 10,
+  "findings": [
+    {
+      "id": "b6ee3175b543",
+      "severity": "high",
+      "file": "src/dotenv/__init__.py",
+      "line": 35,
+      "title": "Command Injection Risk in get_cli_string",
+      "description": "The `get_cli_string` function constructs a string intended for shell execution. When `value` contains spaces, it blindly wraps it in double quotes without escaping internal quotes or shell metacharacters (e.g. `value=\"123\\\"; rm -rf /; echo \\\"\"`). This leads to command injection if the result is executed by a shell.",
+      "suggestion": "Use `shlex.quote(value)` to safely escape arguments for shell execution instead of manually concatenating quotes.",
+      "focus": "security"
+    },
+    {
+      "id": "f1d0c2cb0172",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 275,
+      "title": ".env Configuration Injection via Unescaped Newlines",
+      "description": "In `set_key`, if `quote_mode='never'`, `value_to_set` is appended to the `.env` file verbatim. If an application uses this to store user input, an attacker can inject newlines (e.g., `value_to_set=\"foo\\nADMIN=true\"`) to inject or overwrite arbitrary `.env` variables.",
+      "suggestion": "Validate that `value_to_set` does not contain newline characters when `quote_mode='never'`, raising a `ValueError` if it does, or enforce quoting when newlines are present.",
+      "focus": "security"
+    },
+    {
+      "id": "1162679405d5",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 341,
+      "title": "Inefficient Environment Copying in resolve_variables",
+      "description": "Inside a loop over parsed `.env` variables, the entire `os.environ` dictionary is copied into a new `env` dictionary on every iteration (`env.update(os.environ)`). For environments with many variables, this creates an O(N * M) performance bottleneck.",
+      "suggestion": "Use `collections.ChainMap(new_values, os.environ)` to combine scopes efficiently without copying the entire dictionary on each iteration.",
+      "focus": "performance"
+    },
+    {
+      "id": "b56836c53d8d",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 19,
+      "title": "Incorrect pre-commit Installation Command",
+      "description": "The documentation instructs users to run `$ uv run precommit install`, which will fail because the command is `pre-commit` (with a hyphen), not `precommit`.",
+      "suggestion": "Change the command to `$ uv run pre-commit install` or simply `$ pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "a00c6162253d",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 161,
+      "title": "test_run_without_cmd Does Not Test Missing Command Logic",
+      "description": "The test `test_run_without_cmd` attempts to assert the \"No command given.\" branch in `cli.py`. However, it fails prematurely because `tmp_path` has no `.env` file, causing click to throw a `BadParameter` exception for the missing default file. The intended code path is never exercised.",
+      "suggestion": "Provide a mock `.env` file in the `tmp_path` fixture for this test, or explicitly pass a path to a valid empty file via the `--file` flag.",
+      "focus": "testing"
+    },
+    {
+      "id": "a33bccc7bfce",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 203,
+      "title": "Unhandled PermissionError during Command Execution",
+      "description": "When executing a command via `os.execvpe`, the code only catches `FileNotFoundError`. If the command points to a non-executable file or a directory, it will raise a `PermissionError` (a subclass of `OSError`), resulting in an unhandled traceback instead of a clean exit.",
+      "suggestion": "Catch `OSError` instead of just `FileNotFoundError` (or add a separate except block for `PermissionError`) to handle permissions issues gracefully.",
+      "focus": "patterns"
+    },
+    {
+      "id": "321c1455bcdf",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 408,
+      "title": "Unsafe Stack Traversal in find_dotenv Causes AssertionError",
+      "description": "The `find_dotenv` function climbs the call stack searching for an on-disk file. If the entire stack originates from built-ins, dynamic execution (`exec`), or unextracted zip archives, `frame.f_back` will eventually be `None`, triggering an `AssertionError` and crashing the application.",
+      "suggestion": "Replace `assert frame.f_back is not None` with an `if frame.f_back is None:` block that breaks the loop and falls back to `os.getcwd()` or an empty string.",
+      "focus": "patterns"
+    },
+    {
+      "id": "3b3b9db86390",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 75,
+      "title": "Unhandled TypeError When Current Working Directory Is Missing",
+      "description": "If the current working directory is deleted, `enumerate_env()` returns `None`. The `click` parameter `file` defaults to `None`, which is passed to `stream_file(None)`. Calling `open(None)` raises an unhandled `TypeError` instead of displaying a friendly error.",
+      "suggestion": "Add a check in the CLI commands for `if file is None:` and gracefully exit with an error message indicating that no `.env` file or working directory could be found.",
+      "focus": "patterns"
+    },
+    {
+      "id": "934ad6cc2627",
+      "severity": "medium",
+      "file": "docs/index.md",
+      "line": 1,
+      "title": "Duplicated Markdown Files Create Documentation Drift Risk",
+      "description": "`docs/index.md`, `docs/changelog.md`, and `docs/contributing.md` are exact copies of the root `README.md`, `CHANGELOG.md`, and `CONTRIBUTING.md`. The repository includes `mkdocs-include-markdown-plugin` in its requirements but fails to use it in `mkdocs.yml`, leading to poor hygiene and out-of-sync documentation.",
+      "suggestion": "Configure the `mkdocs-include-markdown-plugin` in `mkdocs.yml` and replace the duplicated file contents with `!include ../README.md` directives, or remove the files and map them directly in the `nav` section.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "45d1d759cf2b",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Use of Deprecated bumpversion Dependency",
+      "description": "The project lists `bumpversion` as a dependency. This package is deprecated, hasn't been updated since 2015, and has known incompatibilities with modern Python environments. It poses a minor supply chain risk.",
+      "suggestion": "Replace `bumpversion` with the actively maintained community fork `bump-my-version`.",
+      "focus": "dependencies"
+    }
+  ]
+}

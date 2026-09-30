@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "openai",
+    "model": "gpt-5-mini",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:28.682101",
+    "completed_at": "2026-09-29T23:54:36.287873",
+    "wall_clock_seconds": 1927.61,
+    "error": null
+  },
+  "tokens": {
+    "input": 107163,
+    "output": 6305,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0197,
+  "findings_count": 16,
+  "findings": [
+    {
+      "id": "14b66d1f239d",
+      "severity": "medium",
+      "file": "noxaudit/reporter.py",
+      "line": null,
+      "title": "Report title and branding still reference 'Nightwatch'",
+      "description": "generate_report() produces a report header '# Nightwatch Report: ...' and other places in the code/docstrings still use the old project name. The project was renamed to Noxaudit (per CHANGELOG/docs). This is documentation/branding drift and will confuse users and integration scripts that rely on naming.",
+      "suggestion": "Replace all remaining occurrences of 'Nightwatch' with 'Noxaudit' (e.g., change the report header in noxaudit/reporter.py to '# Noxaudit Report: ...' and update any docstrings). Run a repo-wide search for 'Nightwatch' and update or document the historical rename.",
+      "focus": "docs"
+    },
+    {
+      "id": "c9dfb1dd141e",
+      "severity": "medium",
+      "file": "noxaudit/__init__.py",
+      "line": null,
+      "title": "Package docstring contains stale product name",
+      "description": "__init__.py docstring reads 'Nightwatch: Nightly AI-powered codebase audits.' This contradicts the project's current name (Noxaudit) and other docs. Stale docstrings reduce trust and cause confusion when introspecting package metadata.",
+      "suggestion": "Update the module docstring to reference 'Noxaudit' and align wording with README and CHANGELOG.",
+      "focus": "docs"
+    },
+    {
+      "id": "07d624dec73b",
+      "severity": "low",
+      "file": "noxaudit/config.py",
+      "line": null,
+      "title": "Confusing pre-pass config naming: 'prepass.auto' -> PrepassConfig.auto_disable inversion",
+      "description": "The PrepassConfig dataclass uses `auto_disable: bool` but load_config maps the YAML key 'prepass.auto' to `auto_disable=not prepass_raw.get(\"auto\", True)`. This inverted naming is confusing and easy to get wrong when reading or editing config: a user setting `prepass.auto: true` ends up with auto_disable=False internally.",
+      "suggestion": "Use consistent naming: either expose `prepass.auto_enable` (default True) or keep `auto_disable` but map the YAML key with the same polarity. Update docs/guides and unit tests to match the chosen convention and add comments clarifying the mapping.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "f6c69196235b",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": null,
+      "title": "Pre-pass economics use global config.model instead of provider-specific model",
+      "description": "The _maybe_prepass() function determines whether to auto-enable pre-pass using `model_key = config.model` and then MODEL_PRICING.get(model_key). This ignores provider-specific model overrides stored in config.providers or per-repo provider rotation, which can cause incorrect pre-pass decisions (false positives/negatives) when the per-provider model differs from the global model.",
+      "suggestion": "Resolve the effective model for the provider (using config.get_model_for_provider(provider_name) or resolve_model_key with the provider) when computing pricing and tier thresholds. Add unit tests covering provider-specific model overrides.",
+      "focus": "patterns"
+    },
+    {
+      "id": "d552b9fa82d0",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": null,
+      "title": "Telegram bot token placed in request URL (potential token leakage via logs)",
+      "description": "send_telegram() constructs the Telegram API URL with the bot token embedded (https://api.telegram.org/bot{token}/sendMessage). While Telegram API uses this pattern, embedding secrets in URLs can cause tokens to appear in web server/proxy logs or CLI history if the URL is ever printed or logged elsewhere, increasing risk of token leakage.",
+      "suggestion": "If possible, avoid including secrets in URLs. Use the Authorization header or a short-lived proxy token. At minimum add a warning in docs and code comments explaining that the token appears in the request URL and that network/proxy logs may contain it; recommend storing the token in GitHub/GitLab secrets and rotate tokens periodically.",
+      "focus": "security"
+    },
+    {
+      "id": "ef96c1a990f9",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": null,
+      "title": "GitHub Action env var mismatch for GitHub token (GH_TOKEN vs GITHUB_TOKEN)",
+      "description": "The action maps the input 'github-token' to environment variable GH_TOKEN, but elsewhere the documentation and some code references expect GITHUB_TOKEN (the standard GitHub Actions secret name). This mismatch can cause authorization failures in workflows that expect the standard env var and may result in skipped or failed GitHub operations (issue creation, SARIF upload) or accidental leaking if users supply a different secret name.",
+      "suggestion": "Use the conventional environment variable name GITHUB_TOKEN (or explicitly document that the action provides GH_TOKEN). Update action inputs and the action run environment to set GITHUB_TOKEN=${{ inputs.github-token }}, and ensure docs show the correct secret name. Add an integration test or CI check that verifies issue creation path with the action.",
+      "focus": "docs"
+    },
+    {
+      "id": "c832306e2d94",
+      "severity": "medium",
+      "file": "scripts/setup-hooks.sh",
+      "line": null,
+      "title": "Setup script relies on non-standard 'uv' CLI tooling",
+      "description": "scripts/setup-hooks.sh and multiple docs reference the 'uv' tool (e.g., 'uv pip install -e \"[dev]\"', 'uv run pre-commit install'). 'uv' is not a widely installed tool; relying on it in install and hook setup may break developer onboarding and CI that follows the documented steps.",
+      "suggestion": "Document 'uv' as a prerequisite or provide alternative instructions using standard pip/venv commands (pip, python -m pip, pre-commit). Consider making the script resilient: try 'uv' first, fall back to 'python -m pip' if missing, and surface a clear error message describing how to install 'uv' if it is required.",
+      "focus": "docs"
+    },
+    {
+      "id": "0e12df3ab8e3",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "Inconsistent and duplicated development dependency specifications",
+      "description": "pyproject.toml contains two dev/dependency sections with overlapping packages and different version pins (e.g., optional-dependencies.dev lists pytest>=8.0 while [dependency-groups].dev lists pytest>=9.0.2; ruff versions differ). This will confuse contributors and may cause different environments / CI jobs to install different versions leading to test/linting inconsistencies or surprise breakage.",
+      "suggestion": "Consolidate dev dependencies to a single authoritative section, pick consistent minimum versions (prefer exact or semver ranges your CI tests), and update README/CONTRIBUTING to reference the canonical install path. Run a local install to confirm reproducible dev envs and update lock files if used.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "f703bc089ae9",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": null,
+      "title": "Action installs repository from main branch without pinning \u2014 supply chain risk",
+      "description": "The action step 'pip install git+https://github.com/atriumn/noxaudit.git' installs whatever is at the default branch at runtime (likely main). This unpinned installation increases supply-chain risk because changes to the remote repository (including malicious ones) affect the action consumers immediately.",
+      "suggestion": "Encourage pinning to a release tag or commit SHA (e.g., git+https://...@v0.1.0) in the action documentation and example, or publish and recommend installing a pinned pip package instead of using the VCS URL. Consider changing the action to use a pinned install or the released package in the action's example workflow.",
+      "focus": "security"
+    },
+    {
+      "id": "a9c24933a647",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": null,
+      "title": "Decision ordering uses string comparison of dates (fragile)",
+      "description": "filter_findings() builds a map of the most recent decision per finding using string comparison: `if d.finding_id not in decision_map or d.date > decision_map[d.finding_id].date:`. This approach is fragile: dates stored as empty strings or non-ISO formats can break ordering; lexicographic compare works only for ISO8601, and no validation/parsing happens before the comparison.",
+      "suggestion": "Parse decision.date into date objects (date.fromisoformat) when loading decisions and use datetime/date comparisons for ordering and expiry checks. Add defensive handling for missing or invalid dates when loading decisions (treat invalid/empty date as very old or log a warning). Add tests for malformed/empty decision dates.",
+      "focus": "patterns"
+    },
+    {
+      "id": "51fcd9bb380b",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": null,
+      "title": "record_decision computes file hash using current CWD without repo path",
+      "description": "mcp.server.record_decision computes the file hash using `_hash_file(Path(finding.file))`, which resolves the path relative to the MCP server's current working directory (not necessarily the repo root). If the MCP server isn't run from the repo root, the hash will be None and change detection will not work as intended, causing decisions to not be invalidated when files actually change.",
+      "suggestion": "Compute the hash relative to the repository root (use the base_path or config to find repo path) or accept an explicit repo path parameter. Document that MCP server should be started from the repo root and add defensive logging when a hash cannot be computed.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "c72ddff1d622",
+      "severity": "low",
+      "file": "noxaudit/focus/base.py",
+      "line": null,
+      "title": "Top-level definition regex for file-map extraction is brittle",
+      "description": "The _DEF_RE regex used by extract_file_map() in noxaudit/focus/base.py attempts to capture many language patterns in a single expression. It may miss valid top-level constructs or mis-classify indented lines, and the fallback behavior (first 20 lines) may include implementation details rather than structural map.",
+      "suggestion": "Replace the single complex regex with language-specific lightweight parsers (or multiple regexes), or use heuristics per file extension. Add tests for extract_file_map() with representative inputs for Python/JS/TS files, and document limitations.",
+      "focus": "patterns"
+    },
+    {
+      "id": "213fc2698fc8",
+      "severity": "medium",
+      "file": "README.md",
+      "line": null,
+      "title": "Inconsistent example and recommended environment variable names for provider keys",
+      "description": "Documentation/examples reference several different environment variable names for provider API keys across docs (ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY). Some tests and helper docs reference GEMINI_API_KEY or 'GEMINI_API_KEY' (in tests monkeypatch.delenv) which is inconsistent with docs (which use GOOGLE_API_KEY). This inconsistency can confuse users and lead to failed runs.",
+      "suggestion": "Standardize on one env var per provider (documented canonical names: ANTHROPIC_API_KEY, OPENAI_API_KEY, GOOGLE_API_KEY). Update tests, docs, and examples to match the canonical names. Add validation at startup that emits clear errors if required env vars are missing or misnamed.",
+      "focus": "docs"
+    },
+    {
+      "id": "4321c3c6ec3c",
+      "severity": "medium",
+      "file": "scripts/pre-push.sh",
+      "line": null,
+      "title": "Pre-push hook uses an unusual 'uv' invocation that may fail locally",
+      "description": "scripts/pre-push.sh calls: `uv run --extra dev --extra mcp pytest`. This pattern is non-standard and will fail where 'uv' isn't installed or configured. Since the script is symlinked into .git/hooks by setup-hooks.sh, failing or non-deterministic pre-push hooks can block contributor workflows.",
+      "suggestion": "Use standard, well-known commands in hooks (e.g., run pytest via python -m pytest or use a Makefile target). Either document 'uv' as a prerequisite clearly or change the scripts to detect 'uv' and fall back to plain pytest. Consider making the pre-push hook optional or non-fatal (print warning instead of failing) with a configuration toggle.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "2146864c427d",
+      "severity": "low",
+      "file": "noxaudit/providers/openai.py",
+      "line": null,
+      "title": "Batch polling sleep interval hard-coded and unbounded in run_audit",
+      "description": "OpenAIProvider.run_audit (and Anthropic/Gemini providers) polls batches with time.sleep(60) in a loop. For long-running jobs this is acceptable, but the fixed 60s interval and lack of backoff or max-poll attempts can lead to long waits or tight loops in some failure scenarios.",
+      "suggestion": "Introduce an exponential backoff with a maximum wait and an overall timeout or a configurable polling interval in config. Surface helpful progress/logging to the user and add a unit test to document behavior.",
+      "focus": "performance"
+    },
+    {
+      "id": "7f985b5f90d6",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "Packaging: installing from git in action and examples is unpinned",
+      "description": "Multiple places (action/action.yml and README examples) show installing the package from the repository without pinning to a release tag or commit. This can lead to non-reproducible builds and surprise behavior across CI runs when the default branch changes.",
+      "suggestion": "Recommend pinning to a released version (git tag or PyPI release) in the action example and README. Prefer releasing artifacts (PyPI) and referencing a fixed version in automation.",
+      "focus": "dependencies"
+    }
+  ]
+}

@@ -56,7 +56,9 @@ nav:
       - CLI: reference/cli.md
       - Configuration: reference/configuration.md
       - Providers: reference/providers.md
-  - Benchmark: benchmark.md
+  - Benchmark:
+      - March 2026 Results: benchmark.md
+      - "September 2026: 10 LLMs, One Codebase": blog/2026-09-30-llms-one-codebase.md
   - Contributing: contributing/index.md
   - Changelog: changelog.md
 

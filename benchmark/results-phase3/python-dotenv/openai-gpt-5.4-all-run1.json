@@ -1,0 +1,394 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "openai",
+    "model": "gpt-5.4",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:29.359511",
+    "completed_at": "2026-09-30T00:43:46.585111",
+    "wall_clock_seconds": 4877.23,
+    "error": null
+  },
+  "tokens": {
+    "input": 43997,
+    "output": 4218,
+    "cache_read": 43776,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0866,
+  "findings_count": 37,
+  "findings": [
+    {
+      "id": "bd6f0f4e9fec",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 20,
+      "title": "Broken mkdocs link placeholder in contributing guide",
+      "description": "The text `Documentation is published with [mkdocs]():` uses an empty Markdown link target. This renders as a broken/stale link and makes the documentation setup instructions look incomplete.",
+      "suggestion": "Replace the empty target with the real MkDocs URL, e.g. `[mkdocs](https://www.mkdocs.org/)`, or remove the link markup.",
+      "focus": "docs"
+    },
+    {
+      "id": "c7d4628ec07b",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 23,
+      "title": "Documentation setup instructions reference requirements-docs.txt despite project declaring docs tooling elsewhere",
+      "description": "The contributing guide instructs users to run `uv pip install -r requirements-docs.txt`, but the repository's primary packaging/configuration has moved to `pyproject.toml` and the changelog explicitly says more config was moved there. This split setup is easy to drift and may mislead contributors about the canonical source of docs dependencies.",
+      "suggestion": "Document the canonical install path for docs dependencies and keep it aligned with project metadata; preferably define a docs extra in `pyproject.toml` and reference that instead of a standalone requirements file.",
+      "focus": "docs"
+    },
+    {
+      "id": "e11699df8d75",
+      "severity": "medium",
+      "file": "docs/contributing.md",
+      "line": 20,
+      "title": "Broken mkdocs link placeholder duplicated in docs copy",
+      "description": "The same empty Markdown link `Documentation is published with [mkdocs]():` appears in the docs copy, so the published documentation will also contain a broken link.",
+      "suggestion": "Replace with a valid MkDocs URL or plain text.",
+      "focus": "docs"
+    },
+    {
+      "id": "6d118da28487",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 23,
+      "title": "Published contributing docs duplicate potentially drifting docs dependency instructions",
+      "description": "The published docs duplicate the same docs setup instructions from `CONTRIBUTING.md`, including reliance on `requirements-docs.txt`. Because this content is duplicated in two places, it increases the chance of documentation drift and inconsistent contributor experience.",
+      "suggestion": "Generate one from the other or centralize the content so there is a single source of truth for contributor setup instructions.",
+      "focus": "patterns"
+    },
+    {
+      "id": "bb17e8a7d30c",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 43,
+      "title": "Getting Started oversimplifies .env discovery behavior",
+      "description": "The README says `load_dotenv()` will look for a `.env` file in the same directory as the Python script or higher. In code, `find_dotenv()` changes behavior in interactive sessions, debuggers, and frozen apps to search from the current working directory instead. The documentation omits those important cases, so the described behavior is incomplete.",
+      "suggestion": "Clarify that search starts from the calling script in normal execution, but from the current working directory in REPL/IPython/debugger/frozen contexts.",
+      "focus": "docs"
+    },
+    {
+      "id": "75c2c7b8eaba",
+      "severity": "low",
+      "file": "README.md",
+      "line": 166,
+      "title": "Minor punctuation error in variable-without-value example reduces clarity",
+      "description": "The sentence `It results in dotenv_values associating that variable name with the value None (e.g. {\"FOO\": None}.` is missing a closing parenthesis after the example. This is small, but it appears in user-facing documentation.",
+      "suggestion": "Change to `(... e.g. {\"FOO\": None}).`",
+      "focus": "docs"
+    },
+    {
+      "id": "f015f5bafef9",
+      "severity": "medium",
+      "file": "docs/index.md",
+      "line": 43,
+      "title": "Published docs oversimplify .env discovery behavior",
+      "description": "Like the README, `docs/index.md` states `load_dotenv()` looks for `.env` in the same directory as the Python script or higher, but actual code uses current working directory in interactive, debugger, and frozen contexts. This published documentation is incomplete relative to implementation.",
+      "suggestion": "Document the conditional search behavior to match `find_dotenv()` implementation.",
+      "focus": "docs"
+    },
+    {
+      "id": "3eb96252f972",
+      "severity": "low",
+      "file": "docs/index.md",
+      "line": 166,
+      "title": "Minor punctuation error duplicated in published docs",
+      "description": "The same missing closing parenthesis in the `{\"FOO\": None}` example appears in the published docs page.",
+      "suggestion": "Fix the sentence punctuation in both README and docs copy.",
+      "focus": "docs"
+    },
+    {
+      "id": "ec6bd17d74e4",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": 1,
+      "title": "Changelog is duplicated verbatim in docs/changelog.md",
+      "description": "`CHANGELOG.md` and `docs/changelog.md` contain the same long content. Maintaining two full copies of the changelog is a consistency risk; any future change can easily land in one file and not the other.",
+      "suggestion": "Publish the root changelog into docs via include/generation, or keep a single source of truth.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "1566a7403548",
+      "severity": "medium",
+      "file": "docs/changelog.md",
+      "line": 1,
+      "title": "Documentation duplicates root changelog verbatim",
+      "description": "The docs copy of the changelog is a full duplicate of `CHANGELOG.md`. This duplication is a maintenance smell and raises the risk of drift between source and published docs.",
+      "suggestion": "Generate this page from `CHANGELOG.md` instead of maintaining two copies.",
+      "focus": "patterns"
+    },
+    {
+      "id": "19aebe4b9b35",
+      "severity": "high",
+      "file": "src/dotenv/__init__.py",
+      "line": 23,
+      "title": "get_cli_string builds shell command by string concatenation without safe escaping",
+      "description": "`get_cli_string()` returns a shell command string assembled via interpolation. `path`, `key`, `action`, and `quote` are inserted without shell escaping, and `value` is only wrapped in double quotes when it contains a space, without escaping embedded quotes or shell metacharacters. If callers pass untrusted input to this helper and execute the result in a shell, command injection is possible.",
+      "suggestion": "Avoid returning a shell string; return an argument list instead. If a string API must remain, escape every argument with `shlex.quote()` (or a Windows-safe equivalent when relevant) and document that inputs must not be untrusted.",
+      "focus": "security"
+    },
+    {
+      "id": "3870ecadb0bb",
+      "severity": "medium",
+      "file": "src/dotenv/__init__.py",
+      "line": 10,
+      "title": "Docstring grammar is stale and misleading about argument handling",
+      "description": "The docstring says `Useful for converting a arguments passed to a fabric task`, which is grammatically incorrect and underspecified. More importantly, it does not warn that the function returns a shell string and therefore has quoting/injection caveats.",
+      "suggestion": "Update the docstring to explain the returned format, escaping limitations, and safer alternatives.",
+      "focus": "docs"
+    },
+    {
+      "id": "4115852eb186",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 119,
+      "title": "run command fails with unhandled TypeError when --file is omitted and default .env is unavailable",
+      "description": "`--file` defaults to `enumerate_env()`, which returns `None` if the current working directory is unavailable. `run()` then calls `os.path.isfile(file)` without guarding against `file is None`, which can raise `TypeError`. Other commands use `stream_file()` and fail in a more controlled way. This is an inconsistency in error handling for the same option.",
+      "suggestion": "Validate `ctx.obj[\"FILE\"]` before using it in all commands and emit a Click-friendly error if it is missing or invalid.",
+      "focus": "patterns"
+    },
+    {
+      "id": "122bbbe2d64f",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 95,
+      "title": "get command treats empty-string values as missing",
+      "description": "`get()` checks `if stored_value:` before printing. A key explicitly set to an empty string (`FOO=`) is a valid value in dotenv semantics, but this branch treats it as absent and exits with code 1. This behavior is inconsistent with parser semantics and the README's distinction between no value and empty string.",
+      "suggestion": "Change the condition to `if stored_value is not None:` so empty strings are returned correctly.",
+      "focus": "patterns"
+    },
+    {
+      "id": "f97a6078c553",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 95,
+      "title": "CLI get behavior for empty-string values lacks test coverage",
+      "description": "The code path where a key exists with an empty string value is subtle and currently mishandled, and there is no corresponding CLI test exercising `get` on `FOO=`. Existing tests cover missing keys and normal values only.",
+      "suggestion": "Add a test asserting that `dotenv get FOO` prints a blank line and exits 0 when the file contains `FOO=`.",
+      "focus": "testing"
+    },
+    {
+      "id": "2a59e2995657",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 54,
+      "title": "Type annotation uses os.PathLike without generic parameter unlike rest of codebase",
+      "description": "`stream_file(path: os.PathLike)` uses a looser path annotation than the dominant pattern in `main.py`, which defines and consistently uses the `StrPath` alias. This is a small typing inconsistency across modules handling filesystem paths.",
+      "suggestion": "Reuse the shared `StrPath` alias or annotate consistently with `os.PathLike[str] | str`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "4f68acebebea",
+      "severity": "medium",
+      "file": "src/dotenv/ipython.py",
+      "line": 31,
+      "title": "Broad IOError handling in IPython extension swallows specific failure context",
+      "description": "The `%dotenv` magic catches `IOError` from `find_dotenv` and prints a generic `cannot find .env file`. This loses context and uses `print` instead of the logging/error style used elsewhere. The broader project generally uses logger warnings/info or Click errors rather than silent generic text.",
+      "suggestion": "Catch the specific not-found case, preserve the path searched when possible, and use a more consistent warning/reporting mechanism.",
+      "focus": "patterns"
+    },
+    {
+      "id": "578d9e242a9f",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 125,
+      "title": "Temporary file created during rewrite may be readable by other users depending on platform defaults",
+      "description": "`rewrite()` uses `tempfile.NamedTemporaryFile(delete=False, dir=...)` to create a sibling temp file and only later applies the original mode before replacing. During the window before `os.chmod`, the temp file exists with the platform-default temp permissions, which may be more permissive than the source file. Because `.env` files often contain secrets, this can expose sensitive content transiently on shared systems.",
+      "suggestion": "Create the temp file with restrictive permissions from the start (e.g. use `mkstemp` and `os.fchmod(fd, 0o600)` or original mode when known) before writing sensitive content.",
+      "focus": "security"
+    },
+    {
+      "id": "04318ba2d040",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 230,
+      "title": "unset_key existence check follows symlinks before rewrite intentionally does not",
+      "description": "`unset_key()` checks `os.path.exists(dotenv_path)` before calling `rewrite(..., follow_symlinks=False)`. For a symlink to an existing file, `exists()` is true but the later rewrite intentionally replaces the symlink itself rather than editing the target. For a symlink to a missing target, `exists()` is false and the function returns without touching the path. This split logic is subtle and differs from `set_key()`, increasing behavioral surprise around symlink handling.",
+      "suggestion": "Document this behavior explicitly and consider harmonizing pre-check semantics with the no-follow policy, e.g. using `os.path.lexists()` plus explicit symlink handling.",
+      "focus": "patterns"
+    },
+    {
+      "id": "6b6cada3873e",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 209,
+      "title": "unset_key has unused quote_mode parameter",
+      "description": "`unset_key()` accepts `quote_mode` but never uses it. The parameter appears to exist only for CLI symmetry, which adds API noise and can confuse users or maintainers.",
+      "suggestion": "Remove the unused parameter in a major release or clearly deprecate/document that it is ignored.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "732f0d901460",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 328,
+      "title": "load_dotenv docstring omits interpolate parameter description",
+      "description": "The function signature includes `interpolate: bool = True`, but the docstring parameter list does not document it. This creates an API docs mismatch, especially since `docs/reference.md` likely renders docstrings.",
+      "suggestion": "Add a docstring entry explaining `interpolate` behavior and defaults.",
+      "focus": "docs"
+    },
+    {
+      "id": "1ec3255126e8",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 334,
+      "title": "Docstring contains grammar inaccuracies",
+      "description": "The `load_dotenv` docstring says `with it's default parameters`, which should be `its`. There are a few similar minor wording issues across docstrings that reduce polish in generated API documentation.",
+      "suggestion": "Proofread and correct grammar in public API docstrings.",
+      "focus": "docs"
+    },
+    {
+      "id": "ef0d7d5dc3db",
+      "severity": "medium",
+      "file": "src/dotenv/parser.py",
+      "line": 55,
+      "title": "Parser reads entire input stream into memory",
+      "description": "`Reader.__init__` does `self.string = stream.read()`, meaning parsing always loads the full file or stream into memory before processing. For ordinary `.env` files this is fine, but the library explicitly supports FIFOs and arbitrary streams, where content may be large or producer-driven. This prevents true streaming and can increase memory use unnecessarily.",
+      "suggestion": "Refactor parsing to operate incrementally on chunks or lines, or clearly document that the full stream is buffered in memory.",
+      "focus": "performance"
+    },
+    {
+      "id": "21f53725f35a",
+      "severity": "medium",
+      "file": "src/dotenv/parser.py",
+      "line": 55,
+      "title": "Full-stream buffering of FIFOs/streams lacks targeted performance tests",
+      "description": "Because the parser reads the whole stream eagerly, performance and blocking characteristics for large streams/FIFOs are important, but the test suite only covers a tiny FIFO payload and many small string cases. There is no test protecting against pathological buffering behavior or large input regression.",
+      "suggestion": "Add tests for larger stream inputs and, if streaming semantics are expected, tests that validate incremental behavior or acceptable bounds.",
+      "focus": "testing"
+    },
+    {
+      "id": "3309fc170423",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 24,
+      "title": "test_list mistakenly checks built-in format instead of output_format parameter",
+      "description": "Inside `test_list`, the condition is `if format is not None:` instead of `if output_format is not None:`. Since `format` is the built-in function and never `None`, the branch always executes, so the `None` case does not actually test the default CLI behavior as intended.",
+      "suggestion": "Change the condition to `if output_format is not None:` and keep the `None` case truly exercising the default path.",
+      "focus": "testing"
+    },
+    {
+      "id": "e9e4bb079f0f",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 24,
+      "title": "Accidental use of Python built-in name format in test logic",
+      "description": "The test references the built-in `format` name, which is almost certainly a typo. This is minor, but it is code hygiene debt and can obscure the real intent of the test.",
+      "suggestion": "Use `output_format` consistently and avoid accidental built-in references.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "853e6e910a7c",
+      "severity": "medium",
+      "file": "tests/test_ipython.py",
+      "line": 17,
+      "title": "Tests mutate process working directory without restoration",
+      "description": "Several IPython tests call `os.chdir(tmp_path)` directly instead of using `monkeypatch.chdir`. This can leak global state across tests and make the suite order-dependent or flaky, especially if more tests are added.",
+      "suggestion": "Use `monkeypatch.chdir(tmp_path)` so pytest restores the working directory automatically after each test.",
+      "focus": "testing"
+    },
+    {
+      "id": "22d88368f054",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 301,
+      "title": "Multiple tests mutate process working directory without restoration",
+      "description": "Several tests in `test_main.py` call `os.chdir(...)` directly. This creates shared mutable global state and can affect unrelated tests depending on execution order.",
+      "suggestion": "Replace direct `os.chdir` calls with `monkeypatch.chdir(...)` in all tests that change directories.",
+      "focus": "testing"
+    },
+    {
+      "id": "d131a5b4549b",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 564,
+      "title": "Subprocess-based current-directory behavior tests use real process execution",
+      "description": "The suite uses real subprocesses to validate `load_dotenv()` behavior. While justified for some integration coverage, these tests are slower and more brittle than in-process tests and currently are not isolated from all environment/working-directory variability beyond selective cleanup.",
+      "suggestion": "Keep a small number of subprocess integration tests, but add/shift more behavior checks to in-process tests with controlled monkeypatching where possible.",
+      "focus": "performance"
+    },
+    {
+      "id": "837313ad7c13",
+      "severity": "low",
+      "file": "tests/test_zip_imports.py",
+      "line": 33,
+      "title": "Debug print left in test helper",
+      "description": "`setup_zipfile()` prints `setup_zipfile: ...` while creating archives. This is test noise and unnecessary output in normal runs.",
+      "suggestion": "Remove the `print` statement or replace it with optional debug logging if needed.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "7d15fba4c7f1",
+      "severity": "medium",
+      "file": "tests/test_utils.py",
+      "line": 7,
+      "title": "CLI integration helper depends on external installed console script",
+      "description": "`run_dotenv()` executes `subprocess.run([\"dotenv\", *args], ...)`, which assumes the `dotenv` console script is installed and on PATH in the test environment. That makes tests more environment-dependent than necessary.",
+      "suggestion": "Invoke the module via `sys.executable -m dotenv` or point directly at the current environment's script path to reduce PATH-related flakiness.",
+      "focus": "testing"
+    },
+    {
+      "id": "f42b7f21afed",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 1,
+      "title": "Project metadata does not declare docs dependencies despite documented docs workflow",
+      "description": "The project documents a docs-specific install flow using `requirements-docs.txt`, but `pyproject.toml` has no `docs` optional dependency group. This splits dependency truth across manifests and undermines the stated migration toward `pyproject.toml`.",
+      "suggestion": "Add a `[project.optional-dependencies].docs` group and reference it from contributing docs.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "533f8e3a1365",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 30,
+      "title": "Runtime console script points to cli import path while CLI dependency is optional",
+      "description": "The package always declares a `dotenv` console script, but `click` is only in the optional `cli` extra. Invoking the script without the extra exits with a runtime message. This is a packaging inconsistency: a runtime entry point is installed even when its runtime dependency may be absent.",
+      "suggestion": "Either make `click` a required dependency when shipping the script, or only expose the console script from an optional packaging target/extras-aware distribution strategy.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "bb6b02b136f2",
+      "severity": "medium",
+      "file": "requirements-docs.txt",
+      "line": 2,
+      "title": "mkdocs-include-markdown-plugin appears unused by provided mkdocs configuration",
+      "description": "`requirements-docs.txt` includes `mkdocs-include-markdown-plugin>=6.0.0`, but `mkdocs.yml` does not configure this plugin and none of the provided docs files reference its features. This looks like a dead docs dependency.",
+      "suggestion": "Remove the plugin if unused, or add the corresponding configuration if it is required.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "a9d23315fc1b",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Development requirements duplicate packaging metadata and are largely unpinned",
+      "description": "`requirements.txt` lists broad dev tools (`click`, `pytest`, `tox`, `ruff`, `build`, `pre-commit`, etc.) even though some dependency information already exists in `pyproject.toml`. Most versions are unpinned or loosely pinned, increasing reproducibility drift across environments.",
+      "suggestion": "Define dev extras or use a dedicated lock/constraints strategy so contributor environments are reproducible and dependency ownership is clearer.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "89444cd0769f",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 2,
+      "title": "Runtime dependency click is duplicated across manifests",
+      "description": "`click` appears in both `requirements.txt` and `pyproject.toml` optional dependencies, creating two version-control points for the same package. This can lead to version skew between development and packaged installations.",
+      "suggestion": "Consolidate dependency declaration so `requirements.txt` is generated from or aligned with project metadata.",
+      "focus": "patterns"
+    },
+    {
+      "id": "fa21bb77ee65",
+      "severity": "low",
+      "file": "mkdocs.yml",
+      "line": 1,
+      "title": "Docs configuration likely relies on README/docs duplication instead of include plugin",
+      "description": "The docs site nav points to hand-maintained markdown files (`index.md`, `changelog.md`, `contributing.md`) that are near-verbatim copies of root docs. Since the repo even carries an include-markdown plugin dependency, the current setup suggests unnecessary duplication rather than reuse.",
+      "suggestion": "Use includes/generated docs from root documents, or drop duplicate files and unused plugin dependencies.",
+      "focus": "hygiene"
+    }
+  ]
+}

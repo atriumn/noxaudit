@@ -1,0 +1,414 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "anthropic",
+    "model": "claude-opus-5-5",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:29.167979",
+    "completed_at": "2026-09-29T23:29:32.624588",
+    "wall_clock_seconds": 423.46,
+    "error": null
+  },
+  "tokens": {
+    "input": 69228,
+    "output": 5284,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.1913,
+  "findings_count": 39,
+  "findings": [
+    {
+      "id": "cddcf2374d4e",
+      "severity": "medium",
+      "file": "src/dotenv/__init__.py",
+      "line": 25,
+      "title": "get_cli_string builds shell command without proper quoting",
+      "description": "get_cli_string is documented as returning 'a string suitable for running as a shell script', but it interpolates path, key and value directly. A value is only wrapped in double quotes when it contains a space, and embedded quotes, $, backticks and ; are not escaped. If the string is passed to a shell (e.g. fabric `run`), this allows command injection.",
+      "suggestion": "Use shlex.quote() on each component (path, quote, key, value) and join them.",
+      "focus": "security"
+    },
+    {
+      "id": "c0bb487b4bf5",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 126,
+      "title": "`dotenv set` echoes secret values to stdout",
+      "description": "`set` prints `key=value` after writing. Secrets may end up in terminal scrollback or CI logs.",
+      "suggestion": "Consider echoing only the key, or add a --quiet option.",
+      "focus": "security"
+    },
+    {
+      "id": "0c8f8d941375",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 163,
+      "title": "Newly created .env temp file mode depends on tempfile default",
+      "description": "NamedTemporaryFile creates the file with mode 0o600. That matches the changelog, but the behavior relies on an implicit tempfile detail rather than an explicit chmod.",
+      "suggestion": "Explicitly chmod to 0o600 when original_mode is None so the intent is clear.",
+      "focus": "security"
+    },
+    {
+      "id": "9012c0dabeb9",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 13,
+      "title": "Contributing commands are invalid",
+      "description": "`uv ruff check .` and `uv format .` are not valid uv commands; the correct forms are `uv run ruff check .` and `uv run ruff format .`. Likewise `uv run precommit install` should be `uv run pre-commit install`. The mkdocs link `[mkdocs]()` is empty.",
+      "suggestion": "Fix the commands to `uv run ruff check .`, `uv run ruff format .` and `uv run pre-commit install`, and add the https://www.mkdocs.org link.",
+      "focus": "docs"
+    },
+    {
+      "id": "f980fce4c32d",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 13,
+      "title": "Duplicated invalid contributing commands",
+      "description": "This file has the same invalid uv/pre-commit commands and empty mkdocs link as CONTRIBUTING.md.",
+      "suggestion": "Fix the commands, or include CONTRIBUTING.md via mkdocs-include-markdown-plugin instead of keeping a copy.",
+      "focus": "docs"
+    },
+    {
+      "id": "7490a5b11dd6",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 362,
+      "title": "load_dotenv docstring missing `interpolate` parameter",
+      "description": "The Parameters section omits `interpolate`. The `verbose` description also has a grammar error ('output a warning the .env file').",
+      "suggestion": "Document `interpolate` and fix the wording of `verbose`.",
+      "focus": "docs"
+    },
+    {
+      "id": "96c555eb7878",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 372,
+      "title": "load_dotenv return doc inaccurate",
+      "description": "The docstring says it returns True if at least one environment variable is set. In fact it returns True whenever the parsed dict is non-empty, even if no variable was set (override=False with all keys present, or all values None).",
+      "suggestion": "Update the docstring, or change the return logic to match it.",
+      "focus": "docs"
+    },
+    {
+      "id": "a1d19daef62f",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 416,
+      "title": "dotenv_values docstring omits `interpolate`",
+      "description": "The `interpolate` parameter is undocumented.",
+      "suggestion": "Add it to the Parameters section.",
+      "focus": "docs"
+    },
+    {
+      "id": "bf4186d7d27e",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 49,
+      "title": "README misdescribes default .env lookup",
+      "description": "The README says load_dotenv looks in the same directory as the Python script. find_dotenv actually starts from the calling frame's file, which may be a library module rather than the main script, or from the cwd in interactive, debugger or frozen contexts.",
+      "suggestion": "Clarify that the search starts from the file that calls load_dotenv, or from cwd in interactive/debugger/frozen contexts.",
+      "focus": "docs"
+    },
+    {
+      "id": "ab17cc7c1a75",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 225,
+      "title": "Variable expansion docs for override=True contradict implementation",
+      "description": "The README says a `.env` file value takes precedence over the environment when override=True. resolve_variables does apply new_values over os.environ in that case, but only for keys defined earlier in the file; later definitions are not visible. This forward-reference limitation is undocumented.",
+      "suggestion": "Note that only variables defined earlier in the file are available for expansion.",
+      "focus": "docs"
+    },
+    {
+      "id": "428edf6fd189",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 170,
+      "title": "run --override help text is misleading",
+      "description": "The help text reads 'Override variables from the environment file with those from the .env file'. It should say the existing environment variables are overridden with those from the .env file.",
+      "suggestion": "Reword to 'Override existing environment variables with values from the .env file.'",
+      "focus": "docs"
+    },
+    {
+      "id": "bf58d1a51889",
+      "severity": "low",
+      "file": "CHANGELOG.md",
+      "line": 14,
+      "title": "Duplicate Python 3.14 support entries and typo",
+      "description": "1.2.2 and 1.2.0 both claim to add Python 3.14 support. 'Is the file needed to be created' should read 'If the file needed'. Some PR links point to /issues/ instead of /pull/, and unused contributor refs (@burnout-projects, @cpackham-atlnz) are present.",
+      "suggestion": "Deduplicate the entries, fix the typo and fix the link references.",
+      "focus": "docs"
+    },
+    {
+      "id": "04c6058ff8e7",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 126,
+      "title": "Empty docstring on DotEnv.get",
+      "description": "The docstring is `\"\"\" \"\"\"`, which carries no information.",
+      "suggestion": "Write a real docstring or remove it.",
+      "focus": "docs"
+    },
+    {
+      "id": "92797b9b27c8",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 206,
+      "title": "Typos in run_command docstring/comments",
+      "description": "'it's parameters' should be 'its parameters', and 'vales' should be 'values'.",
+      "suggestion": "Fix the typos.",
+      "focus": "docs"
+    },
+    {
+      "id": "100b003535fa",
+      "severity": "low",
+      "file": "README.md",
+      "line": 13,
+      "title": "Table of contents missing sections",
+      "description": "The TOC omits 'Disable load_dotenv' and 'Variable without a value'.",
+      "suggestion": "Add the missing entries.",
+      "focus": "docs"
+    },
+    {
+      "id": "10c099d50dd4",
+      "severity": "medium",
+      "file": "docs/index.md",
+      "line": 1,
+      "title": "Docs duplicated manually instead of included",
+      "description": "docs/index.md, docs/changelog.md and docs/contributing.md are verbatim copies of the root files, which will drift. mkdocs-include-markdown-plugin is listed in requirements-docs.txt but not configured in mkdocs.yml.",
+      "suggestion": "Configure the include-markdown plugin and replace each copy with an include directive.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "ca3e9a3f9434",
+      "severity": "medium",
+      "file": "requirements-docs.txt",
+      "line": 2,
+      "title": "Unused mkdocs-include-markdown-plugin dependency",
+      "description": "The plugin is installed but never enabled in the mkdocs.yml plugins list.",
+      "suggestion": "Enable it in mkdocs.yml or remove the dependency.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "b1bbcce1370e",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Deprecated bumpversion dependency and unpinned dev deps",
+      "description": "bumpversion is unmaintained (superseded by bump-my-version) and no bumpversion config is shown. All dev dependencies are unpinned, with no lock file.",
+      "suggestion": "Remove bumpversion or replace it with bump-my-version, and pin or lock the dev dependencies.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "a4d8184b6400",
+      "severity": "low",
+      "file": "requirements.txt",
+      "line": 7,
+      "title": "Likely unused `wheel` dependency",
+      "description": "The build uses PEP 517 via `build`, so `wheel` is not needed directly.",
+      "suggestion": "Remove wheel.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "75e1612c09eb",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": 55,
+      "title": "Very loose click lower bound",
+      "description": "`click>=5.0` allows very old click versions that the CLI code (e.g. context_settings behavior) is not tested against.",
+      "suggestion": "Raise the lower bound to a tested version, e.g. click>=8.0.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "44cccd8ca96f",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": 11,
+      "title": "License specified as legacy table despite setuptools>=77",
+      "description": "`license = { text = ... }` is the deprecated form. setuptools 77+ supports a PEP 639 SPDX string, which the changelog claims was 'corrected'.",
+      "suggestion": "Use `license = \"BSD-3-Clause\"` and `license-files`.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "dc5f303f7363",
+      "severity": "low",
+      "file": ".pre-commit-config.yaml",
+      "line": 3,
+      "title": "Outdated ruff pre-commit rev",
+      "description": "The hook is pinned to v0.12.0, while the unpinned ruff in requirements.txt may lint differently.",
+      "suggestion": "Update the rev and align the ruff version with requirements.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "5036d0cea48a",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 35,
+      "title": "Test checks builtin `format` instead of `output_format`",
+      "description": "`if format is not None` tests the builtin function, which is always truthy. The None case therefore passes `--format None` to click, and the test is not exercising the intended default-format path.",
+      "suggestion": "Use `if output_format is not None:`.",
+      "focus": "testing"
+    },
+    {
+      "id": "62e8bd6d885c",
+      "severity": "medium",
+      "file": "tests/test_utils.py",
+      "line": 1,
+      "title": "get_cli_string lacks tests for shell-special characters",
+      "description": "There are no tests for values with quotes, $, or paths containing spaces, which is the injection-prone logic.",
+      "suggestion": "Add tests for these cases alongside a shlex.quote fix.",
+      "focus": "testing"
+    },
+    {
+      "id": "303269fd6d16",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 1,
+      "title": "Missing tests for edge cases",
+      "description": "There are no tests for: set_key with quote_mode 'never'/'auto' via the API, or an invalid quote_mode raising ValueError; set_key with export=True; the load_dotenv return value when all keys are skipped; and DotEnv.dict caching when the dict is empty.",
+      "suggestion": "Add unit tests covering these branches.",
+      "focus": "testing"
+    },
+    {
+      "id": "f38c1d391332",
+      "severity": "medium",
+      "file": "tests/test_main.py",
+      "line": 330,
+      "title": "Tests use os.chdir without restoring cwd",
+      "description": "test_find_dotenv_* and test_load_dotenv_in_current_dir call os.chdir into tmp_path without restoring it, so later tests are affected. test_ipython.py does the same. This is a flaky, order-dependent pattern.",
+      "suggestion": "Use monkeypatch.chdir.",
+      "focus": "testing"
+    },
+    {
+      "id": "7c8fe555fa8f",
+      "severity": "low",
+      "file": "tests/test_zip_imports.py",
+      "line": 36,
+      "title": "Debug print in test helper",
+      "description": "setup_zipfile prints each init path it adds.",
+      "suggestion": "Remove the print.",
+      "focus": "testing"
+    },
+    {
+      "id": "91a7a05dd4dd",
+      "severity": "low",
+      "file": "tests/test_fifo_dotenv.py",
+      "line": 27,
+      "title": "FIFO test can hang",
+      "description": "If load_dotenv fails before opening the FIFO, the writer thread blocks forever on open. The join timeout does not stop the thread.",
+      "suggestion": "Make the thread a daemon, or open the FIFO non-blocking in the writer.",
+      "focus": "testing"
+    },
+    {
+      "id": "26a63961b935",
+      "severity": "low",
+      "file": "tests/test_parser.py",
+      "line": 245,
+      "title": "Duplicate parametrized case",
+      "description": "The `'a=\"b\\nc\"'` case appears twice.",
+      "suggestion": "Remove the duplicate.",
+      "focus": "testing"
+    },
+    {
+      "id": "e915acf68deb",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 1,
+      "title": "CLI tests depend on installed `dotenv` executable and `printenv`",
+      "description": "run_dotenv invokes `dotenv` from PATH, so tests may exercise a different installed version. `printenv` is Unix-only.",
+      "suggestion": "Invoke via [sys.executable, '-m', 'dotenv'] and skip the printenv tests on Windows.",
+      "focus": "testing"
+    },
+    {
+      "id": "505f17947ae6",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 80,
+      "title": "DotEnv.dict cache ineffective for empty results",
+      "description": "`if self._dict:` treats an empty dict as uncached. set_as_environment_variables calls dict() twice, and parsing re-runs on each call. For an empty file this re-reads it, and a stream is consumed so the second read yields nothing.",
+      "suggestion": "Use `if self._dict is not None:`.",
+      "focus": "performance"
+    },
+    {
+      "id": "36013bbac4ef",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 283,
+      "title": "resolve_variables copies os.environ per value",
+      "description": "For each value, env is rebuilt by copying all of os.environ plus new_values, which is O(n*m).",
+      "suggestion": "Use a collections.ChainMap of new_values and os.environ.",
+      "focus": "performance"
+    },
+    {
+      "id": "3074260cf9a1",
+      "severity": "low",
+      "file": "src/dotenv/parser.py",
+      "line": 58,
+      "title": "Position.advance uses re.findall to count newlines",
+      "description": "Calling re.findall on every advance allocates a list for each match.",
+      "suggestion": "Count newlines with string methods such as str.count.",
+      "focus": "performance"
+    },
+    {
+      "id": "9d73d0084e8a",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 41,
+      "title": "enumerate_env evaluated at import time as default",
+      "description": "The default for --file is computed when the module is imported, not at invocation, so the cwd is captured at import. This is surprising in tests and embedded use.",
+      "suggestion": "Use a callable default (default=enumerate_env).",
+      "focus": "patterns"
+    },
+    {
+      "id": "3afb0366df76",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 71,
+      "title": "Inconsistent error output: print vs click.echo",
+      "description": "The CLI mixes print(..., file=sys.stderr), click.echo and sys.exit codes inconsistently. For example, 'No command given.' goes to stdout via click.echo while other errors go to stderr.",
+      "suggestion": "Use click.echo(err=True) consistently and use click exceptions for error exits.",
+      "focus": "patterns"
+    },
+    {
+      "id": "d414dcd8a0f2",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 241,
+      "title": "unset_key accepts unused quote_mode parameter",
+      "description": "quote_mode is accepted but never used; the CLI passes it anyway.",
+      "suggestion": "Deprecate and remove the parameter.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "698b515ef4b7",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 61,
+      "title": "Loose Any typing in CLI functions",
+      "description": "CLI function parameters are typed as Any even though concrete types are known. This is inconsistent with the typed main.py.",
+      "suggestion": "Use str/bool types.",
+      "focus": "patterns"
+    },
+    {
+      "id": "be357d23ec3f",
+      "severity": "low",
+      "file": "src/dotenv/ipython.py",
+      "line": 35,
+      "title": "IPython magic untyped and prints errors",
+      "description": "The dotenv magic uses print for errors while the rest of the library uses logging. It is also untyped, unlike the other modules.",
+      "suggestion": "Add type hints and use consistent error reporting.",
+      "focus": "patterns"
+    },
+    {
+      "id": "a62090450bbb",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 453,
+      "title": "Redundant exception tuple",
+      "description": "`except (FileNotFoundError, OSError)` is redundant because FileNotFoundError is a subclass of OSError.",
+      "suggestion": "Use `except OSError`.",
+      "focus": "hygiene"
+    }
+  ]
+}
