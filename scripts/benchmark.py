@@ -139,7 +139,7 @@ def run_one(
     Returns True if the run executed, False if it was skipped (already done).
     Raises on unrecoverable errors so callers can apply backoff.
     """
-    from noxaudit.config import NoxauditConfig, RepoConfig
+    from noxaudit.config import DedupConfig, NoxauditConfig, RepoConfig
     from noxaudit.cost_ledger import CostLedger
     from noxaudit.runner import run_audit
 
@@ -160,6 +160,8 @@ def run_one(
             )
         ],
         model=model,
+        # Measure raw model output: LLM dedup runs a second model over the findings.
+        dedup=DedupConfig(enabled=False),
     )
 
     # Snapshot ledger length so we can isolate the new entry after the run.

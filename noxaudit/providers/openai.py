@@ -137,6 +137,13 @@ class OpenAIProvider(BaseProvider):
             },
         }
 
+        if batch.status == "failed" and batch.errors and batch.errors.data:
+            # Batch rejected at validation (e.g. model not supported by the Batch API).
+            # There is no error file in this case, so without this check the run
+            # would silently report zero findings.
+            err = batch.errors.data[0]
+            raise RuntimeError(f"OpenAI batch failed: {err.message}")
+
         if is_done and batch.error_file_id and not batch.output_file_id:
             # Batch completed with errors, no output
             err_content = self.client.files.content(batch.error_file_id).read().decode("utf-8")

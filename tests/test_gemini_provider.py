@@ -212,6 +212,23 @@ class TestRetrieveBatch:
         assert usage["cache_read_tokens"] == 30
         assert usage["cache_write_tokens"] == 0
 
+    def test_thinking_tokens_counted_as_output(self, provider):
+        batch_job = self._make_batch_job("JOB_STATE_SUCCEEDED", file_name="files/out123")
+        provider._api_client.batches.get.return_value = batch_job
+
+        output_line = _make_output_line(
+            [],
+            usage={
+                "promptTokenCount": 200,
+                "candidatesTokenCount": 80,
+                "thoughtsTokenCount": 500,
+            },
+        )
+        provider._api_client.files.download.return_value = output_line.encode("utf-8")
+
+        provider.retrieve_batch("batches/abc123")
+        assert provider.get_last_usage()["output_tokens"] == 580
+
     def test_default_focus_applied_to_findings(self, provider):
         batch_job = self._make_batch_job("JOB_STATE_SUCCEEDED", file_name="files/out123")
         provider._api_client.batches.get.return_value = batch_job

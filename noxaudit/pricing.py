@@ -55,6 +55,29 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         cache_read_per_million=0.10,
         cache_write_per_million=1.25,
     ),
+    # --- Anthropic, September 2026 lineup (verified 2026-09-29) ---
+    "claude-opus-5-5": ModelPricing(
+        input_per_million=4.00,
+        output_per_million=20.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=1_000_000,
+        cache_read_per_million=0.20,
+        cache_write_per_million=5.00,
+    ),
+    "claude-sonnet-5-5": ModelPricing(
+        input_per_million=2.00,
+        output_per_million=10.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=1_000_000,
+        cache_read_per_million=0.20,
+        cache_write_per_million=2.50,
+    ),
     # --- Google Gemini (verified 2026-03-06 from ai.google.dev/gemini-api/docs/pricing) ---
     "gemini-2.5-flash": ModelPricing(
         input_per_million=0.30,
@@ -80,6 +103,25 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         tier_threshold=200_000,
         input_per_million_high=2.50,
         output_per_million_high=15.00,
+        batch_discount=0.50,
+        context_window=1_000_000,
+    ),
+    # --- Google Gemini, September 2026 lineup (verified 2026-09-29) ---
+    "gemini-3.8-flash": ModelPricing(
+        input_per_million=0.75,
+        output_per_million=3.75,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=1_000_000,
+    ),
+    "gemini-3.1-pro-preview": ModelPricing(
+        input_per_million=2.00,
+        output_per_million=12.00,
+        tier_threshold=200_000,
+        input_per_million_high=4.00,
+        output_per_million_high=18.00,
         batch_discount=0.50,
         context_window=1_000_000,
     ),
@@ -120,6 +162,25 @@ MODEL_PRICING: dict[str, ModelPricing] = {
         batch_discount=0.50,
         context_window=1_050_000,
     ),
+    # --- OpenAI, September 2026 lineup (verified 2026-09-29) ---
+    "gpt-6-sol": ModelPricing(
+        input_per_million=2.00,
+        output_per_million=10.00,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=922_000,
+    ),
+    "gpt-6-luna": ModelPricing(
+        input_per_million=0.10,
+        output_per_million=0.50,
+        tier_threshold=None,
+        input_per_million_high=None,
+        output_per_million_high=None,
+        batch_discount=0.50,
+        context_window=922_000,
+    ),
 }
 
 # Provider name for each model key
@@ -134,6 +195,12 @@ _MODEL_PROVIDER: dict[str, str] = {
     "gpt-5-mini": "openai",
     "o4-mini": "openai",
     "gpt-5.4": "openai",
+    "claude-opus-5-5": "anthropic",
+    "claude-sonnet-5-5": "anthropic",
+    "gemini-3.8-flash": "gemini",
+    "gemini-3.1-pro-preview": "gemini",
+    "gpt-6-sol": "openai",
+    "gpt-6-luna": "openai",
 }
 
 

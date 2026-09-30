@@ -37,6 +37,17 @@ FINDING_SCHEMA = {
 }
 
 
+# Output budget per focus area. Thinking counts against max_tokens on models that
+# always think, so 4096/area truncated multi-focus runs. Capped at 64K, the
+# smallest max output among supported Claude models (Haiku 4.5, Sonnet 4.6).
+MAX_TOKENS_PER_FOCUS = 16384
+MAX_TOKENS_CAP = 64000
+
+
+def _max_tokens(num_focus_areas: int) -> int:
+    return min(MAX_TOKENS_PER_FOCUS * num_focus_areas, MAX_TOKENS_CAP)
+
+
 class AnthropicProvider(BaseProvider):
     name = "anthropic"
 
@@ -63,7 +74,7 @@ class AnthropicProvider(BaseProvider):
     ) -> str:
         """Submit a batch request. Returns the batch ID."""
         user_message = self._build_user_message(files, decision_context)
-        max_tokens = 4096 * num_focus_areas
+        max_tokens = _max_tokens(num_focus_areas)
 
         batch = self.client.messages.batches.create(
             requests=[
@@ -151,7 +162,7 @@ class AnthropicProvider(BaseProvider):
     ) -> list[Finding]:
         """Direct message API — no batch queue."""
         user_message = self._build_user_message(files, decision_context)
-        max_tokens = 4096 * num_focus_areas
+        max_tokens = _max_tokens(num_focus_areas)
 
         message = self.client.messages.create(
             model=self.model,
@@ -198,7 +209,13 @@ Return ONLY the JSON object, no other text."""
         message: anthropic.types.Message,
         default_focus: str | None = None,
     ) -> list[Finding]:
-        text = message.content[0].text
+        # Adaptive-thinking models (Opus 5.5, Sonnet 5.5) return thinking blocks
+        # ahead of the text block, so join text blocks rather than taking content[0].
+        text = "".join(
+            block.text
+            for block in message.content
+            if getattr(block, "type", None) not in ("thinking", "redacted_thinking")
+        )
 
         # Extract JSON from response (handle markdown code blocks)
         if "```json" in text:
