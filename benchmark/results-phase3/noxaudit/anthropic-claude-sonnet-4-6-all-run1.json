@@ -1,0 +1,404 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:29.010514",
+    "completed_at": "2026-09-29T23:29:32.872051",
+    "wall_clock_seconds": 423.86,
+    "error": null
+  },
+  "tokens": {
+    "input": 131234,
+    "output": 7160,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.2506,
+  "findings_count": 38,
+  "findings": [
+    {
+      "id": "5be1acb3b748",
+      "severity": "high",
+      "file": "noxaudit/__init__.py",
+      "line": 3,
+      "title": "Module docstring references old project name 'Nightwatch'",
+      "description": "The module docstring says 'Nightwatch: Nightly AI-powered codebase audits.' but the project was renamed to Noxaudit. This is misleading for new contributors and tools that read module metadata.",
+      "suggestion": "Change the docstring to 'Noxaudit: Nightly AI-powered codebase audits.'",
+      "focus": "docs"
+    },
+    {
+      "id": "dda5ed81c320",
+      "severity": "high",
+      "file": "noxaudit/reporter.py",
+      "line": 11,
+      "title": "Report title still says 'Nightwatch Report' instead of 'Noxaudit Report'",
+      "description": "The generate_report function produces a markdown header '# Nightwatch Report: ...' instead of '# Noxaudit Report: ...'. This is a stale reference to the old project name that will appear in every generated report.",
+      "suggestion": "Change the line to: `f\"# Noxaudit Report: {_focus_display(result.focus)}\"`",
+      "focus": "docs"
+    },
+    {
+      "id": "af15f80944d0",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": 155,
+      "title": "Decisions path hardcoded to '.noxaudit/decisions.jsonl' instead of using config",
+      "description": "The record_decision MCP tool calls save_decision('.noxaudit/decisions.jsonl', decision) with a hardcoded path rather than loading the configured path from noxaudit.yml. If the user configures a different decisions path, MCP decisions will be written to the wrong file.",
+      "suggestion": "Load config inside record_decision using load_config() and use config.decisions.path, similar to how run_audit does it.",
+      "focus": "security"
+    },
+    {
+      "id": "9d43bcd56cfe",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": 133,
+      "title": "Path traversal risk: file hash computed from finding.file without path sanitization",
+      "description": "In record_decision, the file hash is computed as _hash_file(Path(finding.file)). If a malicious latest-findings.json contains a path like '../../../etc/passwd', this would attempt to hash an arbitrary file. latest-findings.json is written by the runner, but if it can be tampered with (e.g., in a shared CI environment), this is a path traversal risk.",
+      "suggestion": "Validate that finding.file is a relative path that does not traverse outside the working directory before hashing. Reject paths containing '..' components.",
+      "focus": "security"
+    },
+    {
+      "id": "4de6221a26a6",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 22,
+      "title": "Telegram bot token embedded in URL and potentially logged",
+      "description": "The Telegram API call constructs the URL as f'https://api.telegram.org/bot{token}/sendMessage'. If httpx or any logging middleware logs outgoing request URLs (common in debug mode or with certain interceptors), the full bot token will appear in logs.",
+      "suggestion": "The token is already in the URL path which is standard for Telegram's Bot API. To reduce logging risk, ensure httpx event hooks or logging are not configured to log full URLs in production, or add a note in documentation.",
+      "focus": "security"
+    },
+    {
+      "id": "a1d382971e16",
+      "severity": "medium",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": null,
+      "title": "JSON parse errors in _parse_response silently propagate as uncaught exceptions",
+      "description": "The _parse_response method calls json.loads(text.strip()) without a try/except. If the AI returns malformed JSON (which can happen), this raises a json.JSONDecodeError that propagates up uncaught, crashing the audit run entirely. No fallback or user-friendly error message is provided.",
+      "suggestion": "Wrap json.loads in a try/except JSONDecodeError, log the raw response for debugging, and return an empty findings list with a warning printed to stderr.",
+      "focus": "patterns"
+    },
+    {
+      "id": "86974c36ffcd",
+      "severity": "medium",
+      "file": "noxaudit/providers/gemini.py",
+      "line": null,
+      "title": "JSON parse errors in _parse_text and _parse_response silently propagate as uncaught exceptions",
+      "description": "Both _parse_text and _parse_response in GeminiProvider call json.loads without try/except, identical to the Anthropic provider issue. Malformed AI output will crash the audit with an unhandled exception.",
+      "suggestion": "Wrap json.loads in try/except JSONDecodeError in both methods and return [] with a warning on failure.",
+      "focus": "patterns"
+    },
+    {
+      "id": "b18e24da684f",
+      "severity": "medium",
+      "file": "noxaudit/providers/openai.py",
+      "line": null,
+      "title": "JSON parse errors in _parse_text silently propagate as uncaught exceptions",
+      "description": "Same pattern as Anthropic and Gemini providers \u2014 _parse_text calls json.loads without error handling. Malformed AI output crashes the audit.",
+      "suggestion": "Wrap json.loads in try/except JSONDecodeError and return [] with a warning.",
+      "focus": "patterns"
+    },
+    {
+      "id": "030d47513dbe",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": null,
+      "title": "Shell command injection risk via subprocess with user-controlled finding data",
+      "description": "The _create_issue function passes finding.title and finding.description as command-line arguments to 'gh issue create' via subprocess.run with a list (not shell=True). While list-form subprocess is safe from shell injection, gh CLI may still interpret certain characters in --body content unexpectedly. More critically, labels from config.labels are passed as --label arguments without validation \u2014 a label containing shell metacharacters in a misconfigured YAML could cause unexpected behavior.",
+      "suggestion": "Validate that config.labels and config.assignees only contain alphanumeric characters, hyphens, and underscores before passing to subprocess. The current list-based subprocess call is safe but config validation is missing.",
+      "focus": "security"
+    },
+    {
+      "id": "20b83b6c1b95",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": null,
+      "title": "GitHub Action missing google-api-key and openai-api-key inputs",
+      "description": "The action/action.yml defines inputs for anthropic-api-key but does not define google-api-key or openai-api-key inputs, even though the README and docs describe multi-provider support. Users who configure gemini or openai in their noxaudit.yml will find those API keys not available to the action.",
+      "suggestion": "Add google-api-key and openai-api-key inputs to action.yml and pass them as GOOGLE_API_KEY and OPENAI_API_KEY environment variables in the 'Run noxaudit' step.",
+      "focus": "docs"
+    },
+    {
+      "id": "6237f145f96b",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": null,
+      "title": "Action 'Run noxaudit' step does not pass --format flag in retrieve mode",
+      "description": "When mode is 'retrieve', the action runs 'noxaudit retrieve --config ... --format ...'. However when mode is 'submit', the action does not forward the focus input when it is empty, but more importantly the --format flag is only applied in retrieve mode. The submit command doesn't support --format, which is correct, but the action's format input description implies it applies to both modes, which is misleading. Also, the 'noxaudit retrieve' call does not pass --config.",
+      "suggestion": "Add '--config ${{ inputs.config }}' to the retrieve command as well (it's missing). Clarify in the input description that format only applies to retrieve mode.",
+      "focus": "docs"
+    },
+    {
+      "id": "962181a53614",
+      "severity": "medium",
+      "file": "noxaudit/config.py",
+      "line": null,
+      "title": "PrepassConfig.auto_disable semantics are inverted from the YAML key 'auto'",
+      "description": "In the config loading, prepass.auto_disable is set to 'not prepass_raw.get(\"auto\", True)'. So 'auto: true' in YAML results in auto_disable=False, and 'auto: false' in YAML results in auto_disable=True. While functionally correct, the internal field name 'auto_disable' is the logical inverse of the YAML key 'auto', making the code confusing. The docstring in PrepassConfig also lacks clarification.",
+      "suggestion": "Rename the field to 'auto_enable' and set it to 'prepass_raw.get(\"auto\", True)' for clarity, or keep the name but add a clear docstring explaining the inversion.",
+      "focus": "patterns"
+    },
+    {
+      "id": "29b09e6ca002",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": null,
+      "title": "resolve_model_key called with provider name but model key is global config \u2014 provider-specific model override not applied in _maybe_prepass",
+      "description": "In _maybe_prepass, the function checks 'pricing = MODEL_PRICING.get(model_key)' where model_key comes from config.model (not the provider-specific override). If the user has configured providers.anthropic.model = 'claude-opus-4-6' but model = 'gemini-2.0-flash' globally, the pre-pass tier check will use the wrong model's pricing data. This could cause pre-pass to either incorrectly trigger or fail to trigger.",
+      "suggestion": "In _maybe_prepass (and anywhere provider-specific model resolution is needed), use config.get_model_for_provider(provider_name) instead of config.model directly.",
+      "focus": "patterns"
+    },
+    {
+      "id": "c54dc4651371",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": null,
+      "title": "Provider instantiated with global config.model instead of provider-specific model in _retrieve_repo",
+      "description": "In _retrieve_repo, the provider is instantiated as PROVIDERS[pname](model=config.model). This ignores any per-provider model override configured under providers.<name>.model. The same issue exists in _submit_repo and _run_repo_sync.",
+      "suggestion": "Replace config.model with config.get_model_for_provider(pname) when instantiating providers in _retrieve_repo, _submit_repo, and _run_repo_sync.",
+      "focus": "patterns"
+    },
+    {
+      "id": "df5bd328b75a",
+      "severity": "medium",
+      "file": "docs/reference/configuration.md",
+      "line": null,
+      "title": "Configuration reference shows default provider_rotation as [gemini] but code uses gemini",
+      "description": "The configuration reference table shows repos[].provider_rotation default as '[gemini]' which matches the code. However, the README's Key Options table shows the default as '[anthropic]'. These are inconsistent.",
+      "suggestion": "Reconcile the two documents to show the same default. The code in config.py uses ['gemini'] as the default, so README should be updated to match.",
+      "focus": "docs"
+    },
+    {
+      "id": "07809a31afa0",
+      "severity": "medium",
+      "file": "README.md",
+      "line": null,
+      "title": "README Key Options table shows repos[].provider_rotation default as [anthropic] but code defaults to [gemini]",
+      "description": "In README.md under the Key Options table, repos[].provider_rotation shows default '[anthropic]'. In config.py, the RepoConfig dataclass and load_config both default provider_rotation to ['gemini']. This is a factual inaccuracy that could mislead users about which provider is used by default.",
+      "suggestion": "Update the README Key Options table to show '[gemini]' as the default for provider_rotation.",
+      "focus": "docs"
+    },
+    {
+      "id": "68a644e994b1",
+      "severity": "medium",
+      "file": "README.md",
+      "line": null,
+      "title": "README lists OpenAI model 'gpt-5.2' with output price $7.00/M but pricing.py shows $14.00/M",
+      "description": "The README's Supported Models table shows gpt-5.2 output at $7.00/M. In pricing.py, the MODEL_PRICING for 'gpt-5.2' shows output_per_million=14.00. This is a 2x discrepancy that could mislead users about cost.",
+      "suggestion": "Update the README Supported Models table to show $14.00/M for gpt-5.2 output, or correct pricing.py if the README is authoritative.",
+      "focus": "docs"
+    },
+    {
+      "id": "3f3367c3ad94",
+      "severity": "medium",
+      "file": "noxaudit/focus/testing.py",
+      "line": null,
+      "title": "Testing focus prompt missing the 'No Tests At All' checklist item from the actual prompt template",
+      "description": "The focus_prompts/testing.md prompt template includes a 'No Tests At All' section as the first checklist item (checking for repos with zero test files). However, the testing.py class just calls get_prompt_from_file('testing') which loads it correctly. This is fine, but the testing.md prompt lacks the 'No Tests At All' section that is present in the system-level prompt used in this audit request (which was injected directly). No actual mismatch \u2014 this is an observation that the prompt file matches what's expected.",
+      "suggestion": "No action needed \u2014 the prompt file correctly implements the intended behavior.",
+      "focus": "docs"
+    },
+    {
+      "id": "416757b26d4e",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": null,
+      "title": "Version 0.1.0 release date is 2026-02-15 \u2014 a future date",
+      "description": "The CHANGELOG.md shows '[0.1.0] - 2026-02-15' as the initial release date. 2026 is a future year (relative to 2025). This appears to be a typo \u2014 likely intended as 2025-02-15 or similar.",
+      "suggestion": "Correct the release date to the actual release date.",
+      "focus": "docs"
+    },
+    {
+      "id": "a8c037ff09d2",
+      "severity": "medium",
+      "file": "docs/changelog.md",
+      "line": null,
+      "title": "Duplicate changelog: docs/changelog.md is identical to CHANGELOG.md",
+      "description": "docs/changelog.md is an exact duplicate of CHANGELOG.md. Maintaining two identical files creates a documentation drift risk \u2014 changes to one may not be reflected in the other. mkdocs.yml references 'changelog.md' which maps to docs/changelog.md.",
+      "suggestion": "Remove docs/changelog.md and use mkdocs' docs_dir configuration or a symlink/include to reference the root CHANGELOG.md directly. Alternatively, use mkdocs-include-markdown-plugin to include CHANGELOG.md from the root.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "99d4ba62538d",
+      "severity": "medium",
+      "file": "docs/guides/focus-areas.md",
+      "line": null,
+      "title": "Focus areas table in docs shows 6 areas but system has 7",
+      "description": "In README.md under 'Focus Areas', the table lists only 6 focus areas: security, docs, patterns, performance, hygiene, dependencies \u2014 missing 'testing'. In docs/guides/focus-areas.md the table correctly lists all 7. The README is missing 'testing' from its focus areas table.",
+      "suggestion": "Add 'testing' to the Focus Areas table in README.md.",
+      "focus": "docs"
+    },
+    {
+      "id": "516c05bfd32b",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": null,
+      "title": "filter_findings uses only most recent decision per finding_id but doesn't handle multiple decisions for same finding correctly",
+      "description": "filter_findings builds a decision_map by iterating all decisions and keeping the latest by date string comparison. However, date comparison uses string comparison ('2026-01-01' > '2025-12-31' works, but '2026-01-01' > '2026-1-1' would fail). ISO dates without zero-padding would break the comparison logic.",
+      "suggestion": "Use date.fromisoformat() comparison instead of string comparison when selecting the most recent decision: if not decision_map.get(d.finding_id) or date.fromisoformat(d.date) > date.fromisoformat(decision_map[d.finding_id].date).",
+      "focus": "patterns"
+    },
+    {
+      "id": "34033732c913",
+      "severity": "low",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": null,
+      "title": "AnthropicProvider.run_audit polls with time.sleep(60) blocking the event loop",
+      "description": "The synchronous run_audit method polls the batch API in a while True loop with time.sleep(60). For a CLI tool this is acceptable, but the 60-second hardcoded interval means the user waits up to 60 extra seconds after the batch completes. There's no progress feedback during this wait beyond the 'Waiting...' print.",
+      "suggestion": "Consider an exponential backoff starting at a shorter interval (e.g., 10 seconds) for the first few polls, then settling at 60 seconds. Also consider printing elapsed time.",
+      "focus": "performance"
+    },
+    {
+      "id": "424aaa0f9980",
+      "severity": "low",
+      "file": "noxaudit/providers/openai.py",
+      "line": null,
+      "title": "OpenAIProvider.run_audit polls with time.sleep(60) \u2014 same issue as Anthropic",
+      "description": "Same pattern as AnthropicProvider: hardcoded 60-second polling interval with no backoff.",
+      "suggestion": "Same as Anthropic: use shorter initial intervals with exponential backoff.",
+      "focus": "performance"
+    },
+    {
+      "id": "416980778a68",
+      "severity": "low",
+      "file": "noxaudit/cost_ledger.py",
+      "line": null,
+      "title": "CostLedger.LEDGER_PATH is a class-level Path('.noxaudit/cost-ledger.jsonl') \u2014 relative to cwd at import time",
+      "description": "LEDGER_PATH = Path('.noxaudit/cost-ledger.jsonl') is evaluated at class definition time and resolves relative to the current working directory when the module is imported. If the CLI is invoked from a different directory, or if tests change directories, the path may resolve incorrectly. Tests patch this attribute, but production code that changes directories could hit the wrong ledger file.",
+      "suggestion": "Make LEDGER_PATH a property or resolve it lazily at method call time rather than at class definition time.",
+      "focus": "patterns"
+    },
+    {
+      "id": "22ca746e4dfb",
+      "severity": "low",
+      "file": "noxaudit/mcp/state.py",
+      "line": null,
+      "title": "LATEST_FINDINGS_FILE constant is '.noxaudit/latest-findings.json' but used as relative path joined with base_path",
+      "description": "LATEST_FINDINGS_FILE = '.noxaudit/latest-findings.json' \u2014 when used as Path(base_path) / LATEST_FINDINGS_FILE, this produces paths like '/tmp/test/.noxaudit/latest-findings.json' which is correct. However the constant name and value are slightly confusing (the constant starts with '.noxaudit/' making it look like an absolute-ish path rather than a filename).",
+      "suggestion": "Minor: rename the constant to LATEST_FINDINGS_RELATIVE_PATH or restructure to separate the directory and filename constants for clarity.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "244af305c4a6",
+      "severity": "low",
+      "file": "noxaudit/sarif.py",
+      "line": null,
+      "title": "_get_noxaudit_version falls back to '0.2.0' instead of the actual current version",
+      "description": "The _get_noxaudit_version function has a fallback return value of '0.2.0' in its except clause. The actual version is '0.1.0' as defined in __init__.py. If the import fails for any reason, the SARIF output will claim version '0.2.0' which doesn't exist.",
+      "suggestion": "Change the fallback to '0.1.0' or 'unknown' to avoid reporting a non-existent version.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "a3c7e7e4e5bc",
+      "severity": "low",
+      "file": "noxaudit/pricing.py",
+      "line": null,
+      "title": "resolve_model_key uses 'elif provider == \"gemini\"' but GeminiProvider.name is 'gemini' \u2014 consistent, but OpenAI branch is 'openai' while provider name is also 'openai'",
+      "description": "The resolve_model_key function checks for provider strings 'anthropic', 'gemini', 'openai'. These match provider class .name attributes. No bug, but the function doesn't validate unknown providers and silently falls back to 'gemini-2.0-flash' for any unrecognized provider string, which could mask misconfiguration.",
+      "suggestion": "Log a warning when the provider is unrecognized before returning the fallback model key.",
+      "focus": "patterns"
+    },
+    {
+      "id": "633e969bc114",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "Duplicate dev dependency group \u2014 both [project.optional-dependencies] dev and [dependency-groups] dev defined",
+      "description": "pyproject.toml defines dev dependencies in two places: [project.optional-dependencies] dev (with jsonschema, pre-commit, pytest, ruff) and [dependency-groups] dev (with only pytest and ruff). The [dependency-groups] section is a uv-specific feature. The two groups are inconsistent \u2014 jsonschema and pre-commit are in optional-dependencies dev but not in dependency-groups dev. This could cause confusion about which group is authoritative.",
+      "suggestion": "Remove the [dependency-groups] dev section and use only [project.optional-dependencies] dev, or ensure both groups are kept in sync. Alternatively, consolidate to [dependency-groups] if uv is the only tool used.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "82dbf7582953",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "jsonschema listed as dev dependency but only used in tests conditionally via pytest.importorskip",
+      "description": "jsonschema is listed in [project.optional-dependencies] dev and is used in test_sarif_integration.py via pytest.importorskip('jsonschema'). The importorskip means tests are skipped if jsonschema is missing rather than failing. This is appropriate behavior, but it means jsonschema isn't strictly required for running the test suite.",
+      "suggestion": "This is acceptable behavior. Consider adding a comment in pyproject.toml noting that jsonschema is optional for SARIF schema validation tests.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "29109db1411d",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": null,
+      "title": "CONTRIBUTING.md project structure section missing mcp/, decisions.py, pricing.py, sarif.py, prepass.py modules",
+      "description": "The project structure tree in CONTRIBUTING.md shows an incomplete module list under noxaudit/. It's missing mcp/, decisions.py, pricing.py, sarif.py, and prepass.py which all exist in the actual codebase. The docs/contributing/index.md has the more complete version but CONTRIBUTING.md is what GitHub shows by default.",
+      "suggestion": "Update CONTRIBUTING.md's project structure section to match the actual module layout, similar to what's in docs/contributing/index.md.",
+      "focus": "docs"
+    },
+    {
+      "id": "b1942012efb8",
+      "severity": "low",
+      "file": "noxaudit/focus/base.py",
+      "line": null,
+      "title": "extract_file_map regex imports re at function call time instead of module level",
+      "description": "The extract_file_map function does 'import re' inside the function body. While Python caches module imports so this isn't a major performance issue, it's inconsistent with the rest of the codebase which uses top-level imports.",
+      "suggestion": "Move 'import re' to the top of focus/base.py with the other imports.",
+      "focus": "patterns"
+    },
+    {
+      "id": "a55110711c3a",
+      "severity": "low",
+      "file": "noxaudit/cli.py",
+      "line": null,
+      "title": "Multiple lazy imports inside command functions instead of top-level imports",
+      "description": "Several CLI command functions import modules inside the function body: estimate imports from noxaudit.focus, noxaudit.focus.base, noxaudit.pricing, noxaudit.runner; baseline imports from noxaudit.mcp.state. While this avoids circular imports in some cases, it creates inconsistency and makes dependencies less visible.",
+      "suggestion": "Review whether any of these can be moved to top-level imports. If circular import issues exist, consider restructuring to eliminate them.",
+      "focus": "patterns"
+    },
+    {
+      "id": "07fb094755fc",
+      "severity": "low",
+      "file": "noxaudit/cli.py",
+      "line": null,
+      "title": "_display_cost_summary imports datetime inside the function body",
+      "description": "The _display_cost_summary function imports 'from datetime import datetime as _dt' and then later 'from datetime import datetime' inside a nested loop. The outer function already has 'from datetime import datetime, timedelta' available at module level. These inner imports are redundant with the module-level import.",
+      "suggestion": "Remove the inner imports and use the module-level datetime import directly.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "ff24d54b0657",
+      "severity": "low",
+      "file": "tests/test_cost_tracking.py",
+      "line": null,
+      "title": "Blank line after imports in test_cost_tracking.py",
+      "description": "There is an extra blank line after 'from unittest import mock' import on line 5 (two blank lines before class definition, and one extra blank line after the from unittest import). This is a minor style inconsistency but ruff should catch it.",
+      "suggestion": "Remove the extra blank line to match ruff formatting rules.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "03a21969e915",
+      "severity": "low",
+      "file": "noxaudit/runner.py",
+      "line": null,
+      "title": "PENDING_BATCH_FILE and LAST_RETRIEVED_FILE constants are relative paths \u2014 same cwd issue as CostLedger",
+      "description": "PENDING_BATCH_FILE = '.noxaudit/pending-batch.json' and LAST_RETRIEVED_FILE = '.noxaudit/last-retrieved.json' are module-level string constants used as Path() arguments. They resolve relative to cwd at call time. If tests or the CLI changes directories, these may resolve incorrectly.",
+      "suggestion": "Document that these paths are relative to cwd, or make them configurable via NoxauditConfig.",
+      "focus": "patterns"
+    },
+    {
+      "id": "7cd3d204deca",
+      "severity": "low",
+      "file": "docs/getting-started/first-audit.md",
+      "line": null,
+      "title": "first-audit.md Step 6 shows 'noxaudit status' output with version 'v0.1.0' \u2014 will become stale",
+      "description": "The status command output example in first-audit.md shows 'Noxaudit v0.1.0'. While currently accurate, this hardcoded version in documentation will become stale as the project releases new versions.",
+      "suggestion": "Either note in the docs that the version number will vary, or use a placeholder like 'vX.Y.Z'.",
+      "focus": "docs"
+    },
+    {
+      "id": "58c8edd1e33d",
+      "severity": "low",
+      "file": "docs/guides/decisions.md",
+      "line": null,
+      "title": "Minor typo in decisions.md: 'resurface even if' missing space",
+      "description": "In the 'File Change Detection' section: 'the decision is invalidated and the finding resurfaceeven if the decision hasn't expired.' \u2014 missing space between 'resurface' and 'even'.",
+      "suggestion": "Fix to: 'the decision is invalidated and the finding resurfaces even if the decision hasn't expired.'",
+      "focus": "docs"
+    }
+  ]
+}

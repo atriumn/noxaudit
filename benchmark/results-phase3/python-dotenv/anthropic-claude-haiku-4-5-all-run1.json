@@ -1,0 +1,324 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:50:37.424066",
+    "completed_at": "2026-09-29T22:56:42.882158",
+    "wall_clock_seconds": 365.46,
+    "error": null
+  },
+  "tokens": {
+    "input": 54286,
+    "output": 4158,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0375,
+  "findings_count": 30,
+  "findings": [
+    {
+      "id": "0d49ed0dcf92",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": 8,
+      "title": "Unreleased version entry has placeholder",
+      "description": "The [Unreleased] section contains only '- ...' as a placeholder, which is incomplete documentation. When the next release is prepared, this should be populated with actual changes.",
+      "suggestion": "Replace '- ...' with actual unreleased changes or remove it if there are none since the last release.",
+      "focus": "docs"
+    },
+    {
+      "id": "521c0dabe2c5",
+      "severity": "high",
+      "file": "CHANGELOG.md",
+      "line": 12,
+      "title": "Incorrect release date in changelog",
+      "description": "The [1.2.2] release is dated 2026-03-01, which is a future date. This is likely a typo (year 2026 instead of 2024 or 2025). All previous releases are from 2021-2025, making a 2026 date inconsistent.",
+      "suggestion": "Correct the date to a realistic past date that matches when version 1.2.2 was actually released. Check git history or release tags for the correct date.",
+      "focus": "docs"
+    },
+    {
+      "id": "f860bf071904",
+      "severity": "high",
+      "file": "docs/changelog.md",
+      "line": 12,
+      "title": "Incorrect release date in documentation changelog",
+      "description": "The [1.2.2] release is dated 2026-03-01, which is a future date. This mirrors the error in CHANGELOG.md.",
+      "suggestion": "Correct the date to match the actual release date. Ensure consistency with CHANGELOG.md.",
+      "focus": "docs"
+    },
+    {
+      "id": "9af3a8f954f9",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 12,
+      "title": "Broken link in contributing documentation",
+      "description": "Line references '[mkdocs]()' with an empty URL, making the link non-functional.",
+      "suggestion": "Replace '[mkdocs]()' with a proper link like '[mkdocs](https://www.mkdocs.org/)' to the MkDocs documentation.",
+      "focus": "docs"
+    },
+    {
+      "id": "2b95f8fc3790",
+      "severity": "low",
+      "file": "docs/contributing.md",
+      "line": 12,
+      "title": "Broken link in documentation contributing section",
+      "description": "Line references '[mkdocs]()' with an empty URL, making the link non-functional.",
+      "suggestion": "Replace '[mkdocs]()' with a proper link like '[mkdocs](https://www.mkdocs.org/)' to the MkDocs documentation.",
+      "focus": "docs"
+    },
+    {
+      "id": "1c140d7a44fe",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 82,
+      "title": "Empty docstring for DotEnv.get() method",
+      "description": "The `get()` method in the DotEnv class has a docstring that is empty (only '\"\"\"\"\"\"'), providing no documentation about what the method does, its parameters, or return values.",
+      "suggestion": "Add a proper docstring describing the method's purpose, parameters (key), and return value (Optional[str]).",
+      "focus": "docs"
+    },
+    {
+      "id": "70e70f4375cb",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 119,
+      "title": "Unused argument in list_values function",
+      "description": "The function parameter 'output_format' is assigned from a click argument, but in test_list (tests/test_cli.py line 15), the variable is named 'format' in the test while the parameter is 'output_format'. However, more critically, in test_list line 15-16, there's a reference to 'format' in a conditional, but 'format' is a built-in Python function that shouldn't be shadowed. The test passes 'output_format' but checks 'format'.",
+      "suggestion": "Review test_cli.py line 15 where it checks 'if format is not None' - this should be 'if output_format is not None'. The variable name 'format' shadows a built-in.",
+      "focus": "patterns"
+    },
+    {
+      "id": "bbdb5a422a42",
+      "severity": "high",
+      "file": "tests/test_cli.py",
+      "line": 15,
+      "title": "Variable shadowing built-in 'format' function",
+      "description": "In the test_list function, the parameter is named 'format' which shadows Python's built-in 'format' function. This is on line 9 and used on line 15.",
+      "suggestion": "Rename the parameter from 'format' to 'output_format' to match the actual parameter name being passed and avoid shadowing built-ins.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "3cb5d9364048",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 20,
+      "title": "Test checks wrong variable name",
+      "description": "In test_list at line 15, the condition checks 'if format is not None' but the parameter name is 'output_format'. This will cause 'format' to refer to the built-in function, not the parameter.",
+      "suggestion": "Change 'if format is not None' to 'if output_format is not None'.",
+      "focus": "patterns"
+    },
+    {
+      "id": "a9e7eebf5664",
+      "severity": "medium",
+      "file": "src/dotenv/__init__.py",
+      "line": 11,
+      "title": "Lazy import of IPython extension without error handling",
+      "description": "The `load_ipython_extension` function performs a lazy import of the IPython extension module, but doesn't handle the case where the module might not be available or the import fails. If ipython is not installed or the module has issues, this could raise an uncaught exception.",
+      "suggestion": "Consider adding try-except handling or ensuring ipython is available as a dependency when this function is called.",
+      "focus": "patterns"
+    },
+    {
+      "id": "12b559bb24ce",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 10,
+      "title": "Comment suggests link but has empty parentheses",
+      "description": "Line 10 has '[mkdocs]()' which appears to be a broken reference/link in the code.",
+      "suggestion": "This appears to be copied from documentation. Ensure the actual documentation link is correct.",
+      "focus": "docs"
+    },
+    {
+      "id": "14e2fa515549",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 1,
+      "title": "Python 3.9 support status unclear in classifiers",
+      "description": "The CHANGELOG.md states that Python 3.9 support was dropped in version 1.2.2, but the pyproject.toml classifiers do not explicitly list Python 3.9. However, the requires-python field is set to '>=3.10' which is correct. The classifiers list Python 3.10-3.14 but don't include 3.9, which is consistent with the dropped support claim.",
+      "suggestion": "No action needed if the requires-python constraint is enforced, but ensure the CHANGELOG entry accurately reflects when support was dropped.",
+      "focus": "docs"
+    },
+    {
+      "id": "2c21b72e0cd1",
+      "severity": "low",
+      "file": "src/dotenv/parser.py",
+      "line": 1,
+      "title": "Unused Pattern import not fully utilized",
+      "description": "The `Pattern` type is imported from typing but could be used in function signatures for type hints. Some regex patterns are created but not all type-hinted properly.",
+      "suggestion": "Consider adding return type hints to functions that work with regex patterns, such as `make_regex` which returns `Pattern[str]`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "badf840fc995",
+      "severity": "low",
+      "file": "src/dotenv/variables.py",
+      "line": 1,
+      "title": "Incomplete type hints in variables module",
+      "description": "The module uses `Optional[str]` but could benefit from more complete return type annotations. Some methods and functions lack explicit return types.",
+      "suggestion": "Add explicit return type hints to all methods, particularly the `resolve` abstract method and its implementations.",
+      "focus": "patterns"
+    },
+    {
+      "id": "2a013d575fbc",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 240,
+      "title": "Potential unhandled exception in _walk_to_root",
+      "description": "The `_walk_to_root` function raises `IOError` if the starting path doesn't exist, but callers like `find_dotenv` don't explicitly handle this exception in all code paths.",
+      "suggestion": "Add explicit exception handling in `find_dotenv` or document that IOError may be raised.",
+      "focus": "patterns"
+    },
+    {
+      "id": "58ddf0c6dd2d",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 1,
+      "title": "Missing test for CLI run command with environment variable substitution",
+      "description": "While there are tests for the run command with override behavior, there are no tests verifying that environment variables are properly substituted/expanded during command execution.",
+      "suggestion": "Add test cases that verify variable substitution works correctly in the run command.",
+      "focus": "testing"
+    },
+    {
+      "id": "f4b9b77216fc",
+      "severity": "low",
+      "file": "tests/test_main.py",
+      "line": 1,
+      "title": "Missing edge case tests for parsing",
+      "description": "The test_parser.py has comprehensive tests, but test_main.py lacks tests for edge cases in variable expansion with special characters and deeply nested variable references.",
+      "suggestion": "Add additional test cases for edge cases in resolve_variables and variable expansion.",
+      "focus": "testing"
+    },
+    {
+      "id": "0f5ae6fdc2bb",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 187,
+      "title": "Subprocess call on Windows may not handle all special characters in command",
+      "description": "The `run_command` function uses `Popen` on Windows with `shell=False`, which is correct for security but may not handle all shell metacharacters that users expect. However, this is intentional and safe.",
+      "suggestion": "No action needed - this is a security feature.",
+      "focus": "security"
+    },
+    {
+      "id": "53d4d8585b94",
+      "severity": "low",
+      "file": "tests/test_ipython.py",
+      "line": 1,
+      "title": "IPython tests skip on Windows without clear documentation",
+      "description": "Tests are skipped on Windows with the reason 'This test assumes case-sensitive variable names', but this limitation isn't documented in the README or contributing guide.",
+      "suggestion": "Document platform-specific limitations in CONTRIBUTING.md.",
+      "focus": "docs"
+    },
+    {
+      "id": "482751554f64",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 47,
+      "title": "DotEnv class doesn't validate encoding parameter",
+      "description": "The encoding parameter is accepted but never validated. Invalid encoding names could cause runtime errors later when files are opened.",
+      "suggestion": "Consider validating the encoding parameter in __init__ or document that invalid encodings will raise an error from the open() call.",
+      "focus": "patterns"
+    },
+    {
+      "id": "f64a9c41272d",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 167,
+      "title": "Command execution error message could be more helpful",
+      "description": "When a command is not found, the error message only shows the command name. It doesn't suggest checking PATH or provide other context.",
+      "suggestion": "Enhance error messages to be more helpful, such as: 'Command not found: {command[0]}. Check that the command exists in your PATH or is properly installed.'",
+      "focus": "docs"
+    },
+    {
+      "id": "6562c8dc42b1",
+      "severity": "low",
+      "file": "README.md",
+      "line": 86,
+      "title": "Documentation shows bare variables not being expanded but doesn't fully explain why",
+      "description": "The README states that bare variables like $DOMAIN are not expanded, but it doesn't explain that only ${DOMAIN} syntax is supported (POSIX style).",
+      "suggestion": "Add clarification that only POSIX variable expansion syntax (${VARIABLE} and ${VARIABLE:-default}) is supported.",
+      "focus": "docs"
+    },
+    {
+      "id": "2cf8e19d333a",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 174,
+      "title": "rewrite context manager doesn't validate follow_symlinks parameter",
+      "description": "The follow_symlinks parameter is accepted but there's no validation that it's a boolean. Type hints exist but runtime validation is absent.",
+      "suggestion": "Add a type check or rely on type checkers to catch incorrect usage.",
+      "focus": "patterns"
+    },
+    {
+      "id": "da86f140c0b6",
+      "severity": "low",
+      "file": "tests/conftest.py",
+      "line": 1,
+      "title": "Fixture naming could be more descriptive",
+      "description": "The 'cli' fixture name is generic. In a larger test suite, this could be ambiguous.",
+      "suggestion": "Rename to 'cli_runner' or 'dotenv_cli_runner' to be more specific.",
+      "focus": "patterns"
+    },
+    {
+      "id": "2096c4546ab6",
+      "severity": "low",
+      "file": "src/dotenv/version.py",
+      "line": 1,
+      "title": "Version string hardcoded without dynamic generation",
+      "description": "Version is hardcoded in version.py and referenced in pyproject.toml. While this works, it requires manual updates in two places.",
+      "suggestion": "Consider using single source of truth or ensuring CI/CD validates version consistency between files.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "089865cf8a59",
+      "severity": "medium",
+      "file": "tests/test_lib.py",
+      "line": 8,
+      "title": "run_dotenv function doesn't validate that dotenv command is available",
+      "description": "The run_dotenv helper function in test_lib.py uses subprocess to call 'dotenv' but doesn't check if it's installed or available in PATH.",
+      "suggestion": "Add a check or skip tests gracefully if the dotenv command is not available.",
+      "focus": "testing"
+    },
+    {
+      "id": "a741fabe5e7c",
+      "severity": "low",
+      "file": "mkdocs.yml",
+      "line": 27,
+      "title": "Reference page in mkdocs uses bare directive without content",
+      "description": "The reference.md file contains only '::: dotenv' which is a mkdocstrings directive. While this is valid, it requires the plugin to be installed and working correctly, and could fail silently if misconfigured.",
+      "suggestion": "Add a comment or documentation about what this directive does, or provide fallback content.",
+      "focus": "docs"
+    },
+    {
+      "id": "f164fc6d4f59",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Development dependencies not separated from core",
+      "description": "The requirements.txt file mixes testing tools (pytest-cov, tox), build tools (bumpversion, build, wheel), and linting tools (ruff) with potential runtime dependencies (click, ipython). This makes it unclear what the core dependencies are.",
+      "suggestion": "Create separate requirements files: requirements-dev.txt, requirements-test.txt, and keep only core runtime dependencies in requirements.txt or rely on pyproject.toml [project.dependencies].",
+      "focus": "dependencies"
+    },
+    {
+      "id": "aaf9b9828daf",
+      "severity": "high",
+      "file": "src/dotenv/cli.py",
+      "line": 58,
+      "title": "Click BOOL type argument is deprecated/incorrect",
+      "description": "Line 58 uses `type=click.BOOL` which is not a standard Click type. Click uses `is_flag=True` for boolean options or `type=bool` is not standard. This should be `is_flag=True`.",
+      "suggestion": "Change `type=click.BOOL` to `is_flag=True` for the --export option.",
+      "focus": "patterns"
+    },
+    {
+      "id": "d0a2ff3f7253",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 58,
+      "title": "Export option uses non-standard Click boolean type",
+      "description": "The --export option defines `type=click.BOOL` which doesn't exist in Click. This may cause a runtime AttributeError.",
+      "suggestion": "Replace with `is_flag=True` and set `default=False`.",
+      "focus": "security"
+    }
+  ]
+}

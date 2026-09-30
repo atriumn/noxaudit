@@ -1,0 +1,194 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "gemini",
+    "model": "gemini-3.8-flash",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:59:00.317441",
+    "completed_at": "2026-09-29T23:02:05.643448",
+    "wall_clock_seconds": 185.33,
+    "error": null
+  },
+  "tokens": {
+    "input": 126433,
+    "output": 16577,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0785,
+  "findings_count": 17,
+  "findings": [
+    {
+      "id": "5e6565bfedba",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 96,
+      "title": "Per-provider model configuration is ignored by runner",
+      "description": "NoxauditConfig defines get_model_for_provider() to allow overriding the AI model per provider (e.g., providers.gemini.model), which is documented in the README and configuration guide. However, runner.py consistently accesses config.model directly (lines 96, 227, 268, 282, 367, 394) instead of calling config.get_model_for_provider(pname), making provider model overrides completely ineffective.",
+      "suggestion": "Update runner.py to instantiate providers and record ledger entries using config.get_model_for_provider(pname) instead of config.model.",
+      "focus": "patterns"
+    },
+    {
+      "id": "c1482ea381a1",
+      "severity": "high",
+      "file": "noxaudit/focus/base.py",
+      "line": 52,
+      "title": "Substring exclusion drops valid files containing excluded words",
+      "description": "In both BaseFocus.gather_files (line 52) and gather_files_combined (line 155), excluded directories are filtered with `if any(ex in rel for ex in exclude): continue`. Because `ex in rel` performs a substring match, default excludes like 'build' and 'dist' will unintentionally filter out valid source files such as `src/builder.py`, `src/build_utils.ts`, or `src/distribution.py`.",
+      "suggestion": "Check path components instead of substring matching: `if any(part in exclude for part in Path(rel).parts): continue`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "7f626fe249fe",
+      "severity": "medium",
+      "file": "noxaudit/providers/gemini.py",
+      "line": 144,
+      "title": "Batch findings overwritten instead of accumulated in retrieve_batch",
+      "description": "In GeminiProvider.retrieve_batch, the loop over downloaded JSONL lines assigns `findings = self._parse_text(response_text, ...)` on each line rather than extending a cumulative list. If the batch output contains multiple response lines, all findings except those from the final line are discarded. The same issue exists in OpenAIProvider.retrieve_batch (line 186 of noxaudit/providers/openai.py).",
+      "suggestion": "Initialize `findings = []` before the loop and accumulate results using `findings.extend(self._parse_text(...))`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "fe9da6eb5097",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 324,
+      "title": "SARIF export exports all findings instead of filtered new findings",
+      "description": "In runner.py (_retrieve_repo line 324 and _run_repo_sync line 427), SARIF generation calls `findings_to_sarif(audit_result.findings, ...)` which passes all raw provider findings rather than `audit_result.new_findings`. As a result, findings that were accepted, dismissed, or baselined continue to be exported to SARIF and re-uploaded as alerts to GitHub Code Scanning.",
+      "suggestion": "Pass `audit_result.new_findings` instead of `audit_result.findings` to `findings_to_sarif`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "abca2c3c5b4d",
+      "severity": "high",
+      "file": "action/action.yml",
+      "line": 35,
+      "title": "GitHub Action input name mismatch with documentation",
+      "description": "action/action.yml defines the format input as `format` (default: 'markdown'). However, docs/integrations/github-actions.md and docs/integrations/sarif.md instruct users to configure `output-format: sarif`. Users following the documentation will have their setting ignored because the action expects `inputs.format`.",
+      "suggestion": "Rename the input in action/action.yml to `output-format` or support both `format` and `output-format`.",
+      "focus": "docs"
+    },
+    {
+      "id": "008604c1f14b",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 13,
+      "title": "GitHub Action references deprecated scheduling feature and omits documented provider keys",
+      "description": "action/action.yml describes the `focus` input with 'Defaults to today's schedule', referencing the deprecated schedule configuration that was removed. Additionally, docs/integrations/github-actions.md documents `openai-api-key` and `google-api-key` as action inputs, but action/action.yml does not declare them or pass them to the action environment.",
+      "suggestion": "Update the description of `focus` to reflect that it defaults to all focus areas, and add the missing `openai-api-key` and `google-api-key` inputs to action/action.yml.",
+      "focus": "docs"
+    },
+    {
+      "id": "6802bc9a60ef",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 133,
+      "title": "Focus Areas table in README omits 'testing'",
+      "description": "README.md states that Noxaudit runs across 7 focus areas, but the Focus Areas table lists only 6 areas (security, docs, patterns, performance, hygiene, dependencies), omitting the 'testing' focus area.",
+      "suggestion": "Add a row for `testing` in the README Focus Areas table describing its purpose and checks.",
+      "focus": "docs"
+    },
+    {
+      "id": "e86e0062e701",
+      "severity": "low",
+      "file": "noxaudit/__init__.py",
+      "line": 1,
+      "title": "Stale project name 'Nightwatch' in module docstring and reports",
+      "description": "CHANGELOG.md notes the project was renamed from Nightwatch to Noxaudit. However, noxaudit/__init__.py still reads 'Nightwatch: Nightly AI-powered codebase audits' and noxaudit/reporter.py line 20 formats report headers as '# Nightwatch Report: ...'.",
+      "suggestion": "Replace occurrences of 'Nightwatch' with 'Noxaudit' in noxaudit/__init__.py and noxaudit/reporter.py.",
+      "focus": "docs"
+    },
+    {
+      "id": "5ebaec10c863",
+      "severity": "low",
+      "file": "noxaudit/sarif.py",
+      "line": 186,
+      "title": "SARIF version fallback does not match package version",
+      "description": "_get_noxaudit_version() in noxaudit/sarif.py falls back to returning '0.2.0' on ImportError or AttributeError, whereas the package version in pyproject.toml and noxaudit/__init__.py is '0.1.0'.",
+      "suggestion": "Update the fallback version in noxaudit/sarif.py to '0.1.0'.",
+      "focus": "docs"
+    },
+    {
+      "id": "26a4a031a1b4",
+      "severity": "low",
+      "file": "README.md",
+      "line": 116,
+      "title": "README lists incorrect default for provider_rotation",
+      "description": "README.md Key Options table documents the default for `repos[].provider_rotation` as `[anthropic]`, but RepoConfig in noxaudit/config.py defaults to `[\"gemini\"]`.",
+      "suggestion": "Align the README default for `provider_rotation` with the code default `[gemini]` or change RepoConfig default to `[anthropic]`.",
+      "focus": "docs"
+    },
+    {
+      "id": "ba02192bc5c2",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 26,
+      "title": "Sensitive Telegram bot token exposed in HTTP URL",
+      "description": "The bot token is interpolated directly into the request URL (`https://api.telegram.org/bot{token}/sendMessage`). HTTP proxies, corporate firewalls, and APM tools often log full request URLs, leading to credential leakage.",
+      "suggestion": "Ensure logs redacting outbound HTTP request URLs are configured, or use an API proxy / header-based authentication if supported.",
+      "focus": "security"
+    },
+    {
+      "id": "ccd2ca9a1971",
+      "severity": "high",
+      "file": "noxaudit/mcp/server.py",
+      "line": 188,
+      "title": "Blocking synchronous audit execution inside async MCP tool handler",
+      "description": "The `run_audit` MCP tool handler is an `async def` function that directly invokes `runner_run_audit()`. When using providers that poll (like Anthropic or OpenAI), `run_audit()` blocks the asyncio event loop with `time.sleep(60)` for up to several minutes, freezing the MCP server and causing timeouts on concurrent queries.",
+      "suggestion": "Run synchronous runner functions in a separate thread using `asyncio.to_thread(runner_run_audit, config, focus_name=focus, dry_run=dry_run)`.",
+      "focus": "performance"
+    },
+    {
+      "id": "d7fe9fba4a07",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 146,
+      "title": "Repeated full filesystem traversals during combined file gathering",
+      "description": "In gather_files_combined, `repo.glob(pattern)` is evaluated sequentially for each pattern in the union set of all focus areas. When running audits across multiple focus areas (e.g., `--focus all`), the entire directory tree is traversed dozens of times.",
+      "suggestion": "Perform a single directory walk (e.g. `os.walk` or `Path.rglob('*')`) and match paths against the pattern set using `fnmatch`.",
+      "focus": "performance"
+    },
+    {
+      "id": "ff5ac87b5dfe",
+      "severity": "high",
+      "file": "noxaudit/issues.py",
+      "line": 1,
+      "title": "Missing test coverage for GitHub issue creation module",
+      "description": "noxaudit/issues.py implements GitHub CLI availability checking, issue existence checks via marker comments, issue payload formatting, and issue creation. There are currently zero unit or integration tests covering this module.",
+      "suggestion": "Create a `tests/test_issues.py` test suite covering `_issue_exists`, `_create_issue`, and `create_issues_for_findings` with mocked subprocess calls.",
+      "focus": "testing"
+    },
+    {
+      "id": "70fa6eee73de",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 1,
+      "title": "Missing test coverage for Telegram notification delivery",
+      "description": "noxaudit/notifications/telegram.py manages sending markdown notifications via the Telegram Bot API with token and chat ID resolution. It currently has no test coverage in the test suite.",
+      "suggestion": "Add tests in `tests/test_notifications.py` verifying behavior with missing tokens, failed HTTP responses, and successful requests using mocked httpx.",
+      "focus": "testing"
+    },
+    {
+      "id": "d311ff5ab565",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 34,
+      "title": "Duplicate dev dependency definitions with conflicting version pins",
+      "description": "pyproject.toml declares dev dependencies in two places: `[project.optional-dependencies].dev` (specifying `pytest>=8.0` and `ruff>=0.8`) and `[dependency-groups].dev` (specifying `pytest>=9.0.2` and `ruff>=0.15.1`). Having conflicting version constraints in both locations can lead to inconsistent installation environments depending on whether pip or uv is used.",
+      "suggestion": "Consolidate development dependencies into a single canonical definition or harmonize the minimum version constraints.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "701242e58822",
+      "severity": "low",
+      "file": "noxaudit/mcp/server.py",
+      "line": 180,
+      "title": "MCP record_decision hardcodes decisions path instead of using configuration",
+      "description": "In `record_decision`, decisions are saved directly to `save_decision(\".noxaudit/decisions.jsonl\", decision)`, bypassing any custom decisions path configured in `noxaudit.yml` under `decisions.path`.",
+      "suggestion": "Load configuration using `load_config()` and pass `config.decisions.path` to `save_decision`.",
+      "focus": "hygiene"
+    }
+  ]
+}

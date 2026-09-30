@@ -1,0 +1,184 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "anthropic",
+    "model": "claude-haiku-4-5",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:28.777286",
+    "completed_at": "2026-09-29T23:29:32.972519",
+    "wall_clock_seconds": 424.2,
+    "error": null
+  },
+  "tokens": {
+    "input": 131234,
+    "output": 2374,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0716,
+  "findings_count": 16,
+  "findings": [
+    {
+      "id": "43a11e5935ac",
+      "severity": "high",
+      "file": "noxaudit/__init__.py",
+      "line": 1,
+      "title": "Outdated docstring \u2014 project renamed from Nightwatch to Noxaudit",
+      "description": "The module docstring still references 'Nightwatch' but the project was renamed to 'Noxaudit' according to CHANGELOG.md. This is misleading to new developers.",
+      "suggestion": "Update line 1 to: \"\"\"Noxaudit: Nightly AI-powered codebase audits.\"\"\"",
+      "focus": "docs"
+    },
+    {
+      "id": "5524cd181cc0",
+      "severity": "high",
+      "file": "noxaudit/reporter.py",
+      "line": 8,
+      "title": "Report title still references 'Nightwatch' instead of 'Noxaudit'",
+      "description": "The generate_report function uses 'Nightwatch Report' in the markdown title, but the project was renamed to Noxaudit. This will appear in all generated reports.",
+      "suggestion": "Change line 8 from '# Nightwatch Report: {_focus_display(result.focus)}' to '# Noxaudit Report: {_focus_display(result.focus)}'",
+      "focus": "docs"
+    },
+    {
+      "id": "962eadcc5a54",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 1,
+      "title": "README example shows old CLI command name in output",
+      "description": "In the 'What It Looks Like' section, the example output shows 'nightwatch: 3 new findings' but should show 'noxaudit: 3 new findings' reflecting the renamed CLI command.",
+      "suggestion": "Update the example output in the README to use 'noxaudit' instead of 'nightwatch'",
+      "focus": "docs"
+    },
+    {
+      "id": "884e940752bf",
+      "severity": "medium",
+      "file": "noxaudit/config.py",
+      "line": 1,
+      "title": "Missing provider-specific model configuration example",
+      "description": "The docstring mentions 'providers.<name>.model' in configuration but doesn't clearly document that this overrides the global 'model' setting. The README shows this feature but the config module documentation is incomplete.",
+      "suggestion": "Add docstring clarification showing that provider-specific models override the global model setting, with an example in get_model_for_provider()",
+      "focus": "docs"
+    },
+    {
+      "id": "1846500e2c6d",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 49,
+      "title": "Documentation references code that was removed",
+      "description": "CONTRIBUTING.md shows 'should_run_prepass' as a dead variable fixed in #46, but looking at the actual code in runner.py, the variable 'should_run_prepass' is still in use in _maybe_prepass(). The comment is outdated or references incorrect issue number.",
+      "suggestion": "Verify the actual issue #46 fix and update the example to reflect current code patterns, or remove the outdated reference",
+      "focus": "docs"
+    },
+    {
+      "id": "924d80e12632",
+      "severity": "medium",
+      "file": "docs/contributing/index.md",
+      "line": 1,
+      "title": "Duplicate contributing documentation",
+      "description": "Both CONTRIBUTING.md and docs/contributing/index.md contain nearly identical content but with slight variations. This creates maintenance burden and risk of divergence.",
+      "suggestion": "Consolidate the two files. Keep CONTRIBUTING.md as the source of truth and reference it from docs/contributing/index.md, or merge content and remove duplication",
+      "focus": "hygiene"
+    },
+    {
+      "id": "3637af6c828c",
+      "severity": "medium",
+      "file": "docs/getting-started/first-audit.md",
+      "line": 7,
+      "title": "Documentation shows old 'nightwatch' references in example output",
+      "description": "The example output in 'Step 1' shows 'my-app \u2014 security' but other sections of documentation show command names with 'noxaudit'. This is inconsistent.",
+      "suggestion": "Ensure all example outputs consistently use current tool names and formatting",
+      "focus": "docs"
+    },
+    {
+      "id": "1a50950f5cf7",
+      "severity": "low",
+      "file": "noxaudit/cli.py",
+      "line": 1,
+      "title": "Missing docstring on main CLI group",
+      "description": "The main() function has a docstring, but other CLI commands lack comprehensive docstrings explaining what they do and their use cases.",
+      "suggestion": "Add descriptive docstrings to run(), submit(), retrieve(), decide(), baseline(), status(), report(), and estimate() commands",
+      "focus": "docs"
+    },
+    {
+      "id": "88133b168d54",
+      "severity": "low",
+      "file": "noxaudit/focus/base.py",
+      "line": 24,
+      "title": "MAX_FILE_SIZE constant lacks documentation",
+      "description": "The constant MAX_FILE_SIZE = 50_000 is hardcoded without explanation of why this value was chosen or how it relates to token limits.",
+      "suggestion": "Add a comment explaining the rationale: '# ~50KB to avoid large generated files, roughly ~12K tokens'",
+      "focus": "docs"
+    },
+    {
+      "id": "7575c2e8c1ef",
+      "severity": "low",
+      "file": "noxaudit/models.py",
+      "line": 59,
+      "title": "ContentTier enum docstring could be more detailed",
+      "description": "The ContentTier class docstring is minimal. It doesn't explain the use case (pre-pass triage) or how tiers map to file content enrichment.",
+      "suggestion": "Expand docstring to explain: 'Content tier for pre-pass classification \u2014 determines how much of a file content to send to main audit. Used by prepass.py to enrich files before main audit.'",
+      "focus": "docs"
+    },
+    {
+      "id": "0acb825ec061",
+      "severity": "medium",
+      "file": "tests/test_cli_integration.py",
+      "line": 1,
+      "title": "Test file docstring lacks context on why CLI integration tests are mandatory",
+      "description": "The docstring mentions the policy but doesn't reference CONTRIBUTING.md or explain the historical reason (features passing unit tests but not wired to CLI).",
+      "suggestion": "Enhance docstring to reference CONTRIBUTING.md and explain the policy rationale more clearly",
+      "focus": "docs"
+    },
+    {
+      "id": "dcd00910c2b5",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 232,
+      "title": "Missing documentation for _maybe_prepass return value",
+      "description": "The _maybe_prepass function returns a 3-tuple (should_run, files, message) but the docstring doesn't document what the 'message' contains or when it's empty vs populated. This affects usability.",
+      "suggestion": "Add docstring: 'Returns: (should_run_prepass: bool, filtered_files: list[FileContent], message: str) \u2014 message explains why prepass was auto-enabled, empty if not triggered'",
+      "focus": "docs"
+    },
+    {
+      "id": "6f5efd1eeeea",
+      "severity": "medium",
+      "file": "focus_prompts/security.md",
+      "line": 1,
+      "title": "Focus prompt header references 'codebase files' but some focus areas audit beyond that",
+      "description": "The security prompt says 'Examine EVERY provided file' but doesn't clarify whether this includes config, infrastructure code, and edge functions \u2014 which are explicitly mentioned later.",
+      "suggestion": "Update opening: 'Examine EVERY provided file including config files, scripts, edge functions, and infrastructure code \u2014 do not skim'",
+      "focus": "docs"
+    },
+    {
+      "id": "126938956b3e",
+      "severity": "low",
+      "file": "noxaudit/pricing.py",
+      "line": 120,
+      "title": "resolve_model_key fallback logic lacks documentation",
+      "description": "The function uses substring matching ('opus', 'pro', 'flash', 'nano', 'mini') to map models to pricing, but this heuristic is not documented. Users may be confused when a model they expect to map doesn't.",
+      "suggestion": "Add docstring explaining the heuristic: 'Falls back to substring matching in model names when exact match fails. Provider parameter disambiguates between similar names (e.g., flash in Gemini vs Anthropic)'",
+      "focus": "docs"
+    },
+    {
+      "id": "8b186a7ca4b9",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 76,
+      "title": "File hash change detection logic not documented in filter_findings",
+      "description": "The filter_findings function checks file_hash to detect if file changed, but the docstring doesn't mention this behavior. Users might be surprised when a dismissed finding resurfaces after file edits.",
+      "suggestion": "Update docstring to document: 'File change detection: if file content hash differs from decision time, finding resurfaces even within expiry window'",
+      "focus": "docs"
+    },
+    {
+      "id": "50fab1f202b8",
+      "severity": "low",
+      "file": "noxaudit/prepass.py",
+      "line": 14,
+      "title": "CLASSIFICATION_PROMPT uses placeholder {focus_names} that's not immediately obvious",
+      "description": "The prompt string has {focus_names} which gets formatted in build_classification_prompt(), but there's no docstring explaining this templating pattern.",
+      "suggestion": "Add comment: '# Prompt string is formatted with focus_names via build_classification_prompt()'",
+      "focus": "docs"
+    }
+  ]
+}

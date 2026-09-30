@@ -1,0 +1,334 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "anthropic",
+    "model": "claude-sonnet-4-6",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:56:47.883728",
+    "completed_at": "2026-09-29T23:17:56.086920",
+    "wall_clock_seconds": 1268.2,
+    "error": null
+  },
+  "tokens": {
+    "input": 54286,
+    "output": 4912,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.1183,
+  "findings_count": 31,
+  "findings": [
+    {
+      "id": "674441455640",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 8,
+      "title": "Incorrect uv command for running ruff",
+      "description": "The contributing guide shows `uv ruff check .` and `uv format .` but these are not valid uv commands. The correct commands would be `uv run ruff check .` and `uv run ruff format .` (or just `ruff check .` / `ruff format .` after installing).",
+      "suggestion": "Change `uv ruff check .` to `uv run ruff check .` and `uv format .` to `uv run ruff format .`.",
+      "focus": "docs"
+    },
+    {
+      "id": "bf6a289bbaa7",
+      "severity": "low",
+      "file": "docs/contributing.md",
+      "line": 8,
+      "title": "Incorrect uv command for running ruff (docs mirror)",
+      "description": "Same issue as CONTRIBUTING.md: `uv ruff check .` and `uv format .` are not valid uv commands. This file is a duplicate of CONTRIBUTING.md and contains the same error.",
+      "suggestion": "Change `uv ruff check .` to `uv run ruff check .` and `uv format .` to `uv run ruff format .`.",
+      "focus": "docs"
+    },
+    {
+      "id": "b904f4f3f0c9",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 17,
+      "title": "Incorrect pre-commit install command via uv",
+      "description": "The guide shows `uv run precommit install` but the package name is `pre-commit` (with a hyphen), not `precommit`. The correct command would be `uv run pre-commit install`.",
+      "suggestion": "Change `uv run precommit install` to `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "e16825a6d464",
+      "severity": "low",
+      "file": "docs/contributing.md",
+      "line": 17,
+      "title": "Incorrect pre-commit install command via uv (docs mirror)",
+      "description": "Same issue as CONTRIBUTING.md: `uv run precommit install` should be `uv run pre-commit install`.",
+      "suggestion": "Change `uv run precommit install` to `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "ee4fa4149e3c",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 20,
+      "title": "Empty mkdocs link in contributing guide",
+      "description": "The line `Documentation is published with [mkdocs]():` has an empty hyperlink URL `()`. The link should point to the mkdocs website.",
+      "suggestion": "Change `[mkdocs]()` to `[mkdocs](https://www.mkdocs.org/)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "48129f3e4bb2",
+      "severity": "low",
+      "file": "docs/contributing.md",
+      "line": 20,
+      "title": "Empty mkdocs link in contributing guide (docs mirror)",
+      "description": "Same issue as CONTRIBUTING.md: `[mkdocs]()` has an empty URL.",
+      "suggestion": "Change `[mkdocs]()` to `[mkdocs](https://www.mkdocs.org/)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "9edab73560ce",
+      "severity": "low",
+      "file": "README.md",
+      "line": null,
+      "title": "PyPI badge link points to badge service, not PyPI",
+      "description": "The `pypi_link` is set to `https://badge.fury.io/py/python-dotenv` which is the badge service URL, not the actual PyPI package page. Clicking the badge would take users to badge.fury.io rather than the PyPI package page.",
+      "suggestion": "Change `pypi_link` to `https://pypi.org/project/python-dotenv/`.",
+      "focus": "docs"
+    },
+    {
+      "id": "efb426e06396",
+      "severity": "low",
+      "file": "docs/index.md",
+      "line": null,
+      "title": "PyPI badge link points to badge service, not PyPI (docs mirror)",
+      "description": "Same issue as README.md: `pypi_link` points to badge.fury.io instead of the actual PyPI package page.",
+      "suggestion": "Change `pypi_link` to `https://pypi.org/project/python-dotenv/`.",
+      "focus": "docs"
+    },
+    {
+      "id": "789dd17b628a",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": null,
+      "title": "CHANGELOG.md and docs/changelog.md are duplicates",
+      "description": "Both files are exact duplicates of each other. Having two canonical sources of truth for the changelog is a maintenance burden and they can easily drift. The mkdocs config points to docs/changelog.md.",
+      "suggestion": "Use mkdocs include-markdown plugin (already in requirements-docs.txt as mkdocs-include-markdown-plugin) to have docs/changelog.md include CHANGELOG.md, or remove one and reference the other.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "ee9d4f11d27e",
+      "severity": "medium",
+      "file": "README.md",
+      "line": null,
+      "title": "README.md and docs/index.md are exact duplicates",
+      "description": "Both files contain identical content. This creates a maintenance burden and the two could drift out of sync. The mkdocs config uses docs/index.md as the home page.",
+      "suggestion": "Use mkdocs include-markdown plugin to have docs/index.md include README.md, or remove the duplication.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "4d30419ec01e",
+      "severity": "low",
+      "file": "CHANGELOG.md",
+      "line": 13,
+      "title": "Future release date in changelog",
+      "description": "Version 1.2.2 is dated 2026-03-01, which is a future date. While this could be intentional for a planned release, presenting a future date as a released version is misleading.",
+      "suggestion": "Verify that the release date for 1.2.2 is correct. If the release has already happened, update to the actual release date.",
+      "focus": "docs"
+    },
+    {
+      "id": "4fde8c490f7e",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "Missing Python 3.9 classifier despite changelog noting it was dropped",
+      "description": "The changelog for 1.2.2 notes 'Dropped Support for Python 3.9' but the pyproject.toml classifiers do not include Python 3.9 anyway (they start from 3.10), so the changelog entry is misleading. The `requires-python = '>=3.10'` is correct.",
+      "suggestion": "The code is fine, but the changelog entry about 'Dropped Support for Python 3.9' is only meaningful if 3.9 was previously supported. Double-check that 3.9 was listed in classifiers before 1.2.2.",
+      "focus": "docs"
+    },
+    {
+      "id": "0efa46e0d176",
+      "severity": "low",
+      "file": "requirements.txt",
+      "line": null,
+      "title": "requirements.txt lacks version pins for development dependencies",
+      "description": "Development dependencies in requirements.txt (bumpversion, click, ipython, pytest-cov, pytest>=3.9, tox, wheel, ruff, build, pre-commit) are not pinned to specific versions. This can cause non-reproducible development environments.",
+      "suggestion": "Consider using a lock file or pinning development dependencies to specific versions for reproducible development environments.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "1f69fca7526a",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": null,
+      "title": "'bumpversion' is unmaintained; successor 'bump2version' or 'bump-my-version' should be used",
+      "description": "The `bumpversion` package (original) is unmaintained. The community has moved to `bump2version` or the newer `bump-my-version`. Using unmaintained packages is a supply chain risk.",
+      "suggestion": "Replace `bumpversion` with `bump-my-version` (the actively maintained successor).",
+      "focus": "dependencies"
+    },
+    {
+      "id": "f495f17e7bae",
+      "severity": "low",
+      "file": "requirements.txt",
+      "line": null,
+      "title": "'wheel' is a redundant dependency with modern build tools",
+      "description": "With the project using PEP 517/518 build system (setuptools via pyproject.toml), explicitly listing `wheel` in requirements.txt is redundant and vestigial from older packaging practices.",
+      "suggestion": "Remove `wheel` from requirements.txt as it is no longer needed with the modern build setup.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "438903a7cdb0",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 120,
+      "title": "CLI 'get' command fails silently for empty string values",
+      "description": "In the `get` command, the check `if stored_value:` will evaluate to False for empty string values (e.g., `FOO=`), causing exit code 1 even when the key exists with a valid empty string value. This is a behavioral bug.",
+      "suggestion": "Change the check to `if stored_value is not None:` to correctly handle empty string values.",
+      "focus": "patterns"
+    },
+    {
+      "id": "4033eeda22d9",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": null,
+      "title": "DotEnv.dict() caches results even for empty dicts",
+      "description": "The `dict()` method uses `if self._dict:` to check the cache, which means an empty dict (no env vars) will not be cached and the parsing will be repeated on every call. This could cause a FIFO/stream to be read multiple times unnecessarily.",
+      "suggestion": "Change `if self._dict:` to `if self._dict is not None:` to correctly cache empty results.",
+      "focus": "performance"
+    },
+    {
+      "id": "af84cad100e2",
+      "severity": "low",
+      "file": "src/dotenv/__init__.py",
+      "line": 14,
+      "title": "get_cli_string builds command using f-strings without shell escaping",
+      "description": "The `get_cli_string` function builds shell command strings using f-strings like `f'-q {quote}'` and `f'-f {path}'` without any shell escaping. If `path` or `quote` contain spaces or special characters, the resulting string will be malformed. The function is documented as returning 'a string suitable for running as a shell script'.",
+      "suggestion": "Use `shlex.quote()` to escape values when building the command string, or document clearly that paths/values with spaces are not supported.",
+      "focus": "security"
+    },
+    {
+      "id": "353693d13795",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": null,
+      "title": "Sensitive environment variable values written to log warnings",
+      "description": "The `get` method logs warnings including the key name and dotenv_path when a key is not found. While this doesn't log values, key names themselves might be sensitive in some contexts. More importantly, the path to the .env file is logged, which could reveal file system structure.",
+      "suggestion": "This is a low-risk informational concern. The logging is useful for debugging. Consider documenting that verbose mode may log file paths.",
+      "focus": "security"
+    },
+    {
+      "id": "db8abe52b39b",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": null,
+      "title": "Potential path traversal via dotenv_path parameter",
+      "description": "The `dotenv_path` parameter in `load_dotenv`, `dotenv_values`, `get_key`, `set_key`, and `unset_key` is used directly in file operations without any validation or path sanitization. If these functions are called with user-supplied paths (e.g., in a web context), an attacker could read or write arbitrary files.",
+      "suggestion": "Document clearly that these functions should not be called with untrusted user-supplied paths. If user input is needed, validate/sanitize the path before passing it to these functions.",
+      "focus": "security"
+    },
+    {
+      "id": "d7769d5b68e6",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 23,
+      "title": "Test bug: format check uses wrong variable",
+      "description": "In `test_list`, the condition `if format is not None:` checks the built-in `format` function (which is never None) rather than the test parameter `output_format`. This means the `--format` argument is always passed, even when `output_format` is `None`. The test is likely producing false positives for the `None` format case.",
+      "suggestion": "Change `if format is not None:` to `if output_format is not None:` to correctly conditionally pass the format argument.",
+      "focus": "testing"
+    },
+    {
+      "id": "9a3d4f0939b6",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 23,
+      "title": "Test for None output_format always passes --format argument",
+      "description": "Due to the bug where `format` (built-in) is checked instead of `output_format`, the test case with `output_format=None` always passes `--format None` to the CLI, which may cause unexpected behavior or mask missing test coverage for the default format behavior.",
+      "suggestion": "Fix the condition to `if output_format is not None:` to correctly test the default format path.",
+      "focus": "testing"
+    },
+    {
+      "id": "15535843b527",
+      "severity": "medium",
+      "file": "tests/",
+      "line": null,
+      "title": "No tests for ipython.py load_ipython_extension function",
+      "description": "The `load_ipython_extension` function in `src/dotenv/ipython.py` and the `IPythonDotEnv` magics class are not directly unit-tested. The integration tests in `test_ipython.py` test the overall behavior but don't cover error paths (e.g., when .env file is not found, the `print('cannot find .env file')` path).",
+      "suggestion": "Add a unit test for the case where `find_dotenv` raises `IOError` in the `%dotenv` magic.",
+      "focus": "testing"
+    },
+    {
+      "id": "ba7bc3f15f96",
+      "severity": "low",
+      "file": "tests/test_main.py",
+      "line": null,
+      "title": "No tests for _is_file_or_fifo function directly",
+      "description": "The `_is_file_or_fifo` helper function in main.py is tested indirectly through `find_dotenv` and `load_dotenv` but has no direct unit tests. Edge cases like permission errors on `os.stat` are not exercised.",
+      "suggestion": "Add direct unit tests for `_is_file_or_fifo` covering: regular file, FIFO, directory, non-existent path, and path with permission error.",
+      "focus": "testing"
+    },
+    {
+      "id": "115297418c6e",
+      "severity": "low",
+      "file": "tests/",
+      "line": null,
+      "title": "No tests for get_cli_string with special characters in path/value",
+      "description": "The `test_utils.py` tests for `get_cli_string` don't cover paths with spaces or special characters, which could reveal the escaping bug in `get_cli_string`.",
+      "suggestion": "Add test cases with paths containing spaces and special characters to expose and prevent the escaping issue.",
+      "focus": "testing"
+    },
+    {
+      "id": "767219655ad0",
+      "severity": "low",
+      "file": "src/dotenv/variables.py",
+      "line": null,
+      "title": "No tests for Variable.resolve with None value in env",
+      "description": "The `Variable.resolve` method handles the case where `result` is `None` (returning empty string), but this path is not explicitly tested. The env mapping can contain `None` values (as documented for variables without values).",
+      "suggestion": "Add a test case where the env mapping has `{key: None}` to ensure the fallback to empty string works correctly.",
+      "focus": "testing"
+    },
+    {
+      "id": "b42eeceb5682",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": null,
+      "title": "Missing Python 3.9 support is documented but classifier range starts at 3.10",
+      "description": "The changelog says Python 3.9 was dropped in 1.2.2 and 3.8 was dropped in 1.1.0, but no 3.9 classifier was ever present in the visible pyproject.toml. This suggests either the changelog entry is in error or the pyproject.toml had 3.9 support before and it was silently removed.",
+      "suggestion": "Verify the history of supported Python versions and ensure the changelog accurately reflects what was actually dropped.",
+      "focus": "docs"
+    },
+    {
+      "id": "ad2b4b7bb785",
+      "severity": "low",
+      "file": "mkdocs.yml",
+      "line": null,
+      "title": "mkdocs-include-markdown-plugin listed in requirements but not in mkdocs.yml",
+      "description": "The `requirements-docs.txt` includes `mkdocs-include-markdown-plugin>=6.0.0` but this plugin is not configured in `mkdocs.yml` under `plugins`. This is an unused dependency in the docs requirements.",
+      "suggestion": "Either add `include-markdown` to the plugins list in mkdocs.yml if it's needed, or remove it from requirements-docs.txt.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "478f129d2718",
+      "severity": "low",
+      "file": "requirements-docs.txt",
+      "line": null,
+      "title": "mkdocs-include-markdown-plugin is declared but unused in mkdocs config",
+      "description": "The `mkdocs-include-markdown-plugin` is listed as a documentation dependency but is not used in the mkdocs.yml configuration.",
+      "suggestion": "Remove `mkdocs-include-markdown-plugin` from requirements-docs.txt if it's not being used, or configure it in mkdocs.yml.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "ab2695378bdd",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": null,
+      "title": "DotEnv.set_as_environment_variables returns False for empty-but-valid dotenv files",
+      "description": "The `set_as_environment_variables` method returns `False` when `self.dict()` is empty (no variables set). This causes `load_dotenv` to return `False` even for a valid, existing .env file that just has no environment variables. This can confuse callers checking for success.",
+      "suggestion": "Consider distinguishing between 'file not found' (already returns False) and 'file found but empty' (currently also returns False). Document this behavior clearly.",
+      "focus": "patterns"
+    },
+    {
+      "id": "dfbc5f89a305",
+      "severity": "low",
+      "file": "src/dotenv/parser.py",
+      "line": null,
+      "title": "Entire stream read into memory at once",
+      "description": "The `Reader.__init__` method calls `stream.read()` which reads the entire file content into memory. For very large .env files (unusual but possible), this could be a memory concern.",
+      "suggestion": "For typical .env files this is fine. Document that the implementation reads the full file into memory, or consider line-by-line parsing for very large files.",
+      "focus": "performance"
+    }
+  ]
+}

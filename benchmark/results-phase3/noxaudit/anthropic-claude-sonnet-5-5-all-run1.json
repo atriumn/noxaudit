@@ -1,0 +1,494 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:29.325446",
+    "completed_at": "2026-09-29T23:29:32.810998",
+    "wall_clock_seconds": 423.49,
+    "error": null
+  },
+  "tokens": {
+    "input": 172710,
+    "output": 26846,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.3069,
+  "findings_count": 47,
+  "findings": [
+    {
+      "id": "a09500f86fe8",
+      "severity": "high",
+      "file": "action/action.yml",
+      "line": 70,
+      "title": "Shell/script injection via unsanitized action inputs interpolated into bash",
+      "description": "`${{ inputs.mode }}`, `${{ inputs.focus }}` and `${{ inputs.config }}` are expanded directly into the `run:` script. A caller that feeds a value from an untrusted source, for example `workflow_dispatch` inputs (as in the docs' `focus: ${{ inputs.focus }}`) or PR-derived values, can inject arbitrary shell commands. Those commands run in a step whose env holds ANTHROPIC_API_KEY, TELEGRAM_BOT_TOKEN and GH_TOKEN.",
+      "suggestion": "Pass inputs through `env:` (e.g. `NOX_FOCUS: ${{ inputs.focus }}`) and reference them as quoted shell variables (`\"$NOX_FOCUS\"`). Validate `mode` against an allowlist and `focus` against a `[a-z,]+` pattern.",
+      "focus": "security"
+    },
+    {
+      "id": "a45de4022c9c",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 52,
+      "title": "Action installs noxaudit from unpinned git HEAD",
+      "description": "`pip install git+https://github.com/atriumn/noxaudit.git` installs the default branch at run time, and the docs tell users to reference the action as `@main`. Any push to main, or a compromise of it, executes in every consumer's CI with their API keys and tokens. Builds are also not reproducible, and the PyPI package is ignored.",
+      "suggestion": "Install a pinned release (`pip install noxaudit==<version>`, ideally hash-pinned), and document pinning the action to a tag or commit SHA rather than `@main`.",
+      "focus": "security"
+    },
+    {
+      "id": "ad719d8fe1db",
+      "severity": "medium",
+      "file": "noxaudit/focus/security.py",
+      "line": 12,
+      "title": "Security focus gathers .env files and sends their contents to third-party AI providers",
+      "description": "Patterns `**/*.env*` and `**/.env*` cause real local environment files, which typically hold live secrets, to be read and uploaded to Anthropic, OpenAI or Google. No redaction step exists. The same applies to `.json`, `.yml` and other config files that may hold credentials. The audit itself becomes an exfiltration path for secrets that are not committed to the repo.",
+      "suggestion": "Exclude real `.env` files by default (only include templates like `.env.example`), or redact secret-looking values before upload. Document this data flow and offer an opt-in.",
+      "focus": "security"
+    },
+    {
+      "id": "dd2554db77bb",
+      "severity": "low",
+      "file": "noxaudit/focus/base.py",
+      "line": 46,
+      "title": "File gathering follows symlinks outside the repository",
+      "description": "`repo.glob()` plus `path.is_file()`/`read_text()` follow symlinks. A symlink in the audited repo pointing at `~/.ssh/id_rsa` or `/etc/...` would have its target contents read and sent to the AI provider. The rel-path check only inspects the link's own name.",
+      "suggestion": "Skip symlinks (`path.is_symlink()`) or verify `path.resolve()` is inside `repo.resolve()` before reading.",
+      "focus": "security"
+    },
+    {
+      "id": "e4c99de9e737",
+      "severity": "low",
+      "file": "noxaudit/decisions.py",
+      "line": 71,
+      "title": "AI-supplied file paths used unsanitized in filesystem access",
+      "description": "`finding.file` comes from model output. `Path(repo_path) / finding.file` (in `filter_findings` and `create_baseline_decisions`) accepts absolute paths and `..` segments, so the tool hashes files outside the repo. MCP `record_decision` does the same with `Path(finding.file)` relative to cwd. Impact is limited to hashing, but it is model-controlled input.",
+      "suggestion": "Resolve the path and require it to be inside the repo root before hashing; otherwise treat the hash as None.",
+      "focus": "security"
+    },
+    {
+      "id": "794aadda9511",
+      "severity": "low",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 27,
+      "title": "AI-generated text sent with Markdown parse mode; network errors unhandled; API body printed",
+      "description": "Finding titles and file names are model/repo controlled and are sent with `parse_mode: Markdown`. Characters like `_` or `*` cause Telegram 400 errors, which silently drop the notification. Content can also be formatted deceptively. `httpx.post` exceptions (timeouts, DNS) are not caught and would abort the audit after results were computed. `resp.text` is printed on failure.",
+      "suggestion": "Escape Markdown (or send plain text), wrap the request in try/except httpx.HTTPError, and avoid printing full response bodies.",
+      "focus": "security"
+    },
+    {
+      "id": "035bd0c9c116",
+      "severity": "low",
+      "file": "noxaudit/decisions.py",
+      "line": 96,
+      "title": "Untrusted repo content and decision reasons flow into LLM prompts (prompt injection)",
+      "description": "Files are embedded verbatim in a markdown code fence, so a file containing a closing fence plus instructions can steer the auditor to suppress findings. Decision `reason` strings from a committed decisions.jsonl are inserted into the system/user context and can instruct the model to ignore issues. Nothing bounds or sanitizes either.",
+      "suggestion": "Use a fence longer than any backtick run in the content, tell the model explicitly that file content is untrusted data, and treat decisions.jsonl as trusted-only input. Consider not forwarding free-text reasons.",
+      "focus": "security"
+    },
+    {
+      "id": "415186548cc9",
+      "severity": "low",
+      "file": "noxaudit/mcp/server.py",
+      "line": 191,
+      "title": "MCP tools let an AI agent trigger paid audits and suppress findings without confirmation",
+      "description": "`run_audit` sends repo code to third-party providers and spends API credits; `record_decision` can permanently dismiss findings. Both are callable autonomously by an agent (and hence by prompt injection in repo content). `record_decision` also hardcodes `.noxaudit/decisions.jsonl` relative to cwd, ignoring `decisions.path`.",
+      "suggestion": "Document the risk, consider a read-only mode flag, and honor the configured decisions path.",
+      "focus": "security"
+    },
+    {
+      "id": "933e50a55654",
+      "severity": "high",
+      "file": "noxaudit/focus/base.py",
+      "line": 62,
+      "title": "Prompt files not packaged in wheel; fallback causes infinite recursion",
+      "description": "`get_prompt_from_file` looks for `focus_prompts/` at `Path(__file__).parent.parent.parent`, i.e. the repo root. `pyproject.toml` builds the wheel with `packages = [\"noxaudit\"]`, so `focus_prompts/` is not shipped. In a `pip install noxaudit` (or the action's git install) the file does not exist and the code falls back to `self.get_prompt()`. Every focus's `get_prompt()` calls `get_prompt_from_file` again, causing a RecursionError on every real audit run.",
+      "suggestion": "Move prompts inside the package (`noxaudit/focus_prompts/`), load via `importlib.resources`, include them in the wheel, and make the fallback a real default string rather than calling `get_prompt()`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "0fce38fc8cd7",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 214,
+      "title": "Provider-specific model overrides and provider rotation are documented but not implemented",
+      "description": "The runner always instantiates `PROVIDERS[pname](model=config.model)`, ignoring `config.get_model_for_provider()` and `providers.<name>.model`, which are documented in the README. A `--provider gemini` run with the default Claude model sends a Claude model name to Gemini, and the docs' `noxaudit run --provider gemini` / `--provider anthropic` tiered examples fail the same way. `get_provider_for_repo` is always called with `run_index=0`, so `provider_rotation` never rotates, contradicting the README ('first run uses Anthropic, second Gemini...'). The cost ledger also records `config.model` for the wrong provider.",
+      "suggestion": "Use `config.get_model_for_provider(pname)` everywhere a provider is built or priced, and persist a run counter so rotation advances. Otherwise update the docs.",
+      "focus": "docs"
+    },
+    {
+      "id": "abe5abbd01b7",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 84,
+      "title": "Auto pre-pass economics check uses raw config.model, never matching MODEL_PRICING keys",
+      "description": "`MODEL_PRICING.get(config.model)` is looked up with the raw model id. The default `claude-sonnet-4-5-20250929` is not a key (`claude-sonnet-4-5` is), so pricing is None and auto-enable never triggers for the default configuration. The check also ignores the actual provider, so it would apply Anthropic tier economics to a different provider whose model happens to match. `resolve_model_key(provider, model)` exists for this.",
+      "suggestion": "Use `resolve_model_key(provider_name, model)` for the lookup.",
+      "focus": "patterns"
+    },
+    {
+      "id": "65c05ebed9f0",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 150,
+      "title": "retrieve_audit deletes pending batch file even if some repos are still processing",
+      "description": "If at least one repo's batch has ended, `_mark_retrieved` writes all batch ids and the pending file is unlinked. Any other repo whose batch was still 'processing' returns None and is dropped permanently. Its results are never retrieved, though it has been paid for.",
+      "suggestion": "Only mark retrieved and delete the pending file when all batches finished; otherwise rewrite the pending file with the remaining batches.",
+      "focus": "patterns"
+    },
+    {
+      "id": "be66e2bd1ad6",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 322,
+      "title": "Sync and batch paths duplicate large blocks of orchestration logic",
+      "description": "`_submit_repo`/`_retrieve_repo` and `_run_repo_sync` each repeat file gathering, provider resolution, pre-pass, ledger writing, decision filtering, MCP state saving, report/SARIF generation, notifications and issue creation. Behavior has already diverged (retrieve never runs pre-pass config; sync path omits the Telegram log line; ledger records post-prepass file count in one and batch_info in the other).",
+      "suggestion": "Extract shared helpers (e.g. `_prepare_repo_inputs`, `_finalize_result`) so both flows share one implementation.",
+      "focus": "patterns"
+    },
+    {
+      "id": "179b1846314d",
+      "severity": "medium",
+      "file": "noxaudit/cost_ledger.py",
+      "line": 13,
+      "title": "State paths inconsistent: some cwd-relative constants, others config-driven",
+      "description": "Decisions and reports paths come from config, but `CostLedger.LEDGER_PATH`, `PENDING_BATCH_FILE`, `LAST_RETRIEVED_FILE`, `latest-findings.json` and `findings-history.jsonl` are hardcoded relative to the current working directory. Running with `--config` from another directory, or auditing multiple repos, scatters state or overwrites it (`latest-findings.json` is overwritten per repo).",
+      "suggestion": "Derive all `.noxaudit/*` paths from a single config-provided state directory.",
+      "focus": "patterns"
+    },
+    {
+      "id": "3b7bf154a256",
+      "severity": "medium",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 150,
+      "title": "Response parsing/formatting code triplicated across providers",
+      "description": "`_build_user_message`, `_format_files`, JSON extraction/`_parse_*`, `_make_finding_id` and `FINDING_SCHEMA` are copy-pasted in anthropic.py, gemini.py and openai.py. Gemini even has two identical parse functions (`_parse_text` and `_parse_response`). Tests explicitly assert the IDs must match across providers, so drift is a real risk.",
+      "suggestion": "Move shared logic into `BaseProvider` (or a helper module) and keep only API-specific calls in subclasses.",
+      "focus": "patterns"
+    },
+    {
+      "id": "4b0ffdbd56f9",
+      "severity": "medium",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 157,
+      "title": "Unhandled JSON parse errors (including truncated output) discard an entire paid audit",
+      "description": "`json.loads(text.strip())` has no error handling in any provider. `max_tokens` is only 4096 per focus area, so long finding lists are cut off and produce invalid JSON, raising and losing all results. The pre-pass classification also uses the same limit for hundreds of files, and missing entries silently default to SKIP.",
+      "suggestion": "Catch JSONDecodeError, attempt repair or partial parse, check stop_reason for max_tokens, raise `max_tokens`, and surface a clear error.",
+      "focus": "patterns"
+    },
+    {
+      "id": "9b9a0d9fa565",
+      "severity": "low",
+      "file": "noxaudit/providers/base.py",
+      "line": 15,
+      "title": "BaseProvider abstract interface does not match concrete providers",
+      "description": "`run_audit` in the base has no `num_focus_areas`/`default_focus` params, and `submit_batch`/`retrieve_batch` are not declared. The runner and prepass call them on all providers. `run_prepass` calls `provider.run_audit(files, prompt, \"\")` without them.",
+      "suggestion": "Declare the full interface (including batch methods and kwargs) on BaseProvider.",
+      "focus": "patterns"
+    },
+    {
+      "id": "5165ed453966",
+      "severity": "medium",
+      "file": "noxaudit/sarif.py",
+      "line": 107,
+      "title": "SARIF `fixes` encode prose suggestions as literal code replacements",
+      "description": "The `suggestion` text (natural-language advice from the model) is emitted as `insertedContent` replacing `startLine` (defaulting to line 1 when unknown). If a Code Scanning consumer or tool applies these fixes, they would corrupt source files.",
+      "suggestion": "Emit the suggestion as `message`/`help` text instead of `fixes`, or only emit fixes when the model supplies real replacement code with an exact region.",
+      "focus": "patterns"
+    },
+    {
+      "id": "033f7385bc81",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": 88,
+      "title": "Issue dedup fails open and issues are created in the cwd repo, not the audited repo",
+      "description": "`_issue_exists` returns False on any gh error, timeout or JSON error, so transient failures create duplicate issues. It searches only open issues with a hidden HTML comment marker, which GitHub search does not reliably index. `gh issue create` and `gh issue list` never pass `--repo`, so for multi-repo configs issues land in whichever repo the cwd belongs to. Labels (`noxaudit`, `noxaudit:<severity>`) must already exist or `gh` fails. `qualifying.index(finding)` is also O(n\u00b2).",
+      "suggestion": "Pass `--repo`, skip creation (not create) on lookup failure, use a visible title-based key, create labels with `gh label create --force`, and iterate with `enumerate`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "24a15f17868c",
+      "severity": "low",
+      "file": "noxaudit/decisions.py",
+      "line": 25,
+      "title": "load_decisions has no tolerance for malformed lines",
+      "description": "A single corrupt line in decisions.jsonl (e.g. after a merge conflict in a committed, team-shared file) raises JSONDecodeError/KeyError and breaks `run`, `status` and `baseline`. CostLedger and MCP state skip bad lines gracefully, so this is inconsistent.",
+      "suggestion": "Skip and warn on malformed lines, as `CostLedger.read_entries` does.",
+      "focus": "patterns"
+    },
+    {
+      "id": "acee6ab6a99b",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 40,
+      "title": "Exclusion uses substring matching on relative paths",
+      "description": "`any(ex in rel for ex in exclude)` excludes any path containing e.g. `build`, `dist`, `venv` or a user's `vendor` as a substring, such as `src/rebuild_index.py`, `distribution.py` or `docs/venv_setup.md`. The docs describe excludes as 'directory names'. Files are silently dropped from audits.",
+      "suggestion": "Match against path components (`ex in Path(rel).parts`) or use fnmatch globs.",
+      "focus": "patterns"
+    },
+    {
+      "id": "c563fe64297f",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 116,
+      "title": "One full-tree glob per pattern walks node_modules/.git/.venv before excluding",
+      "description": "`gather_files_combined` runs `repo.glob(pattern)` for each of ~30 union patterns (`**/...`), each traversing the whole tree including node_modules, .git and virtualenvs. Exclusion is applied only afterward, and `stat()` is called on every match first. On large repos this is many redundant full walks.",
+      "suggestion": "Walk the tree once with `os.walk`, pruning excluded directories, and match files against the patterns in a single pass.",
+      "focus": "performance"
+    },
+    {
+      "id": "70c7f33c0378",
+      "severity": "medium",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 116,
+      "title": "Unbounded polling loop with no timeout",
+      "description": "`run_audit` in the Anthropic and OpenAI providers loops forever with `time.sleep(60)` until the batch ends. Batches can take up to 24h. A stuck or failed job (or error statuses outside the terminal list) hangs a CLI/CI process indefinitely with no cancellation and no timeout.",
+      "suggestion": "Add a configurable max wait, handle error/expired states, and exit with a message pointing to `noxaudit retrieve`.",
+      "focus": "performance"
+    },
+    {
+      "id": "f8697bc5e9c7",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 96,
+      "title": "Every decision (including expired and baseline ones) is appended to every prompt",
+      "description": "`format_decision_context` emits one line per decision. After `baseline` on a large project this can be hundreds or thousands of lines added to every audit's input tokens, including expired decisions that will resurface anyway. Cost grows unbounded over time.",
+      "suggestion": "Filter out expired decisions and cap or summarize the context. Filtering is done locally anyway, so baseline entries need not be sent to the model.",
+      "focus": "performance"
+    },
+    {
+      "id": "f6b040d51cf2",
+      "severity": "low",
+      "file": "noxaudit/runner.py",
+      "line": 405,
+      "title": "Cost ledger under-reports usage when pre-pass runs",
+      "description": "`provider.get_last_usage()` returns only the last API call, so tokens consumed by the pre-pass classification call are never recorded. `noxaudit status` spend and projections omit it.",
+      "suggestion": "Accumulate usage across calls, or record the pre-pass as its own ledger entry.",
+      "focus": "performance"
+    },
+    {
+      "id": "41149f91a45e",
+      "severity": "low",
+      "file": "noxaudit/pricing.py",
+      "line": 233,
+      "title": "Estimate applies batch discount to all providers, ledger only to Anthropic",
+      "description": "`build_estimate_report` uses `use_batch = pricing.batch_discount > 0` (true for every model), while `CostLedger` and `_reprice_entry` apply the discount only when provider == anthropic. Gemini's `run_audit` is synchronous (no batch), so the estimate understates actual Gemini cost and the two numbers disagree.",
+      "suggestion": "Decide per provider/mode whether batching is used and apply it consistently in estimate, ledger and repricing.",
+      "focus": "patterns"
+    },
+    {
+      "id": "6e79c9065fac",
+      "severity": "high",
+      "file": "README.md",
+      "line": 79,
+      "title": "GitHub Actions example only submits; results are never retrieved",
+      "description": "The README and docs/integrations/github-actions.md 'Basic Workflow' call the action with default `mode: submit`. Submit only creates a batch and caches the pending file; no report, notification or issue is produced until a separate `mode: retrieve` run. Users copying the basic workflow (which also passes Telegram secrets) will never see any results, and the docs' claim of nightly audits with notifications is misleading.",
+      "suggestion": "Show both submit and retrieve jobs in the primary example, or make the action able to submit and poll in one run.",
+      "focus": "docs"
+    },
+    {
+      "id": "7f2f52d4d1ab",
+      "severity": "high",
+      "file": "docs/integrations/github-actions.md",
+      "line": 88,
+      "title": "Action input names and list in docs don't match action.yml",
+      "description": "Docs use `output-format: sarif` (in github-actions.md and sarif.md) but action.yml defines `format`. The `output-format` input is silently ignored and SARIF is never generated. The inputs table also documents `openai-api-key` and `google-api-key`, which action.yml does not define or export. OpenAI/Gemini therefore cannot be used through the action. `focus` description in action.yml still says 'Defaults to today's schedule' (schedules were removed; default is all). The SARIF example omits the required `security-events: write` permission.",
+      "suggestion": "Rename docs to `format`, add the missing inputs and env exports to action.yml (or remove them from docs), and fix the focus description.",
+      "focus": "docs"
+    },
+    {
+      "id": "25e7b3beaf55",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 105,
+      "title": "'Adding a New Focus Area' instructions use nonexistent class and signature",
+      "description": "The guide (and docs/contributing/index.md) says to subclass `FocusArea` from `noxaudit.focus.base` and implement `get_prompt(self, context: dict)`. The real class is `BaseFocus`, `get_prompt()` takes no arguments, and the abstract `get_file_patterns()` must also be implemented. The example test calls `focus.get_prompt({})`, which would raise TypeError. Following this produces an ImportError.",
+      "suggestion": "Use `BaseFocus`, show `get_file_patterns()` and `get_prompt()` with no args, and fix the test example. Also add openai.py and the missing modules to the structure tree.",
+      "focus": "docs"
+    },
+    {
+      "id": "b918c80b00f9",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 200,
+      "title": "Test configuration example uses config keys and CLI commands that don't exist",
+      "description": "The 'Configuration for Testing' YAML uses `ai_provider`, `anthropic_api_key`, `focus_schedule` and `telegram: {enabled, bot_token, chat_id}`, none of which are read by `load_config`. The real schema uses `repos`, `model`, `notifications`, and API keys come from env vars. `model: claude-sonnet-4.5` is not a valid id, and 'Testing Your Changes' tells contributors to run `noxaudit schedule`, which is not a command.",
+      "suggestion": "Replace with a real minimal noxaudit.yml and remove `noxaudit schedule` (use `noxaudit status` or `run --dry-run`).",
+      "focus": "docs"
+    },
+    {
+      "id": "dc95e80c87b0",
+      "severity": "medium",
+      "file": "docs/guides/configuration.md",
+      "line": 60,
+      "title": "Budget settings documented as cost controls but never enforced",
+      "description": "The docs say `budget.max_per_run_usd` and `alert_threshold_usd` 'set cost limits per run' and cost-management.md lists them under 'Budget Controls'. `BudgetConfig` is parsed but never read anywhere in runner/cli, so no limit or warning ever occurs. The same goes for `notifications[].webhook`.",
+      "suggestion": "Implement the checks (using estimate_cost before submit) or document them as not yet enforced.",
+      "focus": "docs"
+    },
+    {
+      "id": "fabe5a4b8b2e",
+      "severity": "medium",
+      "file": "docs/guides/cost-management.md",
+      "line": 127,
+      "title": "Pre-pass docs describe a cheap Gemini triage model; code uses the main provider and threshold differently",
+      "description": "Docs say the pre-pass 'uses a cheap model (Gemini Flash)' and that `auto: true` activates it when tokens exceed `threshold_tokens`. `run_prepass` uses the same provider and model as the main audit (sending all files at full price, plus a second call), and auto mode is driven by the pricing tier (200K), not `threshold_tokens`. `estimate` reports a Gemini Flash triage cost that will not be incurred. Pre-pass can therefore increase cost.",
+      "suggestion": "Instantiate a dedicated cheap provider for pre-pass, or correct the docs and the estimate output.",
+      "focus": "docs"
+    },
+    {
+      "id": "a97c659c0f22",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 231,
+      "title": "README pricing and defaults disagree with code",
+      "description": "The Supported Models table lists gpt-5.2 output $7.00, gpt-5-mini $1.00 and gpt-5-nano $0.15, while pricing.py and providers.md use $14.00, $2.00 and $0.40. The Key Options table says `repos[].provider_rotation` defaults to `[anthropic]`, but the code default (and reference docs) is `[gemini]`. The Focus Areas table lists only 6 areas and omits `testing`, though the README states 7.",
+      "suggestion": "Sync README with pricing.py/config defaults and add the testing row.",
+      "focus": "docs"
+    },
+    {
+      "id": "4e5b9ef6f0b3",
+      "severity": "low",
+      "file": "README.md",
+      "line": 105,
+      "title": "Example report output doesn't match generated report format",
+      "description": "The README shows `# Security Audit \u2014 my-app / ## 2025-01-14` with emoji headings per finding and a footer. `generate_report` actually emits `# Nightwatch Report: Security`, a metadata list, a Summary section and severity sections with `### title` and `**ID**`. The README also references `noxaudit.yml.example`, which pip users won't have, since it is not in the wheel.",
+      "suggestion": "Regenerate the sample from real output and inline a minimal config instead of `cp noxaudit.yml.example`.",
+      "focus": "docs"
+    },
+    {
+      "id": "6814b2bc7c3d",
+      "severity": "low",
+      "file": "noxaudit/reporter.py",
+      "line": 16,
+      "title": "Leftover 'Nightwatch' branding after the rename",
+      "description": "The report title says 'Nightwatch Report', `noxaudit/__init__.py`'s docstring says 'Nightwatch: Nightly AI-powered...', and pyproject keywords still include 'nightwatch'. `tests/test_reporter.py` asserts the old title.",
+      "suggestion": "Rename to Noxaudit in code and tests; update the keyword.",
+      "focus": "docs"
+    },
+    {
+      "id": "77dccec6d89f",
+      "severity": "medium",
+      "file": "CHANGELOG.md",
+      "line": 9,
+      "title": "Changelog is incomplete and inconsistent with version/roadmap; duplicated in two files",
+      "description": "Unreleased only lists the rename. It lacks OpenAI support, SARIF, MCP server, cost tracking/estimate, baseline, pre-pass and removal of schedule/frames. The 0.1.0 entry claims only Anthropic/Gemini and the 'rotating focus areas'. docs/roadmap/08-saas-scheduling.md says scheduling was 'removed from OSS CLI in v0.2.0' and sarif.py falls back to '0.2.0', but the package version is 0.1.0. CHANGELOG.md and docs/changelog.md are identical copies that will drift.",
+      "suggestion": "Complete the entries, align version references, and keep a single source (symlink or mkdocs include).",
+      "focus": "docs"
+    },
+    {
+      "id": "cafba776c813",
+      "severity": "low",
+      "file": "noxaudit/mcp/server.py",
+      "line": 58,
+      "title": "get_health_summary docstring promises a trend that isn't computed",
+      "description": "The docstring lists 'trend' among the outputs, but the function computes none. `findings-history.jsonl` is written but never read anywhere.",
+      "suggestion": "Implement the trend from history or drop it from the docstring; otherwise the history file is dead weight.",
+      "focus": "docs"
+    },
+    {
+      "id": "04b5ecc774f3",
+      "severity": "low",
+      "file": "docs/guides/decisions.md",
+      "line": 56,
+      "title": "Typo and doc/behavior mismatches in decision docs",
+      "description": "'resurfaceeven' is missing a space. `baseline --list` is documented as 'Show baselined findings' but only prints a count. The MCP `record_decision` tool 'accepts the same parameters as the CLI' but has no `--by` and doesn't store focus/severity/repo.",
+      "suggestion": "Fix the text, and either list the findings or reword the docs.",
+      "focus": "docs"
+    },
+    {
+      "id": "1bee6241f0bb",
+      "severity": "medium",
+      "file": "scripts/setup-hooks.sh",
+      "line": 8,
+      "title": "setup-hooks uses `uv run pre-commit` but pre-commit isn't in the default dev group",
+      "description": "pyproject defines dev tooling twice. `[project.optional-dependencies].dev` (jsonschema, pre-commit, pytest>=8, ruff) and `[dependency-groups].dev` (pytest>=9.0.2, ruff only). `uv run` uses the dependency group by default, so `pre-commit` is unavailable and the documented setup step (CLAUDE.md, CONTRIBUTING) may fail. `jsonschema` tests are skipped for the same reason. pre-push.sh has to pass `--extra dev --extra mcp` to work around it.",
+      "suggestion": "Consolidate on one dev declaration (add pre-commit, jsonschema and mcp to the dependency group) and make the scripts consistent.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "58237679afd9",
+      "severity": "low",
+      "file": "noxaudit/focus/base.py",
+      "line": 32,
+      "title": "BaseFocus.gather_files is dead code duplicating gather_files_combined",
+      "description": "The runner and estimate command use only `gather_files_combined`. `gather_files` has identical filtering logic and no callers in the source, so bug fixes (e.g. to exclusion) must be applied twice.",
+      "suggestion": "Remove it or have it delegate to `gather_files_combined([self], ...)`.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "553bdc8cf964",
+      "severity": "low",
+      "file": "noxaudit/config.py",
+      "line": 24,
+      "title": "Unused configuration fields and helpers",
+      "description": "`NotificationConfig.webhook` is parsed and never used; `BudgetConfig` is parsed and never read. `CostLedger.get_last_n` is only used in tests. In `cli.estimate`, `FOCUS_AREAS` is re-imported although it is imported at module level, and the local variable `report` shadows the `report` command function. `decisions.filter_findings` has duplicate branches for ACCEPTED/DISMISSED vs INTENTIONAL that do the same thing. `ALL_FOCUS_NAMES` duplicates `FOCUS_AREAS` keys.",
+      "suggestion": "Remove or wire up the unused items and clean up the shadowed names and redundant branches.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "3bfdbafe7c4c",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": null,
+      "title": "No tests for issue creation, Telegram notifier, or pre-pass module",
+      "description": "issues.py (subprocess calls to gh, dedup, severity threshold, error handling), notifications/telegram.py and prepass.py (`build_classification_prompt`, `enrich_files`, `run_prepass`, `extract_file_snippets`, `extract_file_map`) have no direct unit tests. Pre-pass is exercised only through two CLI integration tests with mocks. Edge cases (truncation markers, empty files, fallback map) and failure paths are untested.",
+      "suggestion": "Add unit tests with mocked `subprocess.run`/`httpx.post` and parametrized tests for tiering/enrichment functions.",
+      "focus": "testing"
+    },
+    {
+      "id": "708b07329e5e",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 110,
+      "title": "submit/retrieve orchestration, idempotency guard, and config parsing lack tests",
+      "description": "`submit_audit`, `retrieve_audit` (partial-batch handling, `_already_retrieved`/`_mark_retrieved`), and `load_config` for `providers`, `issues`, `prepass`, `budget`, `decisions` sections are only lightly or never covered. Anthropic `retrieve_batch`/`run_audit` and Gemini `run_audit` are also untested, and `mcp.run_audit` has no test. The retrieve-drops-unfinished-batches bug and the ignored provider model overrides would have been caught.",
+      "suggestion": "Add tests for multi-batch retrieval, the idempotency guard, `get_model_for_provider` usage in the runner, and each config section.",
+      "focus": "testing"
+    },
+    {
+      "id": "72f94f6853e1",
+      "severity": "medium",
+      "file": "tests/test_sarif_integration.py",
+      "line": 60,
+      "title": "Tests write state files into the real working directory",
+      "description": "Runs through `run_audit`/CLI only patch `save_latest_findings`. `CostLedger.append_entry` (cwd-relative `.noxaudit/cost-ledger.jsonl`), `append_findings_history`, and `load_decisions(.noxaudit/decisions.jsonl)` still touch the cwd (the project checkout). Same in TestPrepassCLIIntegration, which never chdirs. This pollutes the repo and creates cross-test/order dependence with real developer data (e.g. `status` reading a real ledger).",
+      "suggestion": "Use an autouse fixture that `monkeypatch.chdir(tmp_path)` and patches `CostLedger.LEDGER_PATH`.",
+      "focus": "testing"
+    },
+    {
+      "id": "4cdf678177f9",
+      "severity": "low",
+      "file": "tests/test_cli_integration.py",
+      "line": 33,
+      "title": "Tests use a nonexistent config key and weak `or` assertions",
+      "description": "`_write_config` sets `\"provider\": provider` on the repo, but the config reads `provider_rotation`, so the key is ignored and passing depends on the default being gemini. Several assertions are effectively vacuous: `test_submit_wires_to_gemini_submit_batch` accepts `\"submitted\" in output.lower()`; `test_retrieve_shows_still_processing` accepts either message; `test_status_reprices_cache_costs` starts with a tautological `or`; `test_skips_malformed_lines` only asserts `>= 1`.",
+      "suggestion": "Use `provider_rotation` and assert specific outputs/values.",
+      "focus": "testing"
+    },
+    {
+      "id": "56620f236545",
+      "severity": "low",
+      "file": "tests/test_reporter.py",
+      "line": 33,
+      "title": "Test locks in stale 'Nightwatch' title",
+      "description": "`assert \"# Nightwatch Report: Security\" in report` enforces the pre-rename brand, so fixing the branding will fail this test.",
+      "suggestion": "Update together with the reporter title rename.",
+      "focus": "testing"
+    },
+    {
+      "id": "588c7978dd7f",
+      "severity": "low",
+      "file": "noxaudit/mcp/state.py",
+      "line": 76,
+      "title": "findings-history.jsonl grows unbounded and is never read",
+      "description": "`append_findings_history` appends full finding lists on every run, including descriptions. Nothing reads or prunes the file, and it may be accidentally committed with vulnerability details.",
+      "suggestion": "Add rotation/retention, or remove until a trend feature consumes it. Document adding `.noxaudit/` files to .gitignore other than decisions.jsonl.",
+      "focus": "hygiene"
+    }
+  ]
+}

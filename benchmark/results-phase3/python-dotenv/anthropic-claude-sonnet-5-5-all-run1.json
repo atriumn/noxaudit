@@ -1,0 +1,224 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "anthropic",
+    "model": "claude-sonnet-5-5",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:22:28.461904",
+    "completed_at": "2026-09-29T23:29:32.118474",
+    "wall_clock_seconds": 423.66,
+    "error": null
+  },
+  "tokens": {
+    "input": 69228,
+    "output": 3078,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0846,
+  "findings_count": 20,
+  "findings": [
+    {
+      "id": "09de4cd67c5d",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 10,
+      "title": "Contributing commands are invalid (`uv ruff check`, `uv format`)",
+      "description": "The setup steps say `uv ruff check .` and `uv format .`. Neither is a valid uv subcommand. The correct forms are `uv run ruff check .` and `uv run ruff format .` (or `uv format` only on very recent uv). A contributor following these steps gets errors.",
+      "suggestion": "Use `uv run ruff check .` and `uv run ruff format .`.",
+      "focus": "docs"
+    },
+    {
+      "id": "48d3fba21ac8",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 21,
+      "title": "Wrong pre-commit command `uv run precommit install`",
+      "description": "The tool is named `pre-commit`, not `precommit`. The documented command fails.",
+      "suggestion": "Change to `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "0e865ec7bb75",
+      "severity": "high",
+      "file": "docs/contributing.md",
+      "line": 10,
+      "title": "Same invalid uv/ruff and precommit commands duplicated in docs copy",
+      "description": "docs/contributing.md repeats `uv ruff check .`, `uv format .` and `uv run precommit install`, all of which fail.",
+      "suggestion": "Fix the commands and de-duplicate the file, e.g. via an include or symlink.",
+      "focus": "docs"
+    },
+    {
+      "id": "036c5d451005",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 25,
+      "title": "Empty mkdocs link",
+      "description": "`[mkdocs]()` is a link with an empty target and renders as a broken link.",
+      "suggestion": "Use `[mkdocs](https://www.mkdocs.org/)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "205a6ff3f3e2",
+      "severity": "low",
+      "file": "docs/contributing.md",
+      "line": 25,
+      "title": "Empty mkdocs link",
+      "description": "`[mkdocs]()` is a link with an empty target.",
+      "suggestion": "Use `[mkdocs](https://www.mkdocs.org/)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "3bb37885891e",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 33,
+      "title": "Test checks builtin `format` instead of `output_format`",
+      "description": "`if format is not None:` tests the builtin `format`, which is always non-None. When `output_format` is None (the first parametrized case), `args.extend([\"--format\", None])` gets passed. The None case is never truly exercised.",
+      "suggestion": "Use `if output_format is not None:`.",
+      "focus": "testing"
+    },
+    {
+      "id": "061d6a107818",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 37,
+      "title": "Docstrings in DotEnv.get and load_dotenv are inaccurate or empty",
+      "description": "`DotEnv.get` has an empty docstring (`\"\"\" \"\"\"`). The `load_dotenv` docstring omits the `interpolate` parameter. It also says `verbose` outputs a warning, but the code uses logger.info. The `dotenv_values` docstring omits `interpolate` too.",
+      "suggestion": "Document `interpolate`, fix the `verbose` description, and fill in the `get` docstring.",
+      "focus": "docs"
+    },
+    {
+      "id": "a79628e93cc2",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 63,
+      "title": "DotEnv.dict cache ignores empty results",
+      "description": "`if self._dict:` is falsy for an empty dict, so an empty result is re-parsed on every call. `set_as_environment_variables` calls `self.dict()` twice. For a stream this can yield an empty result on the second call because the stream is already consumed. Use `is not None` for the cache check.",
+      "suggestion": "Use `if self._dict is not None:`.",
+      "focus": "performance"
+    },
+    {
+      "id": "143655d8e0f2",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 353,
+      "title": "Redundant exception tuple",
+      "description": "`except (FileNotFoundError, OSError)` is redundant because FileNotFoundError is a subclass of OSError.",
+      "suggestion": "Use `except OSError`.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "af5205279e1f",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 151,
+      "title": "Temp file created with default permissions, then chmod after write (secrets window)",
+      "description": "NamedTemporaryFile is created with 0600 by default, so the temp file itself is safe. But when the original file is absent or not a regular file, the fallback mode is whatever the default gives. The behavior is undocumented in code and only described in the changelog. `os.replace` on a symlinked path replaces the link, which is intended.",
+      "suggestion": "Document the permission behavior in the docstring.",
+      "focus": "security"
+    },
+    {
+      "id": "d5a4c00d9a95",
+      "severity": "low",
+      "file": "src/dotenv/__init__.py",
+      "line": 26,
+      "title": "get_cli_string builds a shell string without escaping",
+      "description": "`get_cli_string` interpolates path, key and value into a command string. Only values containing spaces get quoted, and quotes are not escaped. If the result is executed via a shell, this allows command injection through untrusted input.",
+      "suggestion": "Use `shlex.quote` for each argument and document that the output is shell-sensitive.",
+      "focus": "security"
+    },
+    {
+      "id": "b61f02982b2f",
+      "severity": "low",
+      "file": "CHANGELOG.md",
+      "line": 37,
+      "title": "Typo and grammar error in breaking-change note",
+      "description": "'Is the file needed to be created or wasn't a regular file' should read 'If the file needed to be created or wasn't a regular file'.",
+      "suggestion": "Fix the wording.",
+      "focus": "docs"
+    },
+    {
+      "id": "ee8ec189f02c",
+      "severity": "low",
+      "file": "CHANGELOG.md",
+      "line": 9,
+      "title": "Placeholder Unreleased entry and unused link references",
+      "description": "The Unreleased section contains only '- ...'. Link references such as [@burnout-projects], [@cpackham-atlnz] and [#359] are defined but never used. There is no [0.10.3]-style compare link for the older unreleased-tagged sections.",
+      "suggestion": "Remove the placeholder and unused link definitions.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "9fffcd0cf27a",
+      "severity": "low",
+      "file": "docs/changelog.md",
+      "line": 1,
+      "title": "Duplicated files (changelog, contributing, index) instead of includes",
+      "description": "docs/changelog.md, docs/index.md and docs/contributing.md are verbatim copies of the root files. requirements-docs.txt lists mkdocs-include-markdown-plugin, but mkdocs.yml does not enable it. The copies can drift apart.",
+      "suggestion": "Use symlinks or the include-markdown plugin, and add the plugin to mkdocs.yml or remove it from requirements.",
+      "focus": "patterns"
+    },
+    {
+      "id": "6e10c3313f5b",
+      "severity": "low",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Unpinned dev dependencies and stale bumpversion/wheel",
+      "description": "All dev requirements are unpinned. `bumpversion` is unmaintained, and version.py no longer has a bumpversion config in the shown files. `wheel` is unnecessary with PEP 517 builds. `mkdocs-include-markdown-plugin` in requirements-docs.txt is unused by mkdocs.yml.",
+      "suggestion": "Remove bumpversion and wheel, pin versions or use a lock file, and drop the unused docs plugin.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "949f3227a4af",
+      "severity": "low",
+      "file": "pyproject.toml",
+      "line": 45,
+      "title": "click minimum version too permissive",
+      "description": "`click>=5.0` is declared, but the code uses features (`click.Choice`, `version_option(version=...)`, `UNPROCESSED`, `ctx.args`) that need much newer click. Click 5.0 is very old.",
+      "suggestion": "Raise the minimum to a tested version, e.g. `click>=8.0`.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "9925cb39fd84",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 9,
+      "title": "Popen imported conditionally; typing uses tuple[...] alongside typing.List/Dict",
+      "description": "The module mixes `typing.List`/`Dict` with builtin `tuple[str, ...]`. It also evaluates `enumerate_env()` at import time for the default `--file`, so the cwd is frozen at import.",
+      "suggestion": "Use consistent typing style and compute the default lazily.",
+      "focus": "patterns"
+    },
+    {
+      "id": "897f782998af",
+      "severity": "low",
+      "file": "tests/test_main.py",
+      "line": 407,
+      "title": "Tests use os.chdir without restoring",
+      "description": "test_find_dotenv_* and test_load_dotenv_in_current_dir call `os.chdir` directly, not `monkeypatch.chdir`. This leaks cwd state between tests and risks flakiness.",
+      "suggestion": "Use `monkeypatch.chdir`.",
+      "focus": "testing"
+    },
+    {
+      "id": "67eb62987b40",
+      "severity": "low",
+      "file": "tests/test_zip_imports.py",
+      "line": 27,
+      "title": "Debug print in test helper",
+      "description": "`print(f\"setup_zipfile: ...\")` is left in the test helper.",
+      "suggestion": "Remove the print.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "199dc1c5f8e2",
+      "severity": "low",
+      "file": "src/dotenv/cli.py",
+      "line": 120,
+      "title": "`get` treats empty-string values as missing",
+      "description": "`if stored_value:` exits 1 for an empty-string value, which is not distinguished from an absent key. There is no test for it.",
+      "suggestion": "Use `is not None` if empty values should be printed, and add a test.",
+      "focus": "testing"
+    }
+  ]
+}

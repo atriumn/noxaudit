@@ -1,0 +1,224 @@
+{
+  "meta": {
+    "repo": "python-dotenv",
+    "repo_commit": "da0c82054f1ec1e03d57356d49b0b9ad09eb4209",
+    "provider": "gemini",
+    "model": "gemini-3.8-flash",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T22:50:39.556449",
+    "completed_at": "2026-09-29T22:54:45.291867",
+    "wall_clock_seconds": 245.74,
+    "error": null
+  },
+  "tokens": {
+    "input": 52065,
+    "output": 37728,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.0903,
+  "findings_count": 20,
+  "findings": [
+    {
+      "id": "4017cfad42c6",
+      "severity": "high",
+      "file": "src/dotenv/__init__.py",
+      "line": 21,
+      "title": "Command injection vulnerability in get_cli_string",
+      "description": "The function `get_cli_string` builds a shell command string intended to be executed in shell contexts (such as Fabric tasks). It performs rudimentary quoting only if a space exists in `value`, but does not escape shell metacharacters (e.g. `;`, `&`, `|`, `` ` ``, `$()`, or embedded quotes) in `value`, `key`, or `path`. Passing user-controlled inputs into this function leads to command injection.",
+      "suggestion": "Use `shlex.quote` from the standard library to sanitize all parameters (`path`, `key`, `value`, `quote`) before concatenating them into the shell command string.",
+      "focus": "security"
+    },
+    {
+      "id": "d55cd3e3cc01",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 319,
+      "title": "Assert statement used for frame traversal control flow in find_dotenv",
+      "description": "In `find_dotenv`, the loop navigating caller frames uses `assert frame.f_back is not None`. When Python is executed with optimization flags (`python -O`), assertions are stripped, which can cause `frame = frame.f_back` to set `frame = None` and raise `AttributeError` on the subsequent iteration. In non-optimized mode, reaching the top of the call stack (e.g. in dynamically executed code or certain execution environments) raises an unhandled `AssertionError` instead of falling back gracefully.",
+      "suggestion": "Replace `assert frame.f_back is not None` with an explicit check: `if frame.f_back is None: break` and fall back to `os.getcwd()` or raise an `IOError`.",
+      "focus": "security"
+    },
+    {
+      "id": "346d2754340c",
+      "severity": "high",
+      "file": "tests/test_cli.py",
+      "line": 39,
+      "title": "test_list checks built-in format function instead of output_format argument",
+      "description": "In `test_list`, the condition `if format is not None:` references the Python built-in `format` function rather than the test argument `output_format`. Because `format` is always a function object (never `None`), the condition is always true. When testing the default case where `output_format` is `None`, `args.extend([\"--format\", None])` is executed, preventing the test from exercising the command when `--format` is omitted.",
+      "suggestion": "Change `if format is not None:` to `if output_format is not None:`.",
+      "focus": "testing"
+    },
+    {
+      "id": "a43958fcb1cd",
+      "severity": "medium",
+      "file": "tests/test_cli.py",
+      "line": 65,
+      "title": "test_list_no_file and test_set_non_existent_file pass due to unhandled TypeError in Click context",
+      "description": "`test_list_no_file` and `test_set_non_existent_file` invoke subcommands `dotenv.cli.list_values` and `dotenv.cli.set_value` directly via `cli.invoke` without the parent Click group context. `ctx.obj` is therefore `None`, causing `ctx.obj[\"FILE\"]` to crash with `TypeError: 'NoneType' object is not subscriptable`. Click catches the unhandled exception and exits with code 1, which masks the fact that the tests are not actually testing file existence logic.",
+      "suggestion": "Invoke through the main CLI group `dotenv_cli` (e.g. `cli.invoke(dotenv_cli, [\"list\"])` or `cli.invoke(dotenv_cli, [\"set\", \"a\", \"b\"])`) or explicitly pass `obj={\"FILE\": None, ...}` in `cli.invoke`.",
+      "focus": "testing"
+    },
+    {
+      "id": "c93b00697f22",
+      "severity": "low",
+      "file": "tests/test_cli.py",
+      "line": 200,
+      "title": "test_run_without_cmd fails at file check rather than testing missing commandline branch",
+      "description": "In `test_run_without_cmd`, `run_dotenv([\"run\"], cwd=tmp_path)` is executed in an empty `tmp_path` without a `.env` file. It fails with exit code 2 at the earlier `if not os.path.isfile(file):` check rather than testing the `if not commandline:` branch in `run()` (which outputs 'No command given.' and exits with 1). As a result, the missing command validation path is untested.",
+      "suggestion": "Create a dummy `.env` file in `tmp_path` prior to calling `run_dotenv([\"run\"], cwd=tmp_path)` and assert `exit_code == 1` and `stdout == 'No command given.\\n'`.",
+      "focus": "testing"
+    },
+    {
+      "id": "90d6a983a8c1",
+      "severity": "low",
+      "file": "tests/test_parser.py",
+      "line": 235,
+      "title": "Duplicate test case for multiline double-quoted values in test_parse_stream",
+      "description": "The test case `('a=\"b\\nc\"', [Binding(key=\"a\", value=\"b\\nc\", original=Original(string='a=\"b\\nc\"', line=1), error=False)])` appears identically at lines 211-222 and again at lines 235-246.",
+      "suggestion": "Remove the redundant parametrized test case.",
+      "focus": "testing"
+    },
+    {
+      "id": "c49de110b18f",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 206,
+      "title": "dotenv run rejects FIFOs due to os.path.isfile check",
+      "description": "python-dotenv 1.2.0+ supports reading `.env` configurations from FIFOs (named pipes) via `_is_file_or_fifo`. However, the CLI command `run` checks `if not os.path.isfile(file):`. On Unix systems, FIFOs return `False` for `os.path.isfile`, causing `dotenv -f <fifo> run ...` to fail with a `BadParameter` error despite FIFO support being an advertised feature.",
+      "suggestion": "Import `_is_file_or_fifo` from `dotenv.main` and use `if not _is_file_or_fifo(file):` instead of `os.path.isfile(file)`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "1d13b9a08c44",
+      "severity": "medium",
+      "file": "src/dotenv/cli.py",
+      "line": 185,
+      "title": "dotenv get fails with exit code 1 for empty string values",
+      "description": "In `get`, the check `if stored_value:` evaluates to `False` when a key exists in `.env` with an empty string value (e.g. `EMPTY=`). The command exits with error code 1 without printing output, incorrectly treating an empty value as a missing key.",
+      "suggestion": "Change `if stored_value:` to `if stored_value is not None:`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "2b69bef486a4",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 234,
+      "title": "Unused quote_mode parameter and inconsistent parameter ordering in unset_key",
+      "description": "`unset_key` accepts `quote_mode: str = \"always\"`, but the parameter is never used anywhere in the function. In contrast, `get_key` takes `(dotenv_path, key_to_get, encoding=\"utf-8\")` where the 3rd parameter is `encoding`. In `unset_key`, the 3rd parameter is `quote_mode`, causing positional calls like `unset_key(path, key, \"utf-8\")` to silently misassign encoding to `quote_mode`.",
+      "suggestion": "Deprecate and remove `quote_mode` from `unset_key` and align the parameter signature with `get_key` (`encoding` as 3rd parameter).",
+      "focus": "patterns"
+    },
+    {
+      "id": "c4e88cf5655c",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 54,
+      "title": "Inconsistent default values between DotEnv.__init__ and public loader functions",
+      "description": "`DotEnv.__init__` defaults `override=True` and `encoding=None`, whereas public APIs `load_dotenv` and `dotenv_values` default `override=False` and `encoding=\"utf-8\"`. Instantiating `DotEnv` directly produces different behavior from calling `load_dotenv` with defaults.",
+      "suggestion": "Align default parameter values in `DotEnv.__init__` (`override: bool = False`, `encoding: Optional[str] = \"utf-8\"`) with `load_dotenv`.",
+      "focus": "patterns"
+    },
+    {
+      "id": "cacb5a746043",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 14,
+      "title": "Invalid CLI commands in contributing guide",
+      "description": "The commands `uv ruff check .`, `uv format .`, and `uv run precommit install` in `CONTRIBUTING.md` (and `docs/contributing.md`) are invalid. `uv` does not have `ruff` or `format` subcommands (they require `uv run ruff check .` and `uv run ruff format .`), and the pre-commit binary is `pre-commit`, not `precommit`.",
+      "suggestion": "Update the documentation to use valid commands: `uv run ruff check .`, `uv run ruff format .`, and `uv run pre-commit install`.",
+      "focus": "docs"
+    },
+    {
+      "id": "d21d1385a9fa",
+      "severity": "medium",
+      "file": "docs/reference.md",
+      "line": 1,
+      "title": "Markdown header prefix prevents mkdocstrings plugin from generating API reference",
+      "description": "`docs/reference.md` contains `# ::: dotenv`. The leading `#` renders this line as a plain Markdown title rather than the mkdocstrings directive `::: dotenv`. As a result, no API reference documentation is generated for the package.",
+      "suggestion": "Remove the `# ` prefix so line 1 reads `::: dotenv`.",
+      "focus": "docs"
+    },
+    {
+      "id": "8dc7b46ffc18",
+      "severity": "low",
+      "file": "CONTRIBUTING.md",
+      "line": 28,
+      "title": "Empty markdown link for mkdocs in contributing docs",
+      "description": "In `CONTRIBUTING.md` and `docs/contributing.md`, the link `[mkdocs]()` has an empty URL destination.",
+      "suggestion": "Provide the documentation URL, e.g. `[mkdocs](https://www.mkdocs.org/)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "837380f32d1f",
+      "severity": "low",
+      "file": "CHANGELOG.md",
+      "line": 40,
+      "title": "Typographical error in changelog breaking changes section",
+      "description": "In `CHANGELOG.md` (and `docs/changelog.md`) under version [1.2.2], the line reads: 'Is the file needed to be created or wasn't a regular file, mode 0o600 is used.' The word 'Is' is a typo for 'If'.",
+      "suggestion": "Change 'Is the file needed to be created' to 'If the file needed to be created'.",
+      "focus": "docs"
+    },
+    {
+      "id": "047d4381d1f9",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 59,
+      "title": "py.typed package data declared but file is missing from repository",
+      "description": "`pyproject.toml` declares `package-data = {dotenv = [\"py.typed\"]} `, but no `py.typed` file exists inside `src/dotenv/`. Downstream type checkers (e.g. Mypy, Pyright) relying on PEP 561 will fail to recognize `python-dotenv` as a typed library.",
+      "suggestion": "Create an empty `src/dotenv/py.typed` file so type information is distributed in wheels and source distributions.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "5d8c94e7a922",
+      "severity": "low",
+      "file": "docs/index.md",
+      "line": 1,
+      "title": "Documentation files duplicated across root and docs/ directory",
+      "description": "`README.md`, `CHANGELOG.md`, and `CONTRIBUTING.md` are duplicated verbatim as `docs/index.md`, `docs/changelog.md`, and `docs/contributing.md`. This duplication leads to content drift when changes are applied to one set of files but not the other.",
+      "suggestion": "Use MkDocs plugins (such as `mkdocs-include-markdown-plugin` or symlinks) to include root Markdown files into the documentation site rather than maintaining duplicate copies.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "1264b9a25f0d",
+      "severity": "medium",
+      "file": "requirements.txt",
+      "line": 1,
+      "title": "Deprecated bumpversion package in requirements.txt",
+      "description": "`requirements.txt` specifies `bumpversion`, which has been abandoned and unmaintained since ~2015. It lacks compatibility with modern Python packaging and pyproject.toml configuration.",
+      "suggestion": "Replace `bumpversion` with `bump-my-version` or `bump2version`.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "ca3e9a3f9434",
+      "severity": "low",
+      "file": "requirements-docs.txt",
+      "line": 2,
+      "title": "Unused mkdocs-include-markdown-plugin dependency",
+      "description": "`mkdocs-include-markdown-plugin` is listed in `requirements-docs.txt`, but it is not listed in `plugins` within `mkdocs.yml` nor used anywhere in documentation source files.",
+      "suggestion": "Either configure `mkdocs-include-markdown-plugin` in `mkdocs.yml` to eliminate duplicated doc files, or remove it from `requirements-docs.txt`.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "24af8c88e09d",
+      "severity": "medium",
+      "file": "src/dotenv/main.py",
+      "line": 266,
+      "title": "Quadratic dictionary copying in resolve_variables",
+      "description": "In `resolve_variables`, `env = {}` is initialized and `os.environ` plus all previously resolved keys (`new_values`) are copied into it for every single variable in `values`. For a file with N variables and M environment variables, this results in O(N * M + N^2) dictionary insertions and allocations.",
+      "suggestion": "Maintain a persistent dictionary or use `collections.ChainMap` rather than recreating and copying the entire environment dict on every iteration.",
+      "focus": "performance"
+    },
+    {
+      "id": "098818875ac2",
+      "severity": "low",
+      "file": "src/dotenv/main.py",
+      "line": 76,
+      "title": "Cached dict bypassed for empty .env files in DotEnv.dict",
+      "description": "`DotEnv.dict()` checks `if self._dict:` before parsing. If the `.env` file is empty, `self._dict` is `{}` (an empty dict), which evaluates to `False`. Subsequent calls to `dict()` on the same instance re-open the file and re-parse from scratch on every call instead of returning the cached dictionary.",
+      "suggestion": "Change `if self._dict:` to `if self._dict is not None:`.",
+      "focus": "performance"
+    }
+  ]
+}

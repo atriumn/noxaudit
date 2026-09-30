@@ -1,0 +1,174 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "gemini",
+    "model": "gemini-3.1-pro-preview",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:02:10.645583",
+    "completed_at": "2026-09-29T23:07:15.716866",
+    "wall_clock_seconds": 305.07,
+    "error": null
+  },
+  "tokens": {
+    "input": 126433,
+    "output": 18538,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.2377,
+  "findings_count": 15,
+  "findings": [
+    {
+      "id": "4a3de49dfd56",
+      "severity": "high",
+      "file": "noxaudit/focus/base.py",
+      "line": 118,
+      "title": "Inefficient glob traversal on ignored directories",
+      "description": "repo.glob(pattern) recursively traverses all directories including large ignored ones like node_modules and .venv before filtering them. This causes significant blocking disk I/O and memory bloat on large codebases.",
+      "suggestion": "Implement a custom traversal (e.g., using os.walk) that explicitly skips excluded directories before entering them, rather than generating all paths and filtering post-traversal.",
+      "focus": "performance"
+    },
+    {
+      "id": "7d0e311acb32",
+      "severity": "high",
+      "file": "noxaudit/focus/security.py",
+      "line": 19,
+      "title": "Sensitive .env files transmitted to third-party APIs",
+      "description": "The security focus explicitly gathers '**/*.env*' files. Since Noxaudit sends gathered file contents to external LLMs (OpenAI, Anthropic, Gemini) for analysis, this results in actual production or development secrets being transmitted over the network to third parties.",
+      "suggestion": "Remove .env files from the gathered file patterns. If secret scanning is needed for .env files, use a local rule-based regex scanner rather than an external LLM.",
+      "focus": "security"
+    },
+    {
+      "id": "43497dc3aee7",
+      "severity": "high",
+      "file": "noxaudit/issues.py",
+      "line": 1,
+      "title": "No test coverage for GitHub issues data mutation",
+      "description": "The issues.py module creates issues on GitHub via the gh CLI but has zero test coverage. This is a critical data mutation path where bugs could cause duplicate issue spam or fail to report critical security vulnerabilities.",
+      "suggestion": "Add a tests/test_issues.py file with mocked subprocess.run calls to verify issue creation, deduplication logic, and rate-limiting behavior.",
+      "focus": "testing"
+    },
+    {
+      "id": "6565ec6f006a",
+      "severity": "medium",
+      "file": "noxaudit/providers/gemini.py",
+      "line": 160,
+      "title": "Duplicated LLM JSON parsing logic",
+      "description": "The code to extract JSON blocks from Markdown and map them to Finding objects is duplicated between _parse_text and _parse_response. The same exact boilerplate is also repeated in openai.py and anthropic.py.",
+      "suggestion": "Extract the JSON parsing and Finding object mapping logic into a shared helper function in BaseProvider or a common utils module.",
+      "focus": "patterns"
+    },
+    {
+      "id": "2d750a1baf7c",
+      "severity": "high",
+      "file": "action/action.yml",
+      "line": 39,
+      "title": "Action installs from unpinned git branch",
+      "description": "The GitHub Action installs noxaudit via 'pip install git+https://github.com/atriumn/noxaudit.git', which pulls the default branch on every run. This exposes users to supply chain risks and sudden breaking changes.",
+      "suggestion": "Install the package directly from PyPI with a pinned version constraint, or pin the git installation to a specific commit SHA or release tag matching the action's version.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "2191fba7d295",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 24,
+      "title": "Inconsistent dev dependency pinning",
+      "description": "The project uses both [project.optional-dependencies] dev (PEP 621) and [dependency-groups] dev (PEP 735) with conflicting version constraints for pytest (>=8.0 vs >=9.0.2) and ruff (>=0.8 vs >=0.15.1).",
+      "suggestion": "Consolidate the development dependencies into a single section or ensure both sections enforce the exact same version constraints.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "08252cbe1920",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 186,
+      "title": "Unbounded memory usage when hashing files",
+      "description": "The _hash_file function reads the entire file contents into memory using path.read_bytes() before computing the SHA256 hash. If called on very large files, this could cause severe memory spikes.",
+      "suggestion": "Read the file in fixed-size chunks (e.g., 8192 bytes) and update the hash incrementally to maintain a constant memory footprint.",
+      "focus": "performance"
+    },
+    {
+      "id": "f3736d9519c1",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 1,
+      "title": "Missing test coverage for Telegram network calls",
+      "description": "The telegram notification module makes network requests via httpx but has no corresponding unit tests. Error handling, HTTP timeouts, and correct payload formatting are entirely untested.",
+      "suggestion": "Add tests using a library like respx or httpx_mock to verify the Telegram integration works correctly under both success and failure conditions.",
+      "focus": "testing"
+    },
+    {
+      "id": "524a2e912678",
+      "severity": "medium",
+      "file": "noxaudit/cli.py",
+      "line": 285,
+      "title": "Inconsistent error handling for invalid CLI inputs",
+      "description": "The 'estimate' command catches ValueError and raises a clean click.ClickException, but the 'run' and 'submit' commands do not catch ValueError from _resolve_focus_names or run_audit, leading to raw Python stack traces being dumped to the user.",
+      "suggestion": "Apply the same try/except block used in 'estimate' to 'run' and 'submit' to consistently convert expected ValueErrors into clean ClickExceptions.",
+      "focus": "patterns"
+    },
+    {
+      "id": "c48223a4fb66",
+      "severity": "medium",
+      "file": "noxaudit/reporter.py",
+      "line": 59,
+      "title": "Path Traversal vulnerability in report saving",
+      "description": "The reports_path is constructed via 'Path(reports_dir) / repo'. Because 'repo' comes directly from the user-controlled noxaudit.yml config, a malicious repository name like '../../' could write report files outside the designated reports directory.",
+      "suggestion": "Sanitize the 'repo' variable (e.g., by ensuring it doesn't contain path separators) before using it to construct the file path.",
+      "focus": "security"
+    },
+    {
+      "id": "b89b21ed96de",
+      "severity": "medium",
+      "file": "noxaudit/config.py",
+      "line": 28,
+      "title": "Stale/dead configuration field for webhooks",
+      "description": "The NotificationConfig dataclass and config parser include a 'webhook' field which is also documented in the CLI reference, but the application logic in runner.py only supports the 'telegram' channel, making 'webhook' dead configuration.",
+      "suggestion": "Remove the 'webhook' field from the dataclass and documentation, or fully implement the webhook notification logic in runner.py.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "7928156faf96",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 20,
+      "title": "Heavy dependency used for simple POST request",
+      "description": "The project depends on 'httpx>=0.27', but it is only used for a single, optional POST request in the Telegram notification module. This brings in a large dependency tree unnecessarily.",
+      "suggestion": "Replace the httpx.post call with Python's built-in urllib.request to remove the httpx dependency and reduce the package footprint.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "4d50f17bde57",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": 128,
+      "title": "Synchronous blocking operations in async context",
+      "description": "The MCP server uses 'async def' endpoints, but performs blocking synchronous operations within them (e.g., subprocess.run and path.read_text()). This blocks the async event loop and degrades server concurrency.",
+      "suggestion": "Replace blocking subprocess calls with asyncio.create_subprocess_exec and wrap blocking file I/O in asyncio.to_thread().",
+      "focus": "performance"
+    },
+    {
+      "id": "cd528fd72a31",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 349,
+      "title": "Sequential blocking LLM audits",
+      "description": "When multiple repositories are configured, the run_audit function processes them in a sequential loop (_run_repo_sync). This blocks synchronously on the LLM API calls, which can take minutes per repo, artificially increasing total execution time.",
+      "suggestion": "Parallelize the repository audit loops using concurrent.futures.ThreadPoolExecutor or asyncio to execute API calls concurrently.",
+      "focus": "performance"
+    },
+    {
+      "id": "c02614711861",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 87,
+      "title": "Path Traversal in LLM-controlled file paths",
+      "description": "In create_baseline_decisions, finding.file is passed to _hash_file without sanitization. Because finding.file originates from the LLM's JSON output, a prompt injection attack could force the LLM to return a path like '../../../../etc/shadow', which Noxaudit would then open and read into memory.",
+      "suggestion": "Validate that finding.file resolves strictly within the intended repo_path before attempting to read and hash the file.",
+      "focus": "security"
+    }
+  ]
+}

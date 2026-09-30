@@ -1,0 +1,724 @@
+{
+  "meta": {
+    "repo": "noxaudit",
+    "repo_commit": "1503cbf22b08bbe7e64962221c7075474ed33f57",
+    "provider": "openai",
+    "model": "gpt-6-sol",
+    "focus": "all",
+    "run": 1,
+    "started_at": "2026-09-29T23:36:12.659715",
+    "completed_at": "2026-09-29T23:56:22.996724",
+    "wall_clock_seconds": 1210.34,
+    "error": null
+  },
+  "tokens": {
+    "input": 107163,
+    "output": 7320,
+    "cache_read": 0,
+    "cache_write": 0
+  },
+  "cost_usd": 0.1438,
+  "findings_count": 70,
+  "findings": [
+    {
+      "id": "e34a076d5b21",
+      "severity": "high",
+      "file": "action/action.yml",
+      "line": 76,
+      "title": "Workflow inputs are interpolated into a shell script",
+      "description": "The `config`, `focus`, and `mode` inputs are inserted directly into Bash source. A caller who controls a workflow-dispatch input can inject shell syntax that executes on the runner, which also has API keys and a GitHub token.",
+      "suggestion": "Pass inputs through environment variables, quote each variable when invoking the CLI, and validate `mode` against an allowlist.",
+      "focus": "security"
+    },
+    {
+      "id": "70a0c8db9812",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 170,
+      "title": "Retrieval discards unfinished batches when any batch completes",
+      "description": "`retrieve_audit()` marks the entire pending submission retrieved and deletes its file whenever `results` is nonempty. With multiple repositories, one completed batch causes still-processing batches to be lost.",
+      "suggestion": "Remove only successfully processed batches from pending state; retain the others until each has completed.",
+      "focus": "patterns"
+    },
+    {
+      "id": "6b8dcdf86c50",
+      "severity": "high",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 125,
+      "title": "Failed Anthropic batches can be reported as clean audits",
+      "description": "When a batch ends without a successful result, `retrieve_batch()` returns an empty findings list. The runner then produces a report saying there are no new findings rather than reporting that the audit failed.",
+      "suggestion": "Check unsuccessful request counts and result types; propagate an explicit failure instead of treating them as zero findings.",
+      "focus": "security"
+    },
+    {
+      "id": "0b7e6aabc77f",
+      "severity": "high",
+      "file": "noxaudit/providers/gemini.py",
+      "line": 157,
+      "title": "Failed Gemini batches can be reported as clean audits",
+      "description": "Failed and cancelled jobs return `status: ended` with empty findings. The runner processes these as successful audits with no findings.",
+      "suggestion": "Return a distinct failed status or raise an error, and prevent report generation for failed jobs.",
+      "focus": "security"
+    },
+    {
+      "id": "ac2a8f87f7aa",
+      "severity": "high",
+      "file": "noxaudit/providers/openai.py",
+      "line": 176,
+      "title": "Failed OpenAI batches can be reported as clean audits",
+      "description": "Terminal failure, expiry, and cancellation are mapped to `ended`. If no output file is available, the runner defaults to an empty findings list and reports a clean audit.",
+      "suggestion": "Surface unsuccessful batch states and per-request errors explicitly; do not turn them into empty results.",
+      "focus": "security"
+    },
+    {
+      "id": "87774d0319b0",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 260,
+      "title": "Automatic pre-pass can omit security-relevant files",
+      "description": "The pre-pass classifier may omit a file or provide only a snippet or map, yet the final audit is still presented as covering the gathered codebase. An incorrect or incomplete classifier response can therefore hide vulnerabilities.",
+      "suggestion": "For security audits, retain full content for security-critical files and fail or warn clearly on incomplete classification; expose reduced coverage in the report.",
+      "focus": "security"
+    },
+    {
+      "id": "b38fc7c615e2",
+      "severity": "high",
+      "file": "noxaudit/config.py",
+      "line": 25,
+      "title": "Default provider and model are incompatible",
+      "description": "`RepoConfig` defaults to Gemini, while `NoxauditConfig` defaults to a Claude model. A minimal documented config containing only a repo selects Gemini with a Claude model and fails at the provider API.",
+      "suggestion": "Choose compatible provider/model defaults or resolve a provider-specific default model when none is configured.",
+      "focus": "docs"
+    },
+    {
+      "id": "6fc36edcf08a",
+      "severity": "high",
+      "file": "noxaudit/runner.py",
+      "line": 279,
+      "title": "Configured provider-specific model overrides are ignored",
+      "description": "Although `NoxauditConfig.get_model_for_provider()` implements `providers.<name>.model`, provider construction uses `config.model` directly in submission, retrieval, and synchronous runs. The documented multi-provider configuration consequently sends the Claude model to Gemini and OpenAI.",
+      "suggestion": "Resolve the model with `config.get_model_for_provider(pname)` in every provider path and persist the chosen model in pending batch metadata.",
+      "focus": "docs"
+    },
+    {
+      "id": "d6f61596b4c8",
+      "severity": "high",
+      "file": "noxaudit/config.py",
+      "line": 100,
+      "title": "Provider rotation never advances",
+      "description": "`get_provider_for_repo()` defaults `run_index` to zero, and callers never provide another index. Every run selects the first provider, contrary to the documented rotation behavior.",
+      "suggestion": "Persist and advance a per-repository rotation index, or remove the rotation claim and expose provider selection explicitly.",
+      "focus": "docs"
+    },
+    {
+      "id": "d59513df22e3",
+      "severity": "high",
+      "file": "docs/getting-started/quickstart.md",
+      "line": 9,
+      "title": "Minimal configuration selects an incompatible provider and model",
+      "description": "The example config works only because it explicitly specifies Anthropic. The alternative minimal config in `docs/guides/configuration.md` omits the provider and consequently selects Gemini with the default Claude model.",
+      "suggestion": "Update the minimal configuration guide and fix the underlying defaults so both examples work.",
+      "focus": "docs"
+    },
+    {
+      "id": "2d49c28b6e45",
+      "severity": "high",
+      "file": "docs/guides/configuration.md",
+      "line": 15,
+      "title": "Documented minimal configuration cannot run an audit",
+      "description": "The example supplies only `repos[].name` and `path`. Code defaults the provider to Gemini but the model to `claude-sonnet-4-5-20250929`, so an audit fails rather than using a working default.",
+      "suggestion": "Include a compatible provider and model in the example and align the code defaults.",
+      "focus": "docs"
+    },
+    {
+      "id": "f28bec2517a0",
+      "severity": "high",
+      "file": "CONTRIBUTING.md",
+      "line": 108,
+      "title": "Focus-area extension instructions name a nonexistent base class and API",
+      "description": "The guide instructs contributors to import `FocusArea` and override `get_prompt(self, context)`. The implementation exports `BaseFocus`, whose `get_prompt(self)` takes no context and which also requires `get_file_patterns()`. Following the example cannot instantiate or register a working focus area.",
+      "suggestion": "Rewrite the example against `BaseFocus`, implementing both abstract methods with their actual signatures.",
+      "focus": "docs"
+    },
+    {
+      "id": "eeb8b7fc63d2",
+      "severity": "high",
+      "file": "docs/contributing/index.md",
+      "line": 119,
+      "title": "Published focus-area example cannot implement the actual interface",
+      "description": "It imports nonexistent `FocusArea`, passes an unsupported `context` argument to `get_prompt`, and omits the required `get_file_patterns()` method.",
+      "suggestion": "Use `BaseFocus` and show implementations of `get_prompt(self)` and `get_file_patterns(self)`.",
+      "focus": "docs"
+    },
+    {
+      "id": "d78c1a61dd63",
+      "severity": "high",
+      "file": "noxaudit/cli.py",
+      "line": 262,
+      "title": "CLI decisions never record a file hash",
+      "description": "The `decide` command saves only an ID, action, reason, date, and author. `filter_findings()` checks for changes only when `decision.file_hash` exists, so ordinary CLI decisions remain suppressive after the affected file changes, contrary to the decision-memory documentation.",
+      "suggestion": "Look up the finding, verify its repository and file, and store its file path and current hash with the decision.",
+      "focus": "security"
+    },
+    {
+      "id": "2e759503a6ab",
+      "severity": "medium",
+      "file": "noxaudit/cli.py",
+      "line": 262,
+      "title": "CLI accepts decisions for arbitrary finding IDs",
+      "description": "Unlike MCP `record_decision`, `decide` does not verify that the ID belongs to a current finding. A typo creates a persistent, ineffective decision, and an intentionally supplied ID can suppress a future matching finding.",
+      "suggestion": "Validate the ID against recorded findings before saving, with an explicit override if historical decisions are needed.",
+      "focus": "patterns"
+    },
+    {
+      "id": "9992fae4d29d",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": 215,
+      "title": "MCP audit call blocks its async server",
+      "description": "The async `run_audit` tool calls synchronous runner code that performs file scanning, network calls, and batch polling with sleeps. Other MCP requests cannot be serviced while it runs.",
+      "suggestion": "Run the synchronous audit in a worker thread or process, or use an asynchronous provider path.",
+      "focus": "performance"
+    },
+    {
+      "id": "ef515cb2f812",
+      "severity": "medium",
+      "file": "noxaudit/mcp/server.py",
+      "line": 176,
+      "title": "MCP decisions hash files relative to the server directory",
+      "description": "`record_decision` hashes `Path(finding.file)` rather than the audited repo's path. If the server runs outside that repo, it stores no hash or the hash of an unrelated file, breaking change detection.",
+      "suggestion": "Resolve the repository from saved audit metadata/configuration and hash the finding path under that root.",
+      "focus": "security"
+    },
+    {
+      "id": "113d87e11319",
+      "severity": "medium",
+      "file": "noxaudit/cli.py",
+      "line": 423,
+      "title": "Baseline cannot reliably select findings by repository",
+      "description": "`_load_findings_for_baseline()` first loads the current directory's latest-findings file. If it exists, `--repo other-repo` does not select that repo's findings or verify the metadata repo. Decisions can be created for one repository using another repository's findings.",
+      "suggestion": "Store findings per repository or check metadata and load the explicitly selected repository before filtering.",
+      "focus": "patterns"
+    },
+    {
+      "id": "64f1c00576c9",
+      "severity": "medium",
+      "file": "noxaudit/cli.py",
+      "line": 408,
+      "title": "Unfiltered baselines lose repository identity",
+      "description": "Without `--repo`, the command calls `create_baseline_decisions(..., repo_name=None)` with `repo_path='.'`, even when latest findings came from a configured repository elsewhere. File hashes and later `baseline --undo --repo` filtering are consequently unreliable.",
+      "suggestion": "Read the source repository from latest-findings metadata and use its configured path and name for every baseline decision.",
+      "focus": "patterns"
+    },
+    {
+      "id": "4562df5a0a3f",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 411,
+      "title": "Latest findings from different repositories overwrite each other",
+      "description": "Both synchronous and retrieval paths save every repo's results to the same `.noxaudit/latest-findings.json`. After a multi-repo run, MCP queries and baselining can see only the last processed repository.",
+      "suggestion": "Persist findings separately by repo or save a combined, repo-tagged latest state and filter consumers accordingly.",
+      "focus": "patterns"
+    },
+    {
+      "id": "91efac8f6e6b",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 107,
+      "title": "Pre-pass economics ignore the selected provider and model override",
+      "description": "`_maybe_prepass()` receives `provider_name` but looks up pricing using only `config.model`. A tiered Claude model in a Gemini run can trigger unnecessary triage, while a provider-specific tiered model may be missed.",
+      "suggestion": "Resolve the model for the selected provider before pricing it, and make the automatic trigger conditional on that provider's actual pricing.",
+      "focus": "performance"
+    },
+    {
+      "id": "3445aa225873",
+      "severity": "medium",
+      "file": "noxaudit/pricing.py",
+      "line": 246,
+      "title": "Estimate applies batch discounts to synchronous Gemini audits",
+      "description": "`build_estimate_report()` enables the discount whenever a model lists one. The normal Gemini `run_audit()` path uses `models.generate_content`, not its Batch API, so the displayed cost can be roughly half the actual cost.",
+      "suggestion": "Base estimates on the chosen execution mode; apply Gemini's batch discount only for submit/retrieve runs.",
+      "focus": "docs"
+    },
+    {
+      "id": "9a6a4e455d34",
+      "severity": "medium",
+      "file": "noxaudit/pricing.py",
+      "line": 177,
+      "title": "Pre-pass savings estimate assumes the smallest files are most relevant",
+      "description": "`estimate_prepass_reduction()` sorts files by size and counts only the smallest 45% as retained. The real classifier selects by relevance and also retains snippet/map content, so advertised token and cost savings can be substantially optimistic.",
+      "suggestion": "Model all content tiers and use measured classification distributions, or label the calculation clearly as an illustrative lower bound.",
+      "focus": "performance"
+    },
+    {
+      "id": "3afea781bb3c",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 143,
+      "title": "Size and exclude rules silently remove audit coverage",
+      "description": "File gathering silently skips files over 50 KB and excludes paths whenever an exclude term occurs anywhere in the relative path. For example, excluding `build` also excludes a relevant `src/build_auth.py`; skipped files are not listed to users.",
+      "suggestion": "Match excludes against intended path components or explicit globs, and report skipped files and reasons in audit output.",
+      "focus": "security"
+    },
+    {
+      "id": "1dedd49360bb",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 48,
+      "title": "Single-focus gathering can return the same file multiple times",
+      "description": "`BaseFocus.gather_files()` does not deduplicate paths matched by overlapping patterns, unlike `gather_files_combined()`. Callers using this public method may send duplicate content and inflate token costs.",
+      "suggestion": "Track seen relative paths, or delegate to the combined gathering implementation.",
+      "focus": "performance"
+    },
+    {
+      "id": "86f95200704f",
+      "severity": "medium",
+      "file": "noxaudit/focus/base.py",
+      "line": 74,
+      "title": "Prompt templates are loaded outside the built wheel package",
+      "description": "`get_prompt_from_file()` looks for a top-level `focus_prompts` directory, but the wheel configuration packages only `noxaudit`. In an installed wheel the templates may be absent; fallback calls `self.get_prompt()` again, recursively, until failure.",
+      "suggestion": "Package the templates inside `noxaudit` as package data and load them with `importlib.resources`; raise a clear error if a required template is missing.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "12c65fd9b736",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": 70,
+      "title": "Issue lookup fails open and ignores closed issues",
+      "description": "`_issue_exists()` checks only open issues and returns `False` on CLI, timeout, and JSON errors. Transient GitHub failures or a previously closed issue can cause duplicate issues to be created.",
+      "suggestion": "Treat lookup errors as failures that prevent creation, and search all relevant issue states before creating a replacement.",
+      "focus": "security"
+    },
+    {
+      "id": "c5f2d5c5599d",
+      "severity": "medium",
+      "file": "noxaudit/issues.py",
+      "line": 132,
+      "title": "Issue descriptions are exposed in process arguments",
+      "description": "The complete AI-generated issue body is passed through `gh issue create --body`. On systems where process arguments are visible, finding details, including any discovered secrets reproduced by the AI, can be exposed to other local processes.",
+      "suggestion": "Use `--body-file` with a permission-restricted temporary file or a protected stdin/API mechanism, and avoid publishing secret values in findings.",
+      "focus": "security"
+    },
+    {
+      "id": "a615610bfac8",
+      "severity": "medium",
+      "file": "noxaudit/notifications/telegram.py",
+      "line": 37,
+      "title": "Telegram error response body is printed",
+      "description": "On API errors, the complete `resp.text` is written to logs. Provider responses can contain message content or other sensitive details, making CI logs an unnecessary disclosure channel.",
+      "suggestion": "Log a bounded status and sanitized error code rather than the full response body.",
+      "focus": "security"
+    },
+    {
+      "id": "93cfa8336c0d",
+      "severity": "medium",
+      "file": "noxaudit/sarif.py",
+      "line": 113,
+      "title": "Free-form suggestions are presented as executable SARIF fixes",
+      "description": "A finding's natural-language suggestion is emitted as `insertedContent` replacing a source line. Code-scanning clients may offer an invalid or destructive automated fix, although the suggestion is not a verified patch.",
+      "suggestion": "Keep suggestions in result help text; emit SARIF `fixes` only for validated, location-specific replacements.",
+      "focus": "patterns"
+    },
+    {
+      "id": "211c5a3e7056",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 435,
+      "title": "SARIF includes findings suppressed by decisions",
+      "description": "The markdown report, notifications, and latest-findings state use `new_findings`, but SARIF is generated from `result.findings`. Previously dismissed or accepted findings can therefore continue appearing in Code Scanning.",
+      "suggestion": "Generate SARIF from `new_findings`, or explicitly document and consistently implement a different suppression policy.",
+      "focus": "patterns"
+    },
+    {
+      "id": "b6a91e7b0729",
+      "severity": "medium",
+      "file": "noxaudit/runner.py",
+      "line": 505,
+      "title": "Synchronous SARIF includes suppressed findings",
+      "description": "The synchronous path also passes `result.findings`, rather than `result.new_findings`, to `findings_to_sarif()`. This conflicts with decision-memory suppression in the other outputs.",
+      "suggestion": "Apply the decision filter before SARIF generation and test that dismissed findings are omitted.",
+      "focus": "patterns"
+    },
+    {
+      "id": "b9423244bf57",
+      "severity": "medium",
+      "file": "noxaudit/cli.py",
+      "line": 326,
+      "title": "Report selection is based on filename sorting, not modification time",
+      "description": "`report` reverse-sorts report paths. A lexicographically later repository directory can win even when its report is older, so the command may not display the latest audit.",
+      "suggestion": "Select by report timestamp or file modification time, with exact repo and focus filtering.",
+      "focus": "patterns"
+    },
+    {
+      "id": "b98ce203438c",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 99,
+      "title": "AI decision context includes expired and changed decisions",
+      "description": "`format_decision_context()` tells the model not to report every stored decision, without checking expiry or file hashes. The subsequent filter cannot resurface an issue the model has already omitted because it saw an invalid old decision.",
+      "suggestion": "Validate decisions before adding them to the prompt, or omit the suppression instruction and let post-processing decide.",
+      "focus": "security"
+    },
+    {
+      "id": "a5111d6c0f1f",
+      "severity": "medium",
+      "file": "noxaudit/decisions.py",
+      "line": 87,
+      "title": "Decisions without a stored hash never expire on file changes",
+      "description": "File change detection runs only if `decision.file_hash` is present. This includes all ordinary CLI decisions and baselines for missing files, so the documented file-change invalidation does not apply to them.",
+      "suggestion": "Require or recover a valid file hash when recording decisions and explicitly handle missing files as changed.",
+      "focus": "security"
+    },
+    {
+      "id": "878c38afb7b8",
+      "severity": "medium",
+      "file": "noxaudit/mcp/state.py",
+      "line": 30,
+      "title": "Malformed latest findings can crash consumers",
+      "description": "JSON syntax errors return an empty list, but a valid JSON object with malformed finding fields raises `KeyError` or `ValueError` in `_finding_from_dict`. MCP tools and baseline operations can fail on partially written or externally edited state.",
+      "suggestion": "Validate the schema, handle invalid records explicitly, and write state atomically.",
+      "focus": "testing"
+    },
+    {
+      "id": "c3bc8eba2c1a",
+      "severity": "medium",
+      "file": "noxaudit/cost_ledger.py",
+      "line": 69,
+      "title": "Ledger reads and status scans are unbounded",
+      "description": "`read_entries()` loads and parses the entire append-only cost ledger even when callers request only recent entries. Startup and `status` latency and memory use grow with every audit.",
+      "suggestion": "Stream entries for date-filtered queries and rotate or compact the ledger when appropriate.",
+      "focus": "performance"
+    },
+    {
+      "id": "d1e6e8850d22",
+      "severity": "medium",
+      "file": "noxaudit/mcp/state.py",
+      "line": 82,
+      "title": "Findings history grows without retention",
+      "description": "Each audit appends complete finding descriptions to `findings-history.jsonl`, but no reader, pruning, or retention policy is provided. Disk usage and potentially sensitive historical findings accumulate indefinitely.",
+      "suggestion": "Add retention or rotation and document what historical data is retained.",
+      "focus": "performance"
+    },
+    {
+      "id": "06e0269a377d",
+      "severity": "medium",
+      "file": "noxaudit/providers/anthropic.py",
+      "line": 160,
+      "title": "Batch polling has no deadline",
+      "description": "The synchronous audit polls forever at 60-second intervals when the provider never reaches a terminal status. A CI job or MCP invocation can hang until an external timeout.",
+      "suggestion": "Add a configurable maximum wait time and surface an incomplete audit as an error.",
+      "focus": "performance"
+    },
+    {
+      "id": "f8fda12daad2",
+      "severity": "medium",
+      "file": "noxaudit/providers/openai.py",
+      "line": 211,
+      "title": "OpenAI batch polling has no deadline",
+      "description": "The synchronous path loops and sleeps indefinitely if batch status remains nonterminal.",
+      "suggestion": "Enforce a maximum polling duration and return a clear timeout or resumable batch ID.",
+      "focus": "performance"
+    },
+    {
+      "id": "6c68fa055056",
+      "severity": "medium",
+      "file": "noxaudit/providers/gemini.py",
+      "line": 176,
+      "title": "Gemini synchronous audits are priced and described as batches",
+      "description": "`GeminiProvider.run_audit()` calls `generate_content` directly, while runner output describes a batch API and cost estimates apply a batch discount. Users may underestimate spending.",
+      "suggestion": "Distinguish synchronous and batch modes in runner messages, ledger pricing, and estimates.",
+      "focus": "docs"
+    },
+    {
+      "id": "90a0b426d15a",
+      "severity": "medium",
+      "file": "noxaudit/providers/openai.py",
+      "line": 77,
+      "title": "OpenAI strict JSON schema lacks required strict-mode fields",
+      "description": "The `json_schema` request supplies a schema without `additionalProperties: false` and without all declared properties in `required`, as required by OpenAI strict structured-output schemas for supported models. Batch requests may be rejected rather than audited.",
+      "suggestion": "Provide a compliant strict schema, making nullable fields required where necessary, and add an API-contract test.",
+      "focus": "testing"
+    },
+    {
+      "id": "7bccae720f44",
+      "severity": "medium",
+      "file": "tests/test_sarif_integration.py",
+      "line": 348,
+      "title": "SARIF tests do not validate against the real SARIF schema",
+      "description": "`SARIF_MINIMAL_SCHEMA` checks only a small subset of fields, so tests described as SARIF 2.1.0 schema validation can pass with invalid rule references, fixes, or other SARIF structures.",
+      "suggestion": "Validate generated output against the published SARIF 2.1.0 schema and add targeted tests for fixes and missing focus values.",
+      "focus": "testing"
+    },
+    {
+      "id": "1b526697c99c",
+      "severity": "medium",
+      "file": "tests/test_cli_integration.py",
+      "line": 29,
+      "title": "Integration fixture uses an ignored provider config key",
+      "description": "`_write_config()` writes `repos[].provider`, whereas `load_config()` reads `provider_rotation`. These tests always use the default provider, so they do not verify the requested provider configuration.",
+      "suggestion": "Write `provider_rotation: [provider]` and assert provider selection in the integration tests.",
+      "focus": "testing"
+    },
+    {
+      "id": "4eb7b86a1b0f",
+      "severity": "medium",
+      "file": "tests/test_sarif_integration.py",
+      "line": 284,
+      "title": "CLI SARIF integration test relies on the default provider",
+      "description": "`test_run_format_sarif_produces_sarif_file` patches only the Gemini provider while its config omits `provider_rotation`. It currently passes because Gemini is the code default, making the test fragile and unable to detect provider-selection regressions.",
+      "suggestion": "Set the provider explicitly in the CLI test configuration.",
+      "focus": "testing"
+    },
+    {
+      "id": "1bbb087e110f",
+      "severity": "medium",
+      "file": "docs/integrations/github-actions.md",
+      "line": 109,
+      "title": "Documented action inputs do not match action.yml",
+      "description": "The table names `output-format`, `openai-api-key`, and `google-api-key`. The action defines `format` instead and has no OpenAI or Google key inputs. Using the documented inputs does not configure those providers or SARIF output.",
+      "suggestion": "Update the guide and examples to use actual inputs, and add provider-key inputs to the action if multi-provider use is intended.",
+      "focus": "docs"
+    },
+    {
+      "id": "db43f3a50fe2",
+      "severity": "high",
+      "file": "docs/integrations/sarif.md",
+      "line": 60,
+      "title": "SARIF upload example uses an unsupported action input",
+      "description": "Both GitHub Actions examples pass `output-format: sarif`, but `action/action.yml` defines the input as `format`. Retrieval therefore defaults to markdown and produces no SARIF file for upload.",
+      "suggestion": "Use `format: sarif` throughout the integration documentation.",
+      "focus": "docs"
+    },
+    {
+      "id": "abaface4fc02",
+      "severity": "high",
+      "file": "docs/integrations/github-actions.md",
+      "line": 76,
+      "title": "Submit/retrieve example does not preserve pending state between workflows reliably",
+      "description": "The example presents a separate retrieval workflow as sufficient, but the action restores the newest cache with a broad prefix. The cache is not keyed to a particular submitted run; overlapping submissions can cause retrieval of the wrong pending batch or skip one.",
+      "suggestion": "Pass an explicit batch identifier or cache key between submit and retrieve and document how overlapping scheduled runs are handled.",
+      "focus": "docs"
+    },
+    {
+      "id": "877d0cd120c2",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 64,
+      "title": "Action installation is not pinned to a release or commit",
+      "description": "The action runs `pip install git+https://github.com/atriumn/noxaudit.git`, fetching the current default branch instead of the revision of the action being invoked. Audits are not reproducible and a changed branch changes code executed with CI secrets.",
+      "suggestion": "Install the same pinned action revision or a pinned, verified package release.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "bd34d3eb7941",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 84,
+      "title": "Action does not forward optional provider API keys",
+      "description": "The action exposes only `ANTHROPIC_API_KEY` to the CLI. Configurations selecting Gemini or OpenAI cannot work through the action even though the integration guide claims multi-provider support.",
+      "suggestion": "Define Google and OpenAI key inputs, pass them as environment variables, and install the selected provider extras.",
+      "focus": "docs"
+    },
+    {
+      "id": "e3b931701464",
+      "severity": "medium",
+      "file": "action/action.yml",
+      "line": 25,
+      "title": "Action focus input still describes removed scheduling behavior",
+      "description": "Its description says the default is 'today's schedule', while `_resolve_focus_names()` defaults to all seven focus areas and no weekday schedule remains.",
+      "suggestion": "Describe the actual default as `all` and remove the obsolete schedule reference.",
+      "focus": "docs"
+    },
+    {
+      "id": "6b36d779dab9",
+      "severity": "medium",
+      "file": "docs/integrations/github-issues.md",
+      "line": 55,
+      "title": "GitHub token instructions do not match the action's authentication path",
+      "description": "The guide says `GITHUB_TOKEN` is automatically available, while the action explicitly sets `GH_TOKEN` from its `github-token` input. Outside the action, GitHub CLI authentication also depends on its own environment or login state.",
+      "suggestion": "Explain the `GH_TOKEN` action mapping and give a working local `gh auth` or `GH_TOKEN` example.",
+      "focus": "docs"
+    },
+    {
+      "id": "8b06ea78fc3f",
+      "severity": "medium",
+      "file": "README.md",
+      "line": 43,
+      "title": "Installed-package quick start assumes an example file in the user's project",
+      "description": "After `pip install noxaudit`, the command `cp noxaudit.yml.example noxaudit.yml` fails unless the user separately cloned the source repository or already has that file.",
+      "suggestion": "Show a self-contained minimal config or link to a downloadable example, and state when copying is possible.",
+      "focus": "docs"
+    },
+    {
+      "id": "3f99dc8d7223",
+      "severity": "medium",
+      "file": "docs/getting-started/quickstart.md",
+      "line": 20,
+      "title": "Installed-package quick start references a locally unavailable example",
+      "description": "The alternative `cp noxaudit.yml.example noxaudit.yml` assumes the project source tree; pip installation does not place that example in an arbitrary audited repository.",
+      "suggestion": "Make the written YAML the primary installed-user path or provide an installable config-init command.",
+      "focus": "docs"
+    },
+    {
+      "id": "76df20a0a4bc",
+      "severity": "medium",
+      "file": "docs/guides/configuration.md",
+      "line": 9,
+      "title": "Configuration guide assumes the example file exists locally",
+      "description": "`cp noxaudit.yml.example noxaudit.yml` does not work from a typical application repository after installing noxaudit from pip.",
+      "suggestion": "Give self-contained creation instructions or an explicit URL for the example.",
+      "focus": "docs"
+    },
+    {
+      "id": "a6c3eecf380f",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 173,
+      "title": "Contributor verification uses a removed CLI command",
+      "description": "The 'Testing Your Changes' block runs `noxaudit schedule`, but the Click CLI defines no `schedule` command; it exits with an error.",
+      "suggestion": "Replace it with a supported command such as `noxaudit status` or `noxaudit run --dry-run`.",
+      "focus": "docs"
+    },
+    {
+      "id": "77e1c2d4ffb7",
+      "severity": "medium",
+      "file": "CONTRIBUTING.md",
+      "line": 186,
+      "title": "Test configuration example uses unsupported keys",
+      "description": "The example uses top-level `ai_provider`, `anthropic_api_key`, `focus_schedule`, and `telegram`. `load_config()` does not consume those keys; it expects `repos`, environment-based API keys, and a `notifications` list.",
+      "suggestion": "Replace the example with a configuration accepted by `load_config()` and keep credentials in environment variables.",
+      "focus": "docs"
+    },
+    {
+      "id": "8686d20d426e",
+      "severity": "medium",
+      "file": "docs/getting-started/installation.md",
+      "line": 56,
+      "title": "Suggested .env loader can mishandle secrets",
+      "description": "`export $(grep -v '^#' .env | xargs)` splits and reinterprets values containing spaces, quotes, or shell metacharacters and encourages handling secret contents through command substitution.",
+      "suggestion": "Recommend a properly formatted shell file loaded with `set -a; . ./.env; set +a` only when trusted, or a dedicated dotenv loader; keep the file ignored and permission-restricted.",
+      "focus": "security"
+    },
+    {
+      "id": "7880028c31ca",
+      "severity": "medium",
+      "file": "scripts/setup-hooks.sh",
+      "line": 11,
+      "title": "Hook installer fails in Git worktrees",
+      "description": "It assumes `$REPO_ROOT/.git/hooks` is a directory. In a linked worktree `.git` is a file, so creating the pre-push symlink and changing its permissions fails despite the worktree setup instructions.",
+      "suggestion": "Resolve the hook directory with `git rev-parse --git-path hooks` and install into that location.",
+      "focus": "docs"
+    },
+    {
+      "id": "6cd9986c4d9b",
+      "severity": "medium",
+      "file": "pyproject.toml",
+      "line": 75,
+      "title": "Duplicate dev dependency declarations can select different versions",
+      "description": "`pytest` and `ruff` appear in both the `dev` optional extra and the `dev` dependency group with different minimum versions. Contributors using the two supported uv invocation styles can run different test and lint versions.",
+      "suggestion": "Use one authoritative dev dependency group or synchronize constraints across both declarations.",
+      "focus": "dependencies"
+    },
+    {
+      "id": "25b718da70b8",
+      "severity": "medium",
+      "file": "tests/test_mcp_server.py",
+      "line": 13,
+      "title": "Default test suite requires an optional MCP dependency",
+      "description": "The module imports `noxaudit.mcp.server` at collection time, which imports `mcp`. A base install with only the documented dev extra lacks the optional `mcp` extra, so `pytest` fails during collection; only the pre-push script explicitly installs both extras.",
+      "suggestion": "Add MCP to the test dependencies, or skip MCP tests when the optional extra is unavailable.",
+      "focus": "testing"
+    },
+    {
+      "id": "736b9758568e",
+      "severity": "medium",
+      "file": "docs/reference/configuration.md",
+      "line": 10,
+      "title": "Configuration reference describes a nonworking default combination",
+      "description": "It lists default `repos[].provider_rotation` as `[gemini]` and default `model` as a Claude model without explaining that this combination is incompatible. Users following the reference to create a minimal config will encounter an API error.",
+      "suggestion": "Correct the code defaults and document compatible model selection.",
+      "focus": "docs"
+    },
+    {
+      "id": "7cd524247e94",
+      "severity": "medium",
+      "file": "docs/reference/providers.md",
+      "line": 77,
+      "title": "Provider reference calls Anthropic batching the default without distinguishing commands",
+      "description": "`run` does batch and poll for Anthropic, but the guide implies provider behavior determines batching generally. It also describes rotation that cannot advance because callers always request rotation index zero.",
+      "suggestion": "Document execution behavior by command and correct the rotation implementation or claim.",
+      "focus": "docs"
+    },
+    {
+      "id": "e7159315e0a4",
+      "severity": "medium",
+      "file": "docs/guides/cost-management.md",
+      "line": 122,
+      "title": "Pre-pass guide promises coverage the implementation does not guarantee",
+      "description": "It says high files are fully sent, medium files contribute key snippets, and low files receive an outline, but snippets are only the first and last lines and maps retain definitions/comments. Important middle-of-file logic may not be audited.",
+      "suggestion": "Describe the actual extraction strategy and warn that pre-pass reduces audit coverage, particularly for security audits.",
+      "focus": "docs"
+    },
+    {
+      "id": "add62dbdeada",
+      "severity": "low",
+      "file": "noxaudit/__init__.py",
+      "line": 1,
+      "title": "Package docstring retains the old project name",
+      "description": "The module docstring still says 'Nightwatch' after the documented rename to Noxaudit.",
+      "suggestion": "Update the docstring to the current name.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "304a3faa9081",
+      "severity": "low",
+      "file": "noxaudit/reporter.py",
+      "line": 18,
+      "title": "Generated reports retain the old project name",
+      "description": "Every generated report starts `# Nightwatch Report`, contradicting the package name, README, and rename changelog.",
+      "suggestion": "Change the heading to `Noxaudit Report` and update the assertion in `tests/test_reporter.py`.",
+      "focus": "docs"
+    },
+    {
+      "id": "0fb42d7dd9ab",
+      "severity": "low",
+      "file": "noxaudit/reporter.py",
+      "line": 109,
+      "title": "Testing focus area has no notification icon",
+      "description": "`focus_icons` covers six of the seven registered focus areas. Testing audits fall back to the generic combined-audit icon.",
+      "suggestion": "Add a testing icon, or intentionally use one generic icon for all areas.",
+      "focus": "hygiene"
+    },
+    {
+      "id": "2c1d8e46e1dc",
+      "severity": "low",
+      "file": "noxaudit/cli.py",
+      "line": 357,
+      "title": "CLI estimate ignores provider-specific model overrides",
+      "description": "Unlike the documented `providers.<name>.model` behavior, `estimate` resolves pricing from `config.model` for every selected provider. A multi-provider configuration can display costs for the wrong model.",
+      "suggestion": "Use `config.get_model_for_provider(pname)` before resolving the pricing key.",
+      "focus": "docs"
+    },
+    {
+      "id": "d84b8991597d",
+      "severity": "low",
+      "file": "docs/roadmap/08-saas-scheduling.md",
+      "line": 52,
+      "title": "Roadmap links to files not included in the provided documentation",
+      "description": "The SaaS application and strategy references point to `03.5-saas-application.md`, `../STRATEGY.md`, and `06-product-quality-focus-areas.md`, none of which are among the supplied files. These links need verification before the roadmap can serve as a navigable guide.",
+      "suggestion": "Verify that each target exists in the repository and update or remove broken references.",
+      "focus": "docs"
+    },
+    {
+      "id": "e0065affa705",
+      "severity": "low",
+      "file": "docs/guides/focus-areas.md",
+      "line": 14,
+      "title": "Focus-area ordering differs from the registered CLI order",
+      "description": "The guide presents testing immediately after security, while `FOCUS_AREAS` registers docs and patterns before testing. This is minor, but makes the documented overview differ from `status` and default-run ordering.",
+      "suggestion": "Use the registered order consistently if ordering is meant to convey the default run sequence.",
+      "focus": "docs"
+    }
+  ]
+}
